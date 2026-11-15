@@ -90,7 +90,9 @@ export function setupConnection(host: ConnectionHost) {
         setStatus(() => t.connection.notConnected);
         setUi(false);
       } else {
-        // Connected, but drawing something failed on the way (#49 C): the Stop buttons must not stay disabled
+        // Connected, but drawing something failed on the way (#49 C): the Stop buttons must not stay disabled, and the
+        // desktop app must know (global stop shortcut, display sleep)
+        desktop?.connectionChanged(true);
         setUi(true);
       }
     } finally {

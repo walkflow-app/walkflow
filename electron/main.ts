@@ -229,13 +229,16 @@ function createWindow() {
   // The window crashed: the Bluetooth connection was in it, so the belt may run on and nothing here can stop it (#49 F)
   wc.on('render-process-gone', (_e, details) => {
     if (!warnWhenRendererGone(details.reason)) return;
+    // The page that comes back is not connected: no shortcut, no display-sleep blocker, updates allowed
+    setTreadmillConnected(false);
     dialog.showMessageBoxSync({
       type: 'error',
       title: t.electron.rendererGoneTitle,
       message: t.electron.rendererGoneMessage,
       detail: t.electron.rendererGoneDetail,
     });
-    win?.reload();
+    // A page that cannot start at all would only crash again
+    if (details.reason !== 'launch-failed' && details.reason !== 'integrity-failure' && !wc.isDestroyed()) wc.reload();
   });
 
   win.once('ready-to-show', () => win?.show());
@@ -262,10 +265,9 @@ ipcMain.on('bt:pairing-response', (e, r: unknown) => {
 /** Whether the page says it is connected to a treadmill: an update never restarts the app then (platform/update-controller.ts) */
 let treadmillConnected = false;
 
-ipcMain.on('app:connection', (e, connected: unknown) => {
-  if (!fromWindow(e)) return;
-  treadmillConnected = connected === true;
-  if (connected === true) {
+function setTreadmillConnected(connected: boolean) {
+  treadmillConnected = connected;
+  if (connected) {
     if (powerBlockerId === null) powerBlockerId = powerSaveBlocker.start('prevent-display-sleep');
     registerStopShortcut();
   } else {
@@ -273,6 +275,11 @@ ipcMain.on('app:connection', (e, connected: unknown) => {
     powerBlockerId = null;
     globalShortcut.unregister(STOP_ACCELERATOR);
   }
+}
+
+ipcMain.on('app:connection', (e, connected: unknown) => {
+  if (!fromWindow(e)) return;
+  setTreadmillConnected(connected === true);
 });
 
 ipcMain.on('app:language', (e, lang: unknown) => {

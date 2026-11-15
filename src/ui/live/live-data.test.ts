@@ -65,6 +65,24 @@ describe('the belt ends', () => {
   });
 });
 
+describe('the program tick (#49 D)', () => {
+  it('comes before the figures are drawn', () => {
+    const r = rig();
+    const order: string[] = [];
+    r.runner.tick.mockImplementation(() => { order.push('tick'); });
+    r.renderStats.mockImplementation(() => { order.push('draw'); });
+    r.tm.emit('data', { speed: 2 });
+    expect(order).toEqual(['tick', 'draw']);
+  });
+
+  it('is not skipped when drawing the figures fails', () => {
+    const r = rig();
+    r.renderStats.mockImplementation(() => { throw new Error('display'); });
+    try { r.tm.emit('data', { speed: 2 }); } catch { /* the display error, not ours */ }
+    expect(r.runner.tick).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe('the banner', () => {
   it('follows the belt phase and the measured speed', () => {
     const r = rig();
