@@ -66,6 +66,10 @@ npm run dev                                     # Demo (no treadmill) in the con
     anything that ends in a call that drives the belt;
   - `docs-i18n-reviewer` for every change to behaviour, settings, UI texts or the site;
   - `architect` for a spec, a refactor, or a change across layers or repositories.
+  Reviewers run with another model than the one that wrote the change: written with Opus, the reviewer runs with Sonnet, and
+  the other way round; when that is unclear, Opus for safety code, Bluetooth, sharing, the library version or big changes,
+  else Sonnet. On GitHub `.github/scripts/review-model.sh` picks it the same way, from the Co-Authored-By lines of the
+  commits.
 - **Treadmill checks**: skill `hardware-check` writes them into HARDWARE-TESTS.md, and reads a log the maintainer pastes.
 - **Website**: agent `site-editor`.
 - **"release"**: skill `release` (the whole chain, publishing included; it stops before publishing safety changes).
