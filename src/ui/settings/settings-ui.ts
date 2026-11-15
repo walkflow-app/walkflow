@@ -4,7 +4,7 @@
 // Locked while the belt runs: the limit, the ramp and the other safety values are not changed in the middle of a run.
 
 import { confirmDialog } from '../components/dialogs';
-import { dialogStopButton } from '../components/dialog-stop';
+import { lastingDialogStopButton } from '../components/dialog-stop';
 import { t } from '../../i18n/i18n';
 import { DEV_MODE_STORAGE_KEY, readDevMode } from '../../core/safety/dev-mode';
 import { QUIET_STORAGE_KEY, readQuiet } from '../../core/safety/quiet';
@@ -69,8 +69,8 @@ export function setupSettings() {
       if (next) { e.preventDefault(); showTab(next, true); }
     };
   }
-  // Stop within reach while the dialog is open (it also closes when the belt starts, see setLocked)
-  dlg.prepend(dialogStopButton(dlg));
+  // Stop within reach while the dialog is open: the belt can be started on the treadmill while it is
+  dlg.prepend(lastingDialogStopButton(dlg));
   button.onclick = () => open();
   $button('settingsClose').onclick = () => dlg.close();
   // A click on the backdrop (the dialog element itself; its content fills it)
