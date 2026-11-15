@@ -79,6 +79,10 @@ Every new pull request gets a review by AI agents (`.github/workflows/agent-revi
 over an issue with the label `agent-ready` (`.github/workflows/claude.yml`); agents never take on issues labelled `safety` and
 never merge. Pull requests from forks are not reviewed by agents.
 
+A new issue from someone outside the project is sorted by `triage.yml`: an agent that can only read proposes labels,
+duplicates, missing details and where in the code it is; a second job without an agent checks that and writes the labels and
+one comment. It never sets `agent-ready`, closes or moves an issue. Actions → Triage → Run workflow sorts any issue again.
+
 On a schedule: `relays.yml` checks the pinned relays every Monday and opens an issue "Relay check failed" when one fails twice
 (no agent); `docs-check.yml` has an agent read the docs against the code once a month and list what is no longer true in an
 issue "Docs out of date". Neither changes code; a fix is a pull request like any other.
