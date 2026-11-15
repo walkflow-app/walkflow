@@ -1,5 +1,6 @@
 // Integration with the Electron app (only if window.walkflowDesktop exists, i.e. provided by the preload).
 
+import { dialogStopButton } from './components/dialog-stop';
 import { type BtDevice, chooserList } from '../platform/bt-devices';
 import type { UpdateState } from '../platform/update-controller';
 import { choose } from './components/dialogs';
@@ -178,7 +179,7 @@ function setupChooser(d: WalkflowDesktop, log: (m: string) => void) {
       more.type = 'button';
       more.className = 'link';
       more.onclick = () => { showAll = !showAll; render(); };
-      dlg.append(h, p, list, more, label, cancel);
+      dlg.append(dialogStopButton(dlg), h, p, list, more, label, cancel);
       document.body.append(dlg);
       dlg.showModal();
     }
@@ -225,7 +226,7 @@ function askPin(): Promise<string | null> {
     cancel.onclick = () => done(null);
     dlg.addEventListener('cancel', e => { e.preventDefault(); done(null); });
     row.append(ok, cancel);
-    dlg.append(h, input, row);
+    dlg.append(dialogStopButton(dlg), h, input, row);
     document.body.append(dlg);
     dlg.showModal();
     input.focus();

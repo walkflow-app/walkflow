@@ -1,8 +1,10 @@
-// What the person presses to start, pause and stop: the buttons, the stop bar in the other views, and the keys (Space and Esc
-// stop at once, ↑ ↓ change the speed). Stop is never held back: no question, no waiting for anything but the command itself.
+// What the person presses to start, pause and stop: the buttons, the stop bar in the other views, and the keys (Esc always
+// stops, Space too outside text fields, ↑ ↓ change the speed in the training view; src/core/safety/stop-keys.ts decides).
+// Stop is never held back: no question, no waiting for anything but the command itself.
 
 import type { Active } from '../../core/training/selection';
 import type { ProgramRunner } from '../../core/training/program';
+import { keyAction } from '../../core/safety/stop-keys';
 import { $button } from '../ui';
 
 export interface ControlsHost {
@@ -38,19 +40,22 @@ export function setupControls(host: ControlsHost) {
 
   document.addEventListener('keydown', e => {
     if (!host.connected()) return;
-    const el = e.target as HTMLElement;
-    const tag = el.tagName;
-    const isText = tag === 'TEXTAREA' || tag === 'SELECT' || (tag === 'INPUT' && (el as HTMLInputElement).type !== 'range');
-    if (isText) return;
-    if (e.code === 'Space' || e.key === 'Escape') {
+    const el = e.target instanceof HTMLElement ? e.target : document.body;
+    const action = keyAction({
+      key: e.key, code: e.code, tag: el.tagName, type: el instanceof HTMLInputElement ? el.type : '', repeat: e.repeat,
+      view: document.documentElement.dataset.view ?? 'training',
+      inDialog: el.closest('dialog[open]') !== null,
+      onMap: el.closest('.route-map, .maplibregl-map') !== null,
+      editable: el.isContentEditable,
+    });
+    if (action === 'stop') {
       e.preventDefault();
       // oxlint-disable-next-line typescript/no-unnecessary-condition -- the focus may be on an element without blur(); nothing here may throw before the stop below
       (document.activeElement as HTMLElement | null)?.blur?.();
       void host.belt.stop();
-    } else if (tag !== 'INPUT' && e.key === 'ArrowUp') {
-      e.preventDefault(); host.speed.step(1);
-    } else if (tag !== 'INPUT' && e.key === 'ArrowDown') {
-      e.preventDefault(); host.speed.step(-1);
+    } else if (action !== null) {
+      e.preventDefault();
+      host.speed.step(action === 'faster' ? 1 : -1);
     }
   });
 }
