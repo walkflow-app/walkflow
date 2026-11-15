@@ -14,7 +14,8 @@ import { store } from '../store';
 export type SettingsTab = 'general' | 'safety' | 'treadmill' | 'data' | 'info';
 const TABS: readonly SettingsTab[] = ['general', 'safety', 'treadmill', 'data', 'info'];
 
-export function setupSettings() {
+/** onLockClose: the lock closed the open dialog; fields with a typed value go back to what is in force */
+export function setupSettings(onLockClose: () => void = () => {}) {
   const dlg = $<HTMLDialogElement>('settingsDlg');
   const button = $button('settingsBtn');
   const tabs = new Map(TABS.map(name => [name, $button(`tab-${name}`)] as const));
@@ -78,7 +79,8 @@ export function setupSettings() {
     if (!quietSwitch.checked) { quiet = false; store.set(QUIET_STORAGE_KEY, '0'); applyQuiet(); return; }
     // Switching it on is asked for first; "off" needs no question
     quietSwitch.checked = false;
-    const ok = await confirmDialog(t.settings.quietConfirmTitle, t.settings.quietConfirm, t.settings.quietConfirmOk, 'stop');
+    // Not taken if the belt started while the question was open
+    const ok = await confirmDialog(t.settings.quietConfirmTitle, t.settings.quietConfirm, t.settings.quietConfirmOk, 'stop') && !locked;
     quiet = ok;
     if (ok) store.set(QUIET_STORAGE_KEY, '1');
     applyQuiet();
@@ -88,7 +90,8 @@ export function setupSettings() {
     if (!devSwitch.checked) { devMode = false; store.set(DEV_MODE_STORAGE_KEY, '0'); applyDevMode(); return; }
     // Switching it on is asked for first; "off" needs no question
     devSwitch.checked = false;
-    const ok = await confirmDialog(t.settings.devConfirmTitle, t.settings.devConfirm, t.settings.devConfirmOk, 'stop');
+    // Not taken if the belt started while the question was open
+    const ok = await confirmDialog(t.settings.devConfirmTitle, t.settings.devConfirm, t.settings.devConfirmOk, 'stop') && !locked;
     devMode = ok;
     if (ok) store.set(DEV_MODE_STORAGE_KEY, '1');
     applyDevMode();
@@ -105,7 +108,7 @@ export function setupSettings() {
     setLocked(on: boolean) {
       const step = lockStep(on, dlg.open);
       // Closing blurs a field, whose change then fires; speed-controls refuses it while the belt runs
-      if (step.close) dlg.close();
+      if (step.close) { dlg.close(); onLockClose(); }
       if (step.locked === locked) return;
       locked = step.locked;
       renderLock();

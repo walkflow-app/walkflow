@@ -68,7 +68,8 @@ const history = setupHistory({
 });
 const recorder = history.recorder;
 const interval = setupInterval();
-const settings = setupSettings();
+// The lock closed the dialog: the limit and step fields show what is in force again, not a value typed into them
+const settings = setupSettings(() => speed.relabel());
 settings.onDevMode(on => desktop?.setDevMode(on));
 // The speed controls and the stored limits; the treadmill caps and ramps every speed
 const speed = setupSpeedControls({
