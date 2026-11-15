@@ -7,6 +7,7 @@ import { confirmDialog } from '../components/dialogs';
 import { t } from '../../i18n/i18n';
 import { DEV_MODE_STORAGE_KEY, readDevMode } from '../../core/safety/dev-mode';
 import { QUIET_STORAGE_KEY, readQuiet } from '../../core/safety/quiet';
+import { lockStep } from '../../core/safety/settings-lock';
 import { $, $button, $input } from '../ui';
 import { store } from '../store';
 
@@ -102,8 +103,11 @@ export function setupSettings() {
     open,
     /** The belt runs (or may run): the dialog is locked, and closed if it was open */
     setLocked(on: boolean) {
-      if (on === locked) return;
-      locked = on;
+      const step = lockStep(on, dlg.open);
+      // Closing blurs a field, whose change then fires; speed-controls refuses it while the belt runs
+      if (step.close) dlg.close();
+      if (step.locked === locked) return;
+      locked = step.locked;
       renderLock();
     },
     /** Quiet mode: no safety notice, no question before a start */
