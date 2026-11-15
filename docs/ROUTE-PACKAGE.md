@@ -55,7 +55,7 @@ hundred KB at most).
 | `points` | yes | `[lat, lon]` or `[lat, lon, ele]` (elevation in metres), 2 to 5000 points, together at least 10 m long. All points have an elevation or none. Latitude and longitude are written with up to 6 decimals, elevation with 1. |
 | `place` | no | Language code → where it is, for browsing (up to 80 characters each). |
 | `country` | no | ISO 3166-1 alpha-2, e.g. `"DE"`. Without it the app works it out from the start of the route. |
-| `defaultSpeed` | no | A suggested walking speed in km/h (0.5 to 20). A suggestion only: the speed limit of the person still applies, and nothing in a package can change it. |
+| `defaultSpeed` | no | A suggested walking speed in km/h (0.5 to 6). A higher one is dropped when the package is read, and the route walks at 3 km/h until the person sets their own speed. The speed limit of the person still applies, and nothing in a package can change it. |
 | `tags` | no | Up to 8 words of `a-z`, `0-9` and `-`, up to 24 characters each, for filtering. |
 | `author` | no | Who made it (up to 80 characters). |
 | `license` | no | Free text, e.g. an SPDX identifier (up to 80 characters). Whoever shares a package chooses it. |
