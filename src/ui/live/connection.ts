@@ -89,6 +89,9 @@ export function setupConnection(host: ConnectionHost) {
       if (!connected()) {
         setStatus(() => t.connection.notConnected);
         setUi(false);
+      } else {
+        // Connected, but drawing something failed on the way (#49 C): the Stop buttons must not stay disabled
+        setUi(true);
       }
     } finally {
       connecting = false;

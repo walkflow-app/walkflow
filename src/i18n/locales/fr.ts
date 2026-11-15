@@ -805,5 +805,8 @@ export const fr: Messages = {
     closeDetail: 'Après la fermeture, l’application ne pourra plus l’arrêter. Mieux vaut l’arrêter avant.',
     closeCancel: 'Annuler',
     closeAnyway: 'Fermer quand même',
+    rendererGoneTitle: 'Walkflow a cessé de fonctionner',
+    rendererGoneMessage: 'Arrêtez le tapis sur le tapis de course maintenant.',
+    rendererGoneDetail: 'La fenêtre a planté et l’application ne peut plus envoyer Arrêt. Utilisez le bouton d’arrêt ou la clé de sécurité du tapis. Walkflow se rouvre après ce message.',
   },
 };

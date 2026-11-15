@@ -11,6 +11,7 @@ import { COMMUNITY_ENABLED, STORE_BASE } from '../src/platform/features';
 import { sharingRelays } from '../src/platform/relays';
 import { isAllowedRequest } from '../src/platform/request-filter';
 import { devToolsAllowed } from '../src/core/safety/dev-mode';
+import { warnWhenRendererGone } from '../src/core/safety/renderer-gone';
 import { devOrigin } from '../src/platform/dev-url';
 import { mapOrigins, resolveMapStyles } from '../src/core/routes/map-config';
 import { mimeFor } from '../src/platform/mime';
@@ -223,6 +224,18 @@ function createWindow() {
       detail: t.electron.closeDetail,
     });
     if (choice === 1) event.preventDefault();
+  });
+
+  // The window crashed: the Bluetooth connection was in it, so the belt may run on and nothing here can stop it (#49 F)
+  wc.on('render-process-gone', (_e, details) => {
+    if (!warnWhenRendererGone(details.reason)) return;
+    dialog.showMessageBoxSync({
+      type: 'error',
+      title: t.electron.rendererGoneTitle,
+      message: t.electron.rendererGoneMessage,
+      detail: t.electron.rendererGoneDetail,
+    });
+    win?.reload();
   });
 
   win.once('ready-to-show', () => win?.show());

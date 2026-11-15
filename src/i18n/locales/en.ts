@@ -804,6 +804,9 @@ export const en = {
     closeDetail: 'After closing, the app can no longer stop it. Better stop it first.',
     closeCancel: 'Cancel',
     closeAnyway: 'Close anyway',
+    rendererGoneTitle: 'Walkflow stopped working',
+    rendererGoneMessage: 'Stop the belt on the treadmill now.',
+    rendererGoneDetail: 'The window crashed and the app can no longer send Stop. Use the stop button or the safety key of the treadmill. Walkflow opens again after this message.',
   },
 };
 
