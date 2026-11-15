@@ -75,9 +75,10 @@ request; Dependabot keeps the GitHub Actions, which are pinned by commit, and th
 ## Agents on GitHub
 
 Every new pull request gets a review by AI agents (`.github/workflows/agent-review.yml`): they check what this repository's
-`CLAUDE.md` asks for and post one comment with their verdict. Maintainers can ask for more with `@claude …` in a comment, or hand
-over an issue with the label `agent-ready` (`.github/workflows/claude.yml`); agents never take on issues labelled `safety` and
-never merge. Pull requests from forks are not reviewed by agents.
+`CLAUDE.md` asks for and post one comment with their verdict. Maintainers can ask for more with `@claude …` in a comment, or
+hand over an issue with the label `agent-ready` (`.github/workflows/claude.yml`); agents never take on issues labelled `safety`
+and never merge. Pull requests from forks are not reviewed by agents. A review runs with another model than the one that wrote
+the change (Opus and Sonnet check each other; `.github/scripts/review-model.sh`).
 
 On a schedule: `relays.yml` checks the pinned relays every Monday and opens an issue "Relay check failed" when one fails twice
 (no agent); `docs-check.yml` has an agent read the docs against the code once a month and list what is no longer true in an
