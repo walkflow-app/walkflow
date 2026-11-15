@@ -200,7 +200,7 @@ setInterval(renderSettingsLock, 500);
 // Every dialog shows a Stop while the belt may run (dialog-stop.ts): a modal dialog makes the page's Stop buttons unreachable
 const renderRunning = () => { document.documentElement.dataset.running = tm.state.connected && tm.state.maybeRunning ? '1' : '0'; };
 setDialogStop(() => void belt.stop());
-for (const e of ['phase', 'disconnected', 'machineStatus'] as const) tm.on(e, renderRunning);
+for (const e of ['phase', 'disconnected', 'machineStatus', 'data'] as const) tm.on(e, renderRunning);
 setInterval(renderRunning, 250);
 renderRunning();
 onLanguageChange(() => { settings.relabel(); stage.render(); });

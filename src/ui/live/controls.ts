@@ -40,21 +40,27 @@ export function setupControls(host: ControlsHost) {
 
   document.addEventListener('keydown', e => {
     if (!host.connected()) return;
+    // Esc stops before anything else is looked at: nothing may throw before this stop
+    if (e.key === 'Escape') {
+      // In a dialog Esc also cancels it as usual (preventing it would keep the dialog open)
+      if (document.querySelector('dialog[open]') === null) e.preventDefault();
+      void host.belt.stop();
+      return;
+    }
     const el = e.target instanceof HTMLElement ? e.target : document.body;
-    const inDialog = el.closest('dialog[open]') !== null;
     const action = keyAction({
       key: e.key, code: e.code, tag: el.tagName, type: el instanceof HTMLInputElement ? el.type : '', repeat: e.repeat,
       view: document.documentElement.dataset.view ?? 'training',
-      inDialog,
+      // The page, not the focus: after a stop the focus may have left the dialog that is still open
+      inDialog: document.querySelector('dialog[open]') !== null,
       onMap: el.closest('.route-map, .maplibregl-map') !== null,
       editable: el.isContentEditable,
     });
     if (action === 'stop') {
-      // Esc in a dialog also cancels it as usual (preventing it would keep the dialog open)
-      if (!(inDialog && e.key === 'Escape')) e.preventDefault();
-      // oxlint-disable-next-line typescript/no-unnecessary-condition -- the focus may be on an element without blur(); nothing here may throw before the stop below
-      (document.activeElement as HTMLElement | null)?.blur?.();
+      e.preventDefault();
       void host.belt.stop();
+      // oxlint-disable-next-line typescript/no-unnecessary-condition -- the focus may be on an element without blur()
+      (document.activeElement as HTMLElement | null)?.blur?.();
     } else if (action !== null) {
       e.preventDefault();
       host.speed.step(action === 'faster' ? 1 : -1);
