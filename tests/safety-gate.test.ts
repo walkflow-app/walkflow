@@ -34,6 +34,23 @@ describe('safety gate (a pull request that changes safety code)', () => {
     expect(r.warnings.some(w => w.includes('HARDWARE-TESTS.md'))).toBe(true);
   });
 
+  it('counts the program runner, the hidden-tab pause, the wiring and the desktop app as safety code (#49 B)', () => {
+    for (const f of ['src/core/training/program.ts', 'src/ui/background.ts', 'src/main.ts', 'electron/main.ts', 'electron/preload.ts']) {
+      expect(gate([f]).errors).toHaveLength(1);
+    }
+  });
+
+  it('a test somewhere else does not count for safety code (#49 B)', () => {
+    expect(gate(['src/core/safety/quiet.ts', 'src/core/routes/gpx.test.ts']).errors).toHaveLength(1);
+    expect(gate(['src/main.ts', 'src/ui/routes/list.test.ts']).errors).toHaveLength(1);
+  });
+
+  it('a test next to safety code, or under tests/, counts', () => {
+    expect(gate(['src/main.ts', 'tests/wiring.test.ts']).errors).toEqual([]);
+    expect(gate(['src/core/training/program.ts', 'src/core/training/program.test.ts']).errors).toEqual([]);
+    expect(gate(['src/ui/live/controls.ts', 'src/core/safety/stop-keys.test.ts']).errors).toEqual([]);
+  });
+
   it('counts the live view and a new treadmill library as safety code', () => {
     expect(gate(['src/ui/live/controls.ts']).errors).toHaveLength(1);
     const bump = gate(['package.json', 'package-lock.json'], 'build(deps): ftms-treadmill 0.3.0', true);
