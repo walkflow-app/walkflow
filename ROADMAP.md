@@ -3,9 +3,9 @@
 What is being done on the Walkflow app and its site, what comes next, and what may come later. The maintainer decides what
 moves into *Now*. Each line links to where the work is. The treadmill library and the route store have their own roadmaps:
 [ftms-treadmill](https://github.com/walkflow-app/ftms-treadmill/blob/main/ROADMAP.md),
-[route-store](https://github.com/walkflow-app/route-store/blob/main/ROADMAP.md). Last updated: 2026-11-14.
+[route-store](https://github.com/walkflow-app/route-store/blob/main/ROADMAP.md). Last updated: 2026-11-16.
 
-State: [0.7.1](https://github.com/walkflow-app/walkflow/releases/tag/v0.7.1) (2026-11-13), with ftms-treadmill 0.2.0, tested on
+State: [0.7.2](https://github.com/walkflow-app/walkflow/releases/tag/v0.7.2) (2026-11-16), with ftms-treadmill 0.2.0, tested on
 a Sportstech sPad 500.
 
 ## Now
@@ -34,6 +34,8 @@ a Sportstech sPad 500.
 
 ## Done recently
 
+- 2026-11-16: 0.7.2, exported files are named after the local time
+  ([#61](https://github.com/walkflow-app/walkflow/pull/61), [#62](https://github.com/walkflow-app/walkflow/pull/62)).
 - 2026-11-14: docs out of date fixed ([#41](https://github.com/walkflow-app/walkflow/issues/41)): `src/net/` and the
   Community view are built, texts in four languages.
 - 2026-11-13: 0.7.1 (`ended` comes once per run of the belt, ftms-treadmill 0.2.0); route tooling moved into the route store;
