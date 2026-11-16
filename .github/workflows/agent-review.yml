@@ -130,9 +130,18 @@ jobs:
         with:
           path: reviews
       - name: Name the summaries by model
+        env:
+          MODELS: ${{ needs.plan.outputs.models }}
         run: |
+          # Where download-artifact puts a file depends on its version and on how many artifacts there are: search for it
           mkdir -p verdicts
-          for d in reviews/review-*; do [ -f "$d/summary.md" ] && cp "$d/summary.md" "verdicts/${d#reviews/review-}.md"; done
+          find reviews -type f
+          while IFS= read -r f; do
+            m=$(printf '%s' "$f" | grep -oE 'review-(opus|sonnet|haiku)' | head -n 1 | sed 's/^review-//')
+            # A single artifact may land without its own folder: then it is the one model of the plan
+            [ -n "$m" ] || m=$(node -e 'const m = JSON.parse(process.env.MODELS); if (m.length === 1) console.log(m[0])')
+            [ -n "$m" ] && cp "$f" "verdicts/$m.md"
+          done < <(find reviews -type f -name summary.md)
           ls verdicts
       - uses: actions/create-github-app-token@v2
         id: app
