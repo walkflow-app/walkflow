@@ -22,12 +22,14 @@ permissions:
 
 jobs:
   claude:
+    # Never for texts of the pipeline's apps, so a review or a fix report cannot start another run
     if: >-
+      github.event.sender.login != 'walkflow-writer[bot]' && github.event.sender.login != 'walkflow-reviewer[bot]' && (
       (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
       (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
       (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
       (github.event_name == 'issues' && github.event.label.name == 'agent-ready' &&
-        !contains(github.event.issue.labels.*.name, 'safety'))
+        !contains(github.event.issue.labels.*.name, 'safety')))
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -50,10 +52,18 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           PR: ${{ github.event.issue.number || github.event.pull_request.number }}
         run: .github/scripts/review-model.sh
+      # With the agent pipeline on, pull requests are opened as the app walkflow-writer: what the workflow token does starts
+      # no workflow, so CI and the review would never run on them
+      - uses: actions/create-github-app-token@v2
+        id: app
+        if: vars.AGENT_PIPELINE == 'on'
+        with:
+          app-id: ${{ vars.WRITER_APP_ID }}
+          private-key: ${{ secrets.WRITER_APP_KEY }}
       - uses: anthropics/claude-code-action@12043dd146b4203c64397708bacc201910da95c8 # v1.0.276
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          github_token: ${{ github.token }}
+          github_token: ${{ steps.app.outputs.token || github.token }}
           label_trigger: agent-ready
           claude_args: |
             ${{ steps.model.outputs.model && format('--model {0}', steps.model.outputs.model) || '' }}

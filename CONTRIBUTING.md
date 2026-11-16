@@ -75,10 +75,31 @@ request; Dependabot keeps the GitHub Actions, which are pinned by commit, and th
 ## Agents on GitHub
 
 Every new pull request gets a review by AI agents (`.github/workflows/agent-review.yml`): they check what this repository's
-`CLAUDE.md` asks for and post one comment with their verdict. Maintainers can ask for more with `@claude …` in a comment, or
-hand over an issue with the label `agent-ready` (`.github/workflows/claude.yml`); agents never take on issues labelled `safety`
-and never merge. Pull requests from forks are not reviewed by agents. A review runs with another model than the one that wrote
-the change (Opus and Sonnet check each other; `.github/scripts/review-model.sh`).
+`CLAUDE.md` asks for and post their verdict. Maintainers can ask for more with `@claude …` in a comment, or hand over an issue
+with the label `agent-ready` (`.github/workflows/claude.yml`); agents never take on issues labelled `safety`. Pull requests
+from forks are not reviewed by agents. A review runs with another model than the one that wrote the change (Opus and Sonnet
+check each other; `.github/scripts/review-model.sh`).
+
+**The agent pipeline** (repository variable `AGENT_PIPELINE` = `on`; off, the verdict is a comment and a maintainer merges)
+takes a pull request to `main` without a maintainer. The rules are in `scripts/agent-pipeline.mjs` and its tests:
+
+- The review is a review of the app *walkflow-reviewer* on the reviewed commit: `OK` approves, `OK with remarks` comments,
+  `changes needed` and `blocking` request changes. It runs again on every new commit.
+- `agent-pipeline.yml` (after a review, CI or a fix, and every 15 minutes) decides: merge (squash) when the head commit is
+  approved, `test` and `safety-gate` are green and there is no conflict; start `agent-fix.yml` for remarks, a failing check or
+  a conflict (one try each); or hand over to the maintainer with the label `needs-maintainer` and a comment why. Removing the
+  label hands it back. At most 4 reviews per pull request and 5 agent merges a day. A small fix of remarks (30 lines, no safety
+  path, no deleted test) is merged without another review; every other fix is reviewed again.
+- The fix agent works without a write token and hands over a patch; the app *walkflow-writer* pushes it after checking what it
+  changes.
+- **Safety changes** (`src/core/safety/`, `src/ui/live/`, `src/core/training/`, Bluetooth devices, `src/main.ts`) are reviewed
+  by Opus and Sonnet, merged only when both say `OK` and on top of the current `main`, and get the label `needs-hardware`.
+- **Never merged by an agent:** changes to `.github/`, `.claude/`, `CLAUDE.md`, `scripts/`, `HARDWARE-TESTS.md`, dependencies,
+  the test, lint, build and release configuration, `electron/`, `public/legal/`, `src/net/`, `src/core/share/`; drafts; pull
+  requests from forks or from outside the organisation; release-please and Dependabot; anything labelled `hold`.
+- **The release gate:** a release is built only when every pull request since the last release that touches a safety path or
+  has `needs-hardware` has the maintainer's comment `/hardware-ok` (or the release pull request has one for all), after its
+  checks in HARDWARE-TESTS.md passed on a treadmill (`scripts/release-gate.mjs`, in `release.yml` and the `release` skill).
 
 A new issue from someone outside the project is sorted by `triage.yml`: an agent that can only read proposes labels,
 duplicates, missing details and where in the code it is; a second job without an agent checks that and writes the labels and
