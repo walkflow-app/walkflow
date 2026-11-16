@@ -31,8 +31,10 @@ jobs:
   desktop:
     needs: release-please
     if: needs.release-please.outputs.created == 'true'
+    # A called workflow gets no more than this: release.yml's release gate reads the pull requests
     permissions:
       contents: write
+      pull-requests: read
     uses: ./.github/workflows/release.yml
     with:
       tag: ${{ needs.release-please.outputs.tag }}
