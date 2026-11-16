@@ -29,7 +29,8 @@ jobs:
     if: >-
       !github.event.pull_request.draft &&
       github.event.pull_request.head.repo.full_name == github.repository &&
-      (github.event.pull_request.user.type != 'Bot' || github.event.pull_request.user.login == 'walkflow-writer[bot]') &&
+      (github.event.pull_request.user.type != 'Bot' || github.event.pull_request.user.login == 'walkflow-writer[bot]' ||
+        (github.event.pull_request.user.login == 'github-actions[bot]' && startsWith(github.event.pull_request.head.ref, 'claude/'))) &&
       (github.event.action != 'synchronize' || vars.AGENT_PIPELINE == 'on')
     runs-on: ubuntu-latest
     outputs:
@@ -65,8 +66,10 @@ jobs:
       contents: read
       pull-requests: write
     steps:
+      # Exactly the commit the review is posted on
       - uses: actions/checkout@v7
         with:
+          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-node@v7
@@ -74,7 +77,7 @@ jobs:
           node-version: 24
           cache: npm
       # So the reviewers can run the tests they look at
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - uses: anthropics/claude-code-action@12043dd146b4203c64397708bacc201910da95c8 # v1.0.276
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
@@ -90,7 +93,7 @@ jobs:
                stop, and anything still running is lost. Do not review beyond those roles. If none applies, say so in one
                line.
             4. Post concrete findings (a file and line, what is wrong, the fix) as inline comments.
-            5. Write one summary to the file .agent-review/summary.md: per reviewer its one-line verdict and its main
+            5. Write one summary to the file agent-review-out/summary.md: per reviewer its one-line verdict and its main
                findings, at most 25 lines. Its first line says "Reviewed with ${{ matrix.model }} (${{ needs.plan.outputs.why }})."
                Its last line is "Agent review: <OK | OK with remarks | changes needed | blocking>":
                - OK: nothing to change.
@@ -107,13 +110,13 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: review-${{ matrix.model }}
-          path: .agent-review/summary.md
+          path: agent-review-out/summary.md
           if-no-files-found: error
 
   # Without the agent, from main: the verdicts become a comment, or reviews of the reviewer app
   submit:
     needs: [plan, review]
-    if: always() && needs.plan.result == 'success'
+    if: ${{ !cancelled() && needs.plan.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read

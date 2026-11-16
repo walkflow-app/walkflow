@@ -87,19 +87,24 @@ takes a pull request to `main` without a maintainer. The rules are in `scripts/a
   `changes needed` and `blocking` request changes. It runs again on every new commit.
 - `agent-pipeline.yml` (after a review, CI or a fix, and every 15 minutes) decides: merge (squash) when the head commit is
   approved, `test` and `safety-gate` are green and there is no conflict; start `agent-fix.yml` for remarks, a failing check or
-  a conflict (one try each); or hand over to the maintainer with the label `needs-maintainer` and a comment why. Removing the
-  label hands it back. At most 4 reviews per pull request and 5 agent merges a day. A small fix of remarks (30 lines, no safety
-  path, no deleted test) is merged without another review; every other fix is reviewed again.
+  a conflict (one try per commit); or hand over to the maintainer with the label `needs-maintainer` and a comment why. Removing
+  the label hands it back. At most 4 reviewed commits per pull request; past 5 agent merges a day the rest waits for the next
+  day. A small fix of remarks (30 lines, no safety path, no deleted test) is merged without waiting for another review; every
+  other fix is reviewed again. A pull request with changes requested by a person is left alone.
 - The fix agent works without a write token and hands over a patch; the app *walkflow-writer* pushes it after checking what it
-  changes.
-- **Safety changes** (`src/core/safety/`, `src/ui/live/`, `src/core/training/`, Bluetooth devices, `src/main.ts`) are reviewed
-  by Opus and Sonnet, merged only when both say `OK` and on top of the current `main`, and get the label `needs-hardware`.
-- **Never merged by an agent:** changes to `.github/`, `.claude/`, `CLAUDE.md`, `scripts/`, `HARDWARE-TESTS.md`, dependencies,
-  the test, lint, build and release configuration, `electron/`, `public/legal/`, `src/net/`, `src/core/share/`; drafts; pull
-  requests from forks or from outside the organisation; release-please and Dependabot; anything labelled `hold`.
+  changes. A pull request `claude.yml` opened (with the workflow token, which starts no workflow) gets one empty commit by the
+  app, which starts CI and the review; the agent in `claude.yml` never gets the app's token.
+- **Safety changes** (`src/core/safety/`, `src/ui/live/`, `src/core/training/`, Bluetooth devices, `src/main.ts`, a new
+  `ftms-treadmill` version) are reviewed by Opus and Sonnet, merged only when both say `OK` and on top of the current `main`,
+  and get the label `needs-hardware`.
+- **Never merged by an agent:** changes to `.github/`, `.claude/`, `CLAUDE.md`, `scripts/`, `HARDWARE-TESTS.md`, dependencies
+  and npm settings, the test, lint, build and release configuration, `index.html`, `electron/`, `public/legal/`, `src/net/`,
+  `src/core/share/` (`PROTECTED` in `scripts/agent-pipeline.mjs`); drafts; pull requests from forks or from outside the
+  organisation; release-please and Dependabot; anything labelled `hold`.
 - **The release gate:** a release is built only when every pull request since the last release that touches a safety path or
-  has `needs-hardware` has the maintainer's comment `/hardware-ok` (or the release pull request has one for all), after its
-  checks in HARDWARE-TESTS.md passed on a treadmill (`scripts/release-gate.mjs`, in `release.yml` and the `release` skill).
+  has `needs-hardware` has a comment that is only `/hardware-ok`, by an owner in `.github/CODEOWNERS` and written after its
+  merge (or one on the release pull request after the last of them was merged), once its checks in HARDWARE-TESTS.md passed
+  on a treadmill (`scripts/release-gate.mjs`, in `release.yml` and the `release` skill).
 
 A new issue from someone outside the project is sorted by `triage.yml`: an agent that can only read proposes labels,
 duplicates, missing details and where in the code it is; a second job without an agent checks that and writes the labels and

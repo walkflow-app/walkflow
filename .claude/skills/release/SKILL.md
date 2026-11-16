@@ -27,7 +27,8 @@ git fetch --tags && node scripts/release-gate.mjs origin/main <n>
 **Stop and ask before step 2** if it fails, or if the changelog has a *Safety* section, a change to Bluetooth, the ramp, start
 or stop, or a new `ftms-treadmill` version: list the HARDWARE-TESTS.md checks that have to pass on the treadmill first (use
 the `hardware-check` skill to name them) and the pull requests the gate names, and wait. The maintainer confirms with a
-comment `/hardware-ok` on each of them, or once on the release pull request for all; run the gate again before merging.
+comment that is only `/hardware-ok` on each of them, or once on the release pull request for all (after the merges); run the
+gate again before merging.
 `release.yml` runs the same gate and builds nothing without it.
 
 Also list the pull requests an agent merged since the last release, so the maintainer sees what went in without them:

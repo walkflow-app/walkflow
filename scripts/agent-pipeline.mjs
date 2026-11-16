@@ -6,7 +6,7 @@
 //   node scripts/agent-pipeline.mjs models <pr>                  which models review (plan job of agent-review.yml)
 //   node scripts/agent-pipeline.mjs submit-review <pr> <dir>     the verdicts in <dir>/*.md → one review each
 //   node scripts/agent-pipeline.mjs sweep                        decide and act for every open pull request
-//   node scripts/agent-pipeline.mjs check-fix <pr> <sha> <patch> may this fix be pushed? (agent-fix.yml)
+//   node scripts/agent-pipeline.mjs check-fix <pr> <sha> <paths> may this fix be pushed? (agent-fix.yml; paths NUL-separated)
 //
 // Off unless the repository variable AGENT_PIPELINE is "on"; then reviews are a comment, as before.
 import { execFileSync } from 'node:child_process';
@@ -20,13 +20,17 @@ export const REQUIRED_CHECKS = ['test', 'safety-gate'];
 export const LIMITS = { reviews: 4, mergesPerDay: 5, unreviewedLines: 30, staleHours: 6 };
 const MEMBERS = new Set(['OWNER', 'MEMBER', 'COLLABORATOR']);
 const VERDICTS = ['OK', 'OK with remarks', 'changes needed', 'blocking'];
+/** The review state each verdict is submitted as; a marker that does not match its review is not believed */
+const STATE = { OK: 'APPROVED', 'OK with remarks': 'COMMENTED', 'changes needed': 'CHANGES_REQUESTED', blocking: 'CHANGES_REQUESTED' };
 
 /** What reaches the belt: reviewed by two models, label needs-hardware, held for the hardware checks before a release */
 export const SAFETY = [/^src\/core\/safety\//, /^src\/ui\/live\//, /^src\/core\/training\//, /^src\/platform\/bt-devices/, /^src\/main\.ts$/];
-/** Never merged by an agent: the rules, the gates, the pipeline itself, dependencies, and what CODEOWNERS keeps for a person */
+/** Never merged by an agent: the rules, the gates, the pipeline itself, dependencies, the build, and what CODEOWNERS keeps for
+ *  a person. A deny list for the trial; an allow list is the follow-up */
 export const PROTECTED = [
   /^\.github\//, /^\.claude\//, /(^|\/)CLAUDE\.md$/, /^HARDWARE-TESTS\.md$/, /^scripts\//, /^tests\/architecture\.test\.ts$/,
-  /^package(-lock)?\.json$/, /^\.oxlintrc\.json$/, /^knip\.json$/, /^tsconfig[^/]*\.json$/, /^vite\.config\.ts$/, /^vitest\.config/,
+  /^package(-lock)?\.json$/, /^\.npmrc$/, /^\.nvmrc$/, /^\.node-version$/, /^\.husky\//, /^\.gitignore$/, /^\.gitattributes$/,
+  /^\.oxlintrc\.json$/, /^knip\.json$/, /^tsconfig[^/]*\.json$/, /^vite\.config\.ts$/, /^vitest\.config/, /^index\.html$/, /^build\//,
   /^release-please-config\.json$/, /^\.release-please-manifest\.json$/, /^electron-builder\.config\.cjs$/,
   /^electron\//, /^public\/legal\//, /^src\/net\//, /^src\/core\/share\//,
 ];
@@ -34,6 +38,8 @@ const TEST = /\.test\.(ts|mjs)$/;
 const CONVENTIONAL = /^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert|safety)(\([^)]+\))?: \S/;
 /** The GitHub API lists at most this many files of a pull request; more and we cannot know what it changes */
 const MAX_FILES = 3000;
+/** A new version of the library that drives the belt */
+const LIBRARY_BUMP = /^[+-]\s*"ftms-treadmill":/m;
 
 // ---------- Pure decisions (tests/agent-pipeline.test.ts) ----------
 
@@ -43,7 +49,7 @@ const names = f => [f.filename, f.previous_filename].filter(Boolean);
 export function classify(files) {
   const all = files.flatMap(names);
   return {
-    safety: all.some(n => SAFETY.some(p => p.test(n))),
+    safety: all.some(n => SAFETY.some(p => p.test(n))) || files.some(f => f.filename === 'package.json' && LIBRARY_BUMP.test(f.patch ?? '')),
     protected: files.length >= MAX_FILES ? ['(too many files to check)'] : [...new Set(all.filter(n => PROTECTED.some(p => p.test(n))))],
     removedTests: files.filter(f => f.status === 'removed' && TEST.test(f.filename)).map(f => f.filename),
     lines: files.reduce((s, f) => s + (f.additions ?? 0) + (f.deletions ?? 0), 0),
@@ -59,7 +65,8 @@ export function parseVerdict(text) {
 
 export const reviewEvent = verdict => (verdict === 'OK' ? 'APPROVE' : verdict === 'OK with remarks' ? 'COMMENT' : 'REQUEST_CHANGES');
 
-const MARK = /<!-- (agent-review|agent-fix) (\{.*?\}) -->/;
+/** The marker the pipeline appends to its own texts: only the one at the very end counts */
+const MARK = /<!-- (agent-review|agent-fix) (\{[^\n]*\}) -->\s*$/;
 export const marker = (kind, data) => `<!-- ${kind} ${JSON.stringify(data)} -->`;
 export function readMarker(kind, body) {
   const m = MARK.exec(String(body ?? ''));
@@ -67,37 +74,49 @@ export function readMarker(kind, body) {
   try { return JSON.parse(m[2]); } catch { return null; }
 }
 
-/** Texts the pipeline posts never call claude.yml */
-export const quiet = text => String(text).replace(/@claude/gi, 'claude');
+/** Texts of agents, before the pipeline posts them: they never call claude.yml and never carry a marker of their own */
+export const quiet = text => String(text).replace(/@claude/gi, 'claude').replaceAll('<!--', '<! --').replaceAll('-->', '-- >');
 
 const worst = verdicts => verdicts.reduce((a, v) => (VERDICTS.indexOf(v) > VERDICTS.indexOf(a) ? v : a), 'OK');
 
+/** Who may open a pull request the pipeline takes on: a member, the writer app, or claude.yml (workflow token, branch claude/) */
+const agentPr = pr => pr.author.login === WRITER || (pr.author.login === 'github-actions[bot]' && pr.headRef.startsWith('claude/'));
+
 /**
  * What to do next with one pull request. `s` is what the sweep read from GitHub (see readState). Returns
- * { action: 'skip' | 'wait' | 'hold' | 'fix' | 'update' | 'merge', reason, mode?, sha?, safety, addLabels }.
+ * { action: 'skip' | 'wait' | 'hold' | 'kick' | 'fix' | 'update' | 'merge', reason, mode?, sha?, safety, addLabels }.
  */
 export function decide(s) {
   const { pr } = s;
   const files = classify(s.files);
   const safety = files.safety;
   const out = (action, reason, extra = {}) => ({ action, reason, safety, addLabels: safety && !pr.labels.includes('needs-hardware') ? ['needs-hardware'] : [], ...extra });
+  const stale = s.headAgeHours > LIMITS.staleHours;
 
   if (!s.pipeline) return out('skip', 'AGENT_PIPELINE is not on');
   if (pr.draft) return out('skip', 'draft');
   if (pr.headRepo !== pr.repo) return out('skip', 'from a fork');
   if (/^(release-please--|dependabot\/)/.test(pr.headRef)) return out('skip', 'release or Dependabot pull request');
   if (pr.labels.includes('hold') || pr.labels.includes('needs-maintainer')) return out('skip', 'labelled for the maintainer');
-  if (pr.author.type === 'Bot' && pr.author.login !== WRITER) return out('skip', `opened by ${pr.author.login}`);
+  if (pr.author.type === 'Bot' && !agentPr(pr)) return out('skip', `opened by ${pr.author.login}`);
   if (pr.author.type !== 'Bot' && !MEMBERS.has(pr.authorAssociation)) return out('skip', 'author outside the organisation');
-  if (pr.author.login === WRITER && s.issueAuthors.some(a => !MEMBERS.has(a)))
+  if (agentPr(pr) && s.issueAuthors.some(a => !MEMBERS.has(a)))
     return out('hold', 'it closes an issue written by someone outside the organisation');
   if (files.protected.length) return out('hold', `it changes files only the maintainer merges: ${files.protected.join(', ')}`);
-  if (s.running.review || s.running.fix) return out('wait', 'a review or a fix is running');
-  if (s.humanChangesRequested) return out('wait', 'a person requested changes');
+  if (s.failedFixes > 0) return out('hold', 'a fix run of the agent failed');
+  if (s.running.fix) return out('wait', 'a fix is running');
+  if (s.humanChangesRequested) return out('skip', 'a person requested changes');
+  // A pull request claude.yml opened with the workflow token started no workflow: one empty commit by the app starts them
+  if (pr.author.login === 'github-actions[bot]' && !s.anyRun) return out('kick', 'no checks ran yet', { sha: pr.headSha });
 
-  const reviews = s.reviews.filter(r => r.user === REVIEWER).map(r => ({ ...r, mark: readMarker('agent-review', r.body) })).filter(r => r.mark);
+  const reviews = s.reviews.filter(r => r.user === REVIEWER)
+    .map(r => ({ ...r, mark: readMarker('agent-review', r.body) }))
+    .filter(r => r.mark && r.mark.sha === r.commitId && STATE[r.mark.verdict] === r.state);
   const counted = new Set(reviews.filter(r => !s.holdResetAt || r.submittedAt > s.holdResetAt).map(r => r.commitId)).size;
-  const fixed = (sha, mode) => s.comments.some(c => c.user === WRITER && readMarker('agent-fix', c.body)?.sha === sha && readMarker('agent-fix', c.body)?.mode === mode);
+  const fixed = (sha, mode) => s.comments.some(c => {
+    const m = c.user === WRITER ? readMarker('agent-fix', c.body) : null;
+    return m?.sha === sha && m.mode === mode;
+  });
 
   if (s.mergeable === 'CONFLICTING')
     return fixed(pr.headSha, 'conflict') ? out('hold', 'the conflict with main is still there after one try')
@@ -108,20 +127,23 @@ export function decide(s) {
   const onHead = reviews.filter(r => r.commitId === pr.headSha);
   const models = new Set(onHead.map(r => r.mark.model));
   const complete = safety ? models.has('opus') && models.has('sonnet') : onHead.length > 0;
-  let reviewedTitle;
+  let reviewedTitles;
   if (complete) {
     const verdict = worst(onHead.map(r => r.mark.verdict));
-    reviewedTitle = onHead.at(-1).mark.title;
+    reviewedTitles = onHead.map(r => r.mark.title);
     if (verdict === 'blocking') return out('hold', 'the review says blocking');
     if (verdict === 'changes needed') {
       if (fixed(pr.headSha, 'remarks')) return out('hold', 'the review asks for changes and the fix changed nothing');
       if (counted >= LIMITS.reviews) return out('hold', `${LIMITS.reviews} reviews and still changes needed`);
       return out('fix', 'the review asks for changes', { mode: 'remarks', sha: pr.headSha });
     }
-    if (verdict === 'OK with remarks' && !fixed(pr.headSha, 'remarks'))
-      return out('fix', 'the review has remarks', { mode: 'remarks', sha: pr.headSha });
+    if (verdict === 'OK with remarks') {
+      if (!fixed(pr.headSha, 'remarks')) return out('fix', 'the review has remarks', { mode: 'remarks', sha: pr.headSha });
+      // A safety change is merged only when both models say OK: remarks the fix agent declined go to the maintainer
+      if (safety) return out('hold', 'a safety change with remarks the fix agent declined');
+    }
   } else {
-    // A fix of "OK with remarks" after the review: merged without another review only if it is small and harmless
+    // A fix of "OK with remarks" after the review: merged without waiting for another review only if it is small and harmless
     const last = reviews.findLast(r => r.commitId !== pr.headSha);
     const since = s.sinceReviewed;
     const small = since && last && since.base === last.commitId && since.status === 'ahead' && !safety && last.mark.verdict === 'OK with remarks'
@@ -130,11 +152,12 @@ export function decide(s) {
         return !c.safety && !c.protected.length && !c.removedTests.length && c.lines <= LIMITS.unreviewedLines;
       })();
     if (!small) {
+      if (s.running.review) return out('wait', 'the review is running');
       if (counted >= LIMITS.reviews) return out('hold', `${LIMITS.reviews} reviews and still not done`);
-      return s.headAgeHours > LIMITS.staleHours ? out('hold', `no complete review of ${pr.headSha.slice(0, 7)} after ${LIMITS.staleHours} hours`)
+      return stale ? out('hold', `no complete review of ${pr.headSha.slice(0, 7)} after ${LIMITS.staleHours} hours`)
         : out('wait', 'waiting for the review of the head commit');
     }
-    reviewedTitle = last.mark.title;
+    reviewedTitles = [last.mark.title];
   }
 
   // Ready but for the checks, main, and the title
@@ -144,11 +167,11 @@ export function decide(s) {
       : out('fix', `${failed.join(', ')} fails`, { mode: 'checks', sha: pr.headSha });
   const pending = REQUIRED_CHECKS.filter(n => s.checks[n] !== 'success');
   if (pending.length)
-    return s.headAgeHours > LIMITS.staleHours ? out('hold', `${pending.join(', ')} did not finish in ${LIMITS.staleHours} hours`) : out('wait', `waiting for ${pending.join(', ')}`);
+    return stale ? out('hold', `${pending.join(', ')} did not finish in ${LIMITS.staleHours} hours`) : out('wait', `waiting for ${pending.join(', ')}`);
   if (safety && s.behindBy > 0) return out('update', 'a safety change is merged only on top of the current main', { sha: pr.headSha });
-  if (s.mergeable !== 'MERGEABLE') return out('wait', `GitHub says ${s.mergeable}`);
+  if (s.mergeable !== 'MERGEABLE') return stale ? out('hold', `GitHub still says ${s.mergeable}`) : out('wait', `GitHub says ${s.mergeable}`);
   if (!CONVENTIONAL.test(pr.title)) return out('hold', 'the title is not a Conventional Commit (a breaking "!" is merged by the maintainer)');
-  if (reviewedTitle !== pr.title) return out('hold', 'the title changed after the review');
+  if (reviewedTitles.some(t => t !== pr.title)) return out('hold', 'the title changed after the review');
   if (s.mergedToday >= LIMITS.mergesPerDay) return out('wait', `${LIMITS.mergesPerDay} agent merges today`);
   return out('merge', 'reviewed, green, up to date', { sha: pr.headSha });
 }
@@ -182,8 +205,10 @@ function readState(n, pipeline) {
   }));
   const latestHuman = new Map();
   for (const r of reviews) if (r.userType === 'User' && r.state !== 'COMMENTED') latestHuman.set(r.user, r.state);
-  const runs = pages(`repos/${REPO}/actions/runs?head_sha=${head}&per_page=100`).flatMap(x => x.workflow_runs ?? x)
-    .concat(pages(`repos/${REPO}/actions/workflows/agent-fix.yml/runs?per_page=50`).flatMap(x => x.workflow_runs ?? x));
+  const headRuns = pages(`repos/${REPO}/actions/runs?head_sha=${head}&per_page=100`).flatMap(x => x.workflow_runs ?? x);
+  // Fix runs run on main; their name says the pull request and the commit (agent-fix.yml, run-name)
+  const fixRuns = (api(`repos/${REPO}/actions/workflows/agent-fix.yml/runs?per_page=100`).workflow_runs ?? [])
+    .filter(r => r.display_title?.startsWith(`Agent fix #${n} `) && r.display_title.endsWith(head));
   const active = r => ['queued', 'in_progress', 'waiting', 'requested', 'pending'].includes(r.status);
   const checks = {};
   for (const c of pages(`repos/${REPO}/commits/${head}/check-runs?per_page=100`).flatMap(x => x.check_runs ?? x))
@@ -218,13 +243,16 @@ function readState(n, pipeline) {
     behindBy: api(`repos/${REPO}/compare/${p.base.ref}...${head}`).behind_by,
     sinceReviewed,
     running: {
-      review: runs.some(r => r.name === 'Agent review' && r.head_sha === head && active(r)),
-      fix: runs.some(r => r.path?.endsWith('agent-fix.yml') && active(r) && r.display_title?.startsWith(`Agent fix #${n} `)),
+      review: headRuns.some(r => r.name === 'Agent review' && active(r)),
+      fix: fixRuns.some(active),
     },
     humanChangesRequested: [...latestHuman.values()].includes('CHANGES_REQUESTED'),
     holdResetAt: reset,
     mergedToday,
-    headAgeHours: (Date.now() - Date.parse(commit.commit.committer.date)) / 3.6e6,
+    failedFixes: fixRuns.filter(r => r.status === 'completed' && !['success', 'skipped'].includes(r.conclusion)).length,
+    anyRun: headRuns.length > 0,
+    // Since the commit was pushed (its first workflow run), not since it was made: a commit can be pushed days later
+    headAgeHours: (Date.now() - Math.min(...headRuns.map(r => Date.parse(r.created_at)), headRuns.length ? Infinity : Date.parse(commit.commit.committer.date))) / 3.6e6,
   };
 }
 
@@ -235,7 +263,18 @@ function act(n, d, s, writer) {
     gh(['api', `repos/${REPO}/issues/${n}/labels`, '-f', 'labels[]=needs-maintainer'], { token: writer });
     say(`Agent pipeline: this pull request waits for the maintainer: ${d.reason}. Remove the label \`needs-maintainer\` to hand it back to the agents.`);
   } else if (d.action === 'update') {
-    gh(['api', '-X', 'PUT', `repos/${REPO}/pulls/${n}/update-branch`, '-f', `expected_head_sha=${d.sha}`], { token: writer });
+    try {
+      gh(['api', '-X', 'PUT', `repos/${REPO}/pulls/${n}/update-branch`, '-f', `expected_head_sha=${d.sha}`], { token: writer });
+    } catch (e) {
+      act(n, { ...d, addLabels: [], action: 'hold', reason: `bringing it up to date with main failed (${String(e.stderr ?? e.message).trim().slice(0, 200)})` }, s, writer);
+    }
+  } else if (d.action === 'kick') {
+    // An empty commit by the app on the branch: its push starts CI and the review
+    const c = api(`repos/${REPO}/git/commits/${d.sha}`);
+    const made = JSON.parse(gh(['api', `repos/${REPO}/git/commits`, '--input', '-'], {
+      token: writer, input: JSON.stringify({ message: 'ci: start the checks (agent pipeline)', tree: c.tree.sha, parents: [d.sha] }),
+    }));
+    gh(['api', '-X', 'PATCH', `repos/${REPO}/git/refs/heads/${s.pr.headRef}`, '-f', `sha=${made.sha}`], { token: writer });
   } else if (d.action === 'fix') {
     // Started with the workflow token: workflow_dispatch is the one event it may start
     gh(['workflow', 'run', 'agent-fix.yml', '-R', REPO, '-f', `pr=${n}`, '-f', `mode=${d.mode}`, '-f', `sha=${d.sha}`, '-f', `model=${d.safety ? 'opus' : 'sonnet'}`]);
@@ -302,16 +341,16 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   } else if (cmd === 'submit-review') submitReview(args[0], args[1]);
   else if (cmd === 'sweep') sweep();
   else if (cmd === 'check-fix') {
-    // args: pr, expected head sha, file with the changed paths (one per line)
+    // args: pr, expected head sha, file with the changed paths (git diff -z: NUL-separated, never quoted)
     const p = api(`repos/${REPO}/pulls/${args[0]}`);
     if (p.state !== 'open' || p.head.sha !== args[1]) { console.log('The pull request moved on; the fix is dropped.'); process.exitCode = 2; }
     else {
-      const r = checkFix(readFileSync(args[2], 'utf8').split('\n').filter(Boolean));
+      const r = checkFix(readFileSync(args[2], 'utf8').split('\0').filter(Boolean));
       console.log(r.ok ? 'Fix may be pushed' : r.reason);
       process.exitCode = r.ok ? 0 : 1;
     }
   } else {
-    console.error('usage: agent-pipeline.mjs models <pr> | submit-review <pr> <dir> | sweep | check-fix <pr> <sha> <paths file>');
+    console.error('usage: agent-pipeline.mjs models <pr> | submit-review <pr> <dir> | sweep | check-fix <pr> <sha> <NUL-separated paths file>');
     process.exitCode = 2;
   }
 }
