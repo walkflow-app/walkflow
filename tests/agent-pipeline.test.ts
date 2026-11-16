@@ -133,6 +133,9 @@ describe('agent pipeline: what happens next', () => {
     expect(state(s => { s.pr.draft = true; }).action).toBe('skip');
     expect(state(s => { s.pr.headRepo = 'someone/walkflow'; }).action).toBe('skip');
     expect(state(s => { s.pr.headRef = 'release-please--branches--main'; }).action).toBe('skip');
+    // The release pull request only gets its checks started, it is never merged by an agent
+    expect(state(s => { s.pr.headRef = 'release-please--branches--main'; s.pr.author = { login: 'github-actions[bot]', type: 'Bot' }; s.anyRun = false; }).action).toBe('kick');
+    expect(state(s => { s.pr.headRef = 'release-please--branches--main'; s.pr.author = { login: 'github-actions[bot]', type: 'Bot' }; }).action).toBe('skip');
     expect(state(s => { s.pr.headRef = 'dependabot/npm_and_yarn/x'; }).action).toBe('skip');
     expect(state(s => { s.pr.authorAssociation = 'CONTRIBUTOR'; }).action).toBe('skip');
     expect(state(s => { s.pr.author = { login: 'other[bot]', type: 'Bot' }; }).action).toBe('skip');

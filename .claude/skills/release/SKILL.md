@@ -15,8 +15,9 @@ gh pr list --search "chore: release in:title" --state open
 gh pr view <n>   # the changelog it adds to CHANGELOG.md
 ```
 
-Check that the changelog lists what was merged since the last release (`git log v<last>..origin/main --oneline`). No CI checks
-on this pull request is normal (it is made with the workflow token).
+Check that the changelog lists what was merged since the last release (`git log v<last>..origin/main --oneline`). It is made
+with the workflow token, which starts no CI, and `main` needs `test` and `safety-gate`: with the agent pipeline on, an empty
+commit of *walkflow-writer* starts them (`agent-pipeline.yml`, within 15 minutes); otherwise close and reopen it.
 
 Then the release gate, which also catches safety code merged under another title or by an agent:
 
@@ -42,8 +43,10 @@ gh run list -w release-please.yml -L 1          # then
 gh run watch <id> --exit-status
 ```
 
-The run is release-please → desktop (plan, build on windows and ubuntu) → release. On a failure: `gh run view <id> --log-failed`,
-report it, stop.
+The run is release-please → desktop (hardware, plan, build on windows and ubuntu) → release. On a failure: `gh run view <id> --log-failed`,
+report it, stop. If the failure is "A branch or tag with the name 'v<version>' could not be found", the tag ruleset kept
+release-please from creating the tag (its log says "already exists, skipping"): the maintainer pushes it on the release
+commit (`git tag v<version> <sha of "chore: release <version>"> && git push origin v<version>`), which runs `release.yml`.
 
 ## 3. Check the draft
 
