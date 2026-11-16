@@ -96,7 +96,12 @@ export function decide(s) {
   if (!s.pipeline) return out('skip', 'AGENT_PIPELINE is not on');
   if (pr.draft) return out('skip', 'draft');
   if (pr.headRepo !== pr.repo) return out('skip', 'from a fork');
-  if (/^(release-please--|dependabot\/)/.test(pr.headRef)) return out('skip', 'release or Dependabot pull request');
+  // The release pull request is the maintainer's to merge, but it needs its checks to be mergeable at all: release-please
+  // makes it with the workflow token, which starts no workflow
+  if (pr.headRef.startsWith('release-please--'))
+    return pr.author.login === 'github-actions[bot]' && !s.anyRun ? out('kick', 'the release pull request has no checks yet', { sha: pr.headSha })
+      : out('skip', 'release pull request');
+  if (pr.headRef.startsWith('dependabot/')) return out('skip', 'Dependabot pull request');
   if (pr.labels.includes('hold') || pr.labels.includes('needs-maintainer')) return out('skip', 'labelled for the maintainer');
   if (pr.author.type === 'Bot' && !agentPr(pr)) return out('skip', `opened by ${pr.author.login}`);
   if (pr.author.type !== 'Bot' && !MEMBERS.has(pr.authorAssociation)) return out('skip', 'author outside the organisation');
