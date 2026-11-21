@@ -12,6 +12,7 @@ describe('feature gate', () => {
   it('finds the approval: only "approved", by an owner', () => {
     expect(approval([ok], who)).toBe(ok);
     expect(approval([{ ...ok, body: '  Approved\n' }], who)).not.toBeNull();
+    expect(approval([{ ...ok, user: 'CAenderl' }], who)).not.toBeNull();
     expect(approval([{ ...ok, user: 'someone' }], who)).toBeNull();
     expect(approval([{ ...ok, user: 'walkflow-writer[bot]' }], who)).toBeNull();
     expect(approval([{ ...ok, body: 'approved, but change the name first' }], who)).toBeNull();

@@ -24,9 +24,11 @@ export const MAX_START = 3;
 
 const ref = i => `${i.repo}#${i.number}`;
 
-/** The comment that approves a feature: only "approved", by an owner. comments: [{ user, body, url }] */
-export const approval = (comments, who) =>
-  comments.find(c => who.includes(c.user) && /^\s*approved\s*$/i.test(c.body ?? '')) ?? null;
+/** The comment that approves a feature: only "approved", by an owner (logins ignore case). comments: [{ user, body, url }] */
+export const approval = (comments, who) => {
+  const owner = new Set(who.map(w => w.toLowerCase()));
+  return comments.find(c => owner.has(c.user?.toLowerCase()) && /^\s*approved\s*$/i.test(c.body ?? '')) ?? null;
+};
 
 /**
  * Why a task may not start; [] when it may.
@@ -114,10 +116,11 @@ function runCheck(n, undo) {
   }
   for (const w of why) console.log(`::error::#${n}: ${w}`);
   process.exitCode = 1;
-  if (!undo) return;
-  if (task.labels.includes('agent-ready')) gh(['issue', 'edit', n, '-R', REPO, '--remove-label', 'agent-ready']);
+  // One comment each time the label is taken off, not on every run
+  if (!undo || !task.labels.includes('agent-ready')) return;
+  gh(['issue', 'edit', n, '-R', REPO, '--remove-label', 'agent-ready']);
   gh(['issue', 'comment', n, '-R', REPO, '--body',
-    `Not started: ${why.join('; ')}. The dispatcher starts it once that changes (meta decision 0010).`]);
+    `Not started: ${why.join('; ')}. A task of a feature is started by dispatch.yml once that changes.`]);
 }
 
 function runDispatch(dry) {
@@ -141,7 +144,15 @@ function runDispatch(dry) {
     }
     // The label is only a marker (an event of the workflow token starts no workflow); workflow_dispatch starts the build
     gh(['issue', 'edit', String(task.number), '-R', REPO, '--add-label', 'agent-ready']);
-    gh(['workflow', 'run', 'claude.yml', '-R', REPO, '-f', `issue=${task.number}`]);
+    try {
+      gh(['workflow', 'run', 'claude.yml', '-R', REPO, '-f', `issue=${task.number}`]);
+    } catch (e) {
+      // Without the marker the next run tries again
+      gh(['issue', 'edit', String(task.number), '-R', REPO, '--remove-label', 'agent-ready']);
+      console.log(`::error::#${task.number} not started: ${String(e.stderr ?? e.message).trim()}`);
+      process.exitCode = 1;
+      continue;
+    }
     console.log(`#${task.number} started (feature ${ref(feature)})`);
     started++;
   }
