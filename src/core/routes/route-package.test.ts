@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { PACKAGE_FORMAT, PACKAGE_MAX_CHARS, packageFileName, packageFromRoute, readPackage, serializePackage } from './route-package';
 import { SAMPLE_NAMES, SAMPLE_PLACE, SAMPLE_SOURCE, SAMPLE_TEXTS, sampleRoute } from './sample-route';
-import { analyzeRoute, readRoute, type Route, type Waypoint } from './routes';
+import { analyzeRoute, readRoute, ROUTE_IMPORT_SPEED_MAX, type Route, type Waypoint } from './routes';
 
 const base = (over: Partial<Route> = {}): Route => ({
   id: 'abc', name: 'Park loop', updated: 5, country: 'DE', defaultSpeed: 4,
@@ -270,6 +270,18 @@ describe('readPackage cleans what it keeps', () => {
     expect(res.route.defaultSpeed).toBeUndefined();
     expect(res.route.description).toBeUndefined();
     expect(res.route.texts).toBeUndefined();
+  });
+
+  it('drops a speed above a walking pace: a stranger does not choose how fast the belt runs (#48)', () => {
+    const speed = (defaultSpeed: number) => {
+      const res = read(pkg({ defaultSpeed }));
+      return res.ok ? res.route.defaultSpeed : 'refused';
+    };
+    expect(speed(20)).toBeUndefined();
+    expect(speed(6.1)).toBeUndefined();
+    expect(speed(ROUTE_IMPORT_SPEED_MAX)).toBe(ROUTE_IMPORT_SPEED_MAX);
+    expect(speed(4)).toBe(4);
+    expect(ROUTE_IMPORT_SPEED_MAX).toBeLessThanOrEqual(6);
   });
 
   it('cuts a name that is too long, and puts it on one line', () => {
