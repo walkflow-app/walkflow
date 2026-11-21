@@ -106,6 +106,14 @@ takes a pull request to `main` without a maintainer. The rules are in `scripts/a
   merge (or one on the release pull request after the last of them was merged), once its checks in HARDWARE-TESTS.md passed
   on a treadmill (`scripts/release-gate.mjs`, in `release.yml` and the `release` skill).
 
+**Features** are built as tasks: sub-issues of an issue of type *Feature*, each with its blockers ("blocked by"). The
+feature is approved by a comment that is only `approved`, by an owner in `.github/CODEOWNERS`. `dispatch.yml` (when an
+issue closes, and every hour) starts each open task of an approved feature whose blockers are all closed and that has none
+of `safety`, `needs-maintainer` and `hold`: it sets `agent-ready` and starts `claude.yml` with the issue number, at most
+three per run. `claude.yml` checks the same before it builds an issue labelled `agent-ready`; if it may not start, the label
+comes off and the issue says why (`scripts/feature-gate.mjs`). An agent that finds a gap in the feature comments `Spec gap:`
+and stops.
+
 A new issue from someone outside the project is sorted by `triage.yml`: an agent that can only read proposes labels,
 duplicates, missing details and where in the code it is; a second job without an agent checks that and writes the labels and
 one comment. It never sets `agent-ready`, closes or moves an issue. Actions → Triage → Run workflow sorts any issue again.

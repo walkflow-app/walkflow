@@ -79,7 +79,8 @@ npm run dev                                     # Demo (no treadmill) in the con
   workflows to let more through without being asked.
 - **On GitHub:** `agent-review.yml` runs the reviewers on every new pull request and posts their verdicts (comment
   `@claude review` to run it again); `claude.yml` takes on `@claude …` requests and issues labelled `agent-ready`, never ones
-  labelled `safety`. Both only work on branches and pull requests; with the pipeline off a maintainer merges. Scheduled: `docs-check.yml` (monthly,
+  labelled `safety`; `dispatch.yml` starts the tasks of approved features whose blockers are closed
+  (`scripts/feature-gate.mjs`). Both only work on branches and pull requests; with the pipeline off a maintainer merges. Scheduled: `docs-check.yml` (monthly,
   an issue "Docs out of date"), `relays.yml` (weekly, an issue when a relay fails twice). New issues from outside:
   `triage.yml` (labels and one comment, never `agent-ready`).
 
