@@ -11,6 +11,7 @@ import { COMMUNITY_ENABLED, STORE_BASE } from '../src/platform/features';
 import { sharingRelays } from '../src/platform/relays';
 import { isAllowedRequest } from '../src/platform/request-filter';
 import { devToolsAllowed } from '../src/core/safety/dev-mode';
+import { warnWhenRendererGone } from '../src/core/safety/renderer-gone';
 import { devOrigin } from '../src/platform/dev-url';
 import { mapOrigins, resolveMapStyles } from '../src/core/routes/map-config';
 import { mimeFor } from '../src/platform/mime';
@@ -225,6 +226,21 @@ function createWindow() {
     if (choice === 1) event.preventDefault();
   });
 
+  // The window crashed: the Bluetooth connection was in it, so the belt may run on and nothing here can stop it (#49 F)
+  wc.on('render-process-gone', (_e, details) => {
+    if (!warnWhenRendererGone(details.reason)) return;
+    // The page that comes back is not connected: no shortcut, no display-sleep blocker, updates allowed
+    setTreadmillConnected(false);
+    dialog.showMessageBoxSync({
+      type: 'error',
+      title: t.electron.rendererGoneTitle,
+      message: t.electron.rendererGoneMessage,
+      detail: t.electron.rendererGoneDetail,
+    });
+    // A page that cannot start at all would only crash again
+    if (details.reason !== 'launch-failed' && details.reason !== 'integrity-failure' && !wc.isDestroyed()) wc.reload();
+  });
+
   win.once('ready-to-show', () => win?.show());
   win.on('closed', () => { win = null; });
   void win.loadURL(DEV_ORIGIN ? `${DEV_ORIGIN}/` : `${ORIGIN}/index.html`);
@@ -249,10 +265,9 @@ ipcMain.on('bt:pairing-response', (e, r: unknown) => {
 /** Whether the page says it is connected to a treadmill: an update never restarts the app then (platform/update-controller.ts) */
 let treadmillConnected = false;
 
-ipcMain.on('app:connection', (e, connected: unknown) => {
-  if (!fromWindow(e)) return;
-  treadmillConnected = connected === true;
-  if (connected === true) {
+function setTreadmillConnected(connected: boolean) {
+  treadmillConnected = connected;
+  if (connected) {
     if (powerBlockerId === null) powerBlockerId = powerSaveBlocker.start('prevent-display-sleep');
     registerStopShortcut();
   } else {
@@ -260,6 +275,11 @@ ipcMain.on('app:connection', (e, connected: unknown) => {
     powerBlockerId = null;
     globalShortcut.unregister(STOP_ACCELERATOR);
   }
+}
+
+ipcMain.on('app:connection', (e, connected: unknown) => {
+  if (!fromWindow(e)) return;
+  setTreadmillConnected(connected === true);
 });
 
 ipcMain.on('app:language', (e, lang: unknown) => {
