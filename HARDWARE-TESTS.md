@@ -97,6 +97,8 @@ The map only draws. It reads the position the route card already has and sends n
 
 - [ ] Switch the map on in the training view (route chosen), then walk a route (with or without the map the log must look the same: same commands, same spacing, no extra writes). The blue-green dot should move along the line together with “km of km”.
 - [ ] With the map on, press Space/Esc and **Stop** during a walk: the belt stops as fast as without the map.
+- [ ] **Stop from a dialog (touch).** Belt running, open a dialog (Routes → delete a route, the disconnect question, Settings; in the desktop app also the device chooser and a pairing PIN): it has a red **Stop** at the top. Tap it: `→ 08 01` at once and the dialog closes as if cancelled (the route is not deleted). A question that must be answered stays open after the stop. Without a running belt the button is not there. Esc inside a dialog: `→ 08 01` and the dialog closes too.
+- [ ] **Keys anywhere.** Belt running, the focus in the store search: Esc stops (`→ 08 01`), Space types a space. The focus on a select you just used, a checkbox or a slider: Space stops instead of opening, toggling or moving it. In the Routes view and on the map ↑ ↓ change nothing; in the training view holding ↑ for a second is one step (`→ 02 …` once), not a walk to the limit.
 - [ ] Take the computer offline while the map is on: the route card keeps counting, the map shows a hint, the belt is not affected.
 
 ## Settings and training view

@@ -1,5 +1,6 @@
 // Modal dialogs based on <dialog>. Content is set via textContent, never as HTML.
 
+import { dialogStopButton } from './dialog-stop';
 import { onLanguageChange, t } from '../../i18n/i18n';
 import { languageSelect } from '../i18n-dom';
 
@@ -57,7 +58,7 @@ function show<T extends string>(get: () => DialogOptions<T>): Promise<T> {
 
     const render = () => {
       const o = get();
-      const nodes: Node[] = [];
+      const nodes: Node[] = [dialogStopButton(dlg)];
       const h = document.createElement('h2');
       h.textContent = o.title;
       if (o.languagePicker) {

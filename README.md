@@ -47,7 +47,7 @@ Other FTMS treadmills may work but are not tested.
 
 - Personal speed limit (default 6 km/h); higher values only after an extra confirmation. Every input path (slider, presets, ±, arrow keys, program, console) is capped to it. When the limit is lowered, the app actively regulates down.
 - Ramp: at most 0.5 km/h per command (configurable 0.1–1.0) and at least 1.5 s between two speed commands. Larger jumps are approached in steps.
-- Start only after a confirmation. Space or Esc stops immediately; stop and pause take priority over all other commands. Bluetooth writes never run in parallel.
+- Start only after a confirmation. Esc stops immediately wherever the focus is, Space too outside text fields; ↑ ↓ change the speed only in the training view, one step per press. While the belt may run every dialog has its own Stop button (a dialog makes the rest of the page unreachable); stop and pause take priority over all other commands. Bluetooth writes never run in parallel.
 - A running program ends on connection loss, when the treadmill reports “stopped” or “safety key”, or when it reports 0 km/h for 8 s.
 - Permanent notice that the app cannot stop the belt on connection loss; a large warning if the connection drops while the belt is probably running. “Disconnect” offers to stop first while the belt is running.
 - Background tabs: warning in the tab title, optionally pause the belt; programs run by timestamps instead of (throttled) timers.

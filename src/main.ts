@@ -26,6 +26,7 @@ import { loadChosen, setupStage } from './ui/live/stage';
 import { setupSpeedControls } from './ui/live/speed-controls';
 import { renderInfo } from './ui/settings/info';
 import { setupSettings } from './ui/settings/settings-ui';
+import { setDialogStop } from './ui/components/dialog-stop';
 import { setupTreadmillSettings } from './ui/settings/treadmill';
 import { initTheme, onThemeChange } from './ui/theme';
 import { BeltBanner } from './ui/live/belt-banner';
@@ -196,6 +197,12 @@ const connMenu = setupMenu($button('statusBtn'), $('connMenu'), controls);
 setupPrefs($('langOptions'), $('themeOptions'), $('paletteOptions'), $('unitsOptions'));
 $button('openData').onclick = () => settings.open('data');
 setInterval(renderSettingsLock, 500);
+// Every dialog shows a Stop while the belt may run (dialog-stop.ts): a modal dialog makes the page's Stop buttons unreachable
+const renderRunning = () => { document.documentElement.dataset.running = tm.state.connected && tm.state.maybeRunning ? '1' : '0'; };
+setDialogStop(() => void belt.stop());
+for (const e of ['phase', 'disconnected', 'machineStatus', 'data'] as const) tm.on(e, renderRunning);
+setInterval(renderRunning, 250);
+renderRunning();
 onLanguageChange(() => { settings.relabel(); stage.render(); });
 onThemeChange(readout.redrawChart);
 
