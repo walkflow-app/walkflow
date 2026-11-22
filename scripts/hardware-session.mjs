@@ -7,10 +7,13 @@
 //   node scripts/hardware-session.mjs chrome <url> [--debug-port 9222]
 //       opens the url (with ?lang=en, so the log reads as in HARDWARE-TESTS.md) in a Chrome with a profile of its own
 //   node scripts/hardware-session.mjs watch [<log file>] [--debug-port 9222]
-//       appends every new line of the Log card, console warnings and errors and uncaught exceptions to the file, until stopped
+//       appends every new line of the Log card, console warnings and errors and uncaught exceptions to the file (default
+//       session-<date>.log), until stopped; on its first attach to a local build it drops the service worker and its cache
+//       and loads the page again. It follows the first tab with the app: keep one.
 //
-// Everything lives in $WALKFLOW_HARDWARE_DIR (default: walkflow-hardware in the temp folder). Chrome: $CHROME, else the macOS
-// default. Only for a person at the treadmill: nothing here sends anything to the belt.
+// Everything lives in $WALKFLOW_HARDWARE_DIR (default: walkflow-hardware in the temp folder): build/ (the worktree),
+// chrome-profile/, the log files. Chrome: $CHROME, else the macOS default; the debug port exists only in a Chrome this script
+// started. Node 22 or later (WebSocket). Only for a person at the treadmill: nothing here sends anything to the belt.
 import { execFileSync, spawn } from 'node:child_process';
 import { appendFileSync, existsSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -20,11 +23,12 @@ import { fileURLToPath } from 'node:url';
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const work = resolve(process.env.WALKFLOW_HARDWARE_DIR ?? join(tmpdir(), 'walkflow-hardware'));
 const chromePath = process.env.CHROME ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
-const [command, arg] = process.argv.slice(2);
 const option = (name, fallback) => {
   const i = process.argv.indexOf(`--${name}`);
   return i > 0 ? process.argv[i + 1] : fallback;
 };
+// The words that are neither a flag nor a flag's value
+const [command, arg] = process.argv.slice(2).filter((a, i, all) => !a.startsWith('--') && !all[i - 1]?.startsWith('--'));
 const run = (cmd, args, cwd = repo) => execFileSync(cmd, args, { cwd, stdio: 'inherit' });
 
 mkdirSync(work, { recursive: true });
@@ -49,7 +53,8 @@ function serve(ref, port) {
   run('npm', ['ci', '--no-audit', '--no-fund'], dir);
   run('npx', ['vite', 'build'], dir);
   console.log(`\nserving ${ref} (${sha}) on http://localhost:${port}/`);
-  spawn('npx', ['vite', 'preview', '--port', port, '--strictPort'], { cwd: dir, stdio: 'inherit' });
+  const server = spawn('npx', ['vite', 'preview', '--port', port, '--strictPort'], { cwd: dir, stdio: 'inherit' });
+  for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => { server.kill(); process.exit(0); });
 }
 
 function chrome(url, debugPort) {
@@ -91,6 +96,7 @@ async function follow(debugPort, out, fresh) {
     pending.set(++id, done);
     ws.send(JSON.stringify({ id, method, params }));
   });
+  let seen = 0; // characters of the Log card already written
   await new Promise((done, fail) => {
     ws.onopen = done;
     ws.onerror = () => fail(new Error('cannot attach to the tab'));
@@ -105,10 +111,17 @@ async function follow(debugPort, out, fresh) {
     } else if (m.method === 'Runtime.exceptionThrown') {
       out(`[exception] ${m.params.exceptionDetails.exception?.description ?? m.params.exceptionDetails.text}`);
     } else if (m.method === 'Page.frameNavigated' && !m.params.frame.parentId) {
+      seen = 0;
       out(`--- page loaded: ${m.params.frame.url}`);
     }
   };
-  const closed = new Promise(done => { ws.onclose = done; });
+  const closed = new Promise(done => {
+    ws.onclose = () => {
+      for (const answer of pending.values()) answer(undefined);
+      pending.clear();
+      done();
+    };
+  });
   out(`--- attached: ${page.url}`);
   await send('Runtime.enable');
   await send('Page.enable');
@@ -118,7 +131,6 @@ async function follow(debugPort, out, fresh) {
     await send('Page.reload', { ignoreCache: true });
     out('--- local build: service worker and cache dropped, page loaded again');
   }
-  let seen = 0;
   const read = async () => {
     const r = await send('Runtime.evaluate', {
       expression: `document.getElementById('log')?.textContent ?? ''`, returnByValue: true,
