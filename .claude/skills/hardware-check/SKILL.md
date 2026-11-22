@@ -55,7 +55,8 @@ request waiting for `/hardware-ok`), prepare it so they can start at once, and r
    shows (the treadmill's display, what the belt did, a text on the screen).
 5. **Record**: tick the items here (Mode B, in a pull request), comment the results on the issue or pull request. The
    advertised device name (`Device: …`) stays out of public comments unless the item needs it. Stop the watcher and the
-   server; the Chrome profile and the worktree stay for the next session (to remove the worktree:
+   server, and quit that Chrome (on macOS it keeps running without a window and holds the debug port; `chrome` refuses a
+   port in use); the Chrome profile and the worktree stay for the next session (to remove the worktree:
    `git worktree remove <dir>/build`).
 
 The desktop app is not covered yet.

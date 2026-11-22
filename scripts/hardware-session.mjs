@@ -33,7 +33,7 @@ const run = (cmd, args, cwd = repo) => execFileSync(cmd, args, { cwd, stdio: 'in
 
 mkdirSync(work, { recursive: true });
 if (command === 'serve' && arg) serve(arg, option('port', '4173'));
-else if (command === 'chrome' && arg) chrome(arg, option('debug-port', '9222'));
+else if (command === 'chrome' && arg) await chrome(arg, option('debug-port', '9222'));
 else if (command === 'watch') await watch(resolve(arg ?? join(work, `session-${new Date().toISOString().slice(0, 10)}.log`)), option('debug-port', '9222'));
 else {
   console.error('usage: hardware-session.mjs serve <ref | PR number> | chrome <url> | watch [<log file>]');
@@ -60,7 +60,16 @@ function serve(ref, port) {
   for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => { server.kill(); process.exit(0); });
 }
 
-function chrome(url, debugPort) {
+async function chrome(url, debugPort) {
+  // A Chrome left from an earlier session (on macOS it keeps running without a window) may hold the port: the new one then
+  // gets it only on the other address family, and watch would follow the old one
+  for (const host of ['127.0.0.1', '[::1]']) {
+    const busy = await fetch(`http://${host}:${debugPort}/json/version`, { signal: AbortSignal.timeout(1000) }).then(() => true, () => false);
+    if (busy) {
+      console.error(`The debug port ${debugPort} is in use (a Chrome from an earlier session?). Quit that Chrome, or pass --debug-port.`);
+      process.exit(1);
+    }
+  }
   const target = new URL(url);
   if (!target.searchParams.has('lang')) target.searchParams.set('lang', 'en');
   spawn(chromePath, [
