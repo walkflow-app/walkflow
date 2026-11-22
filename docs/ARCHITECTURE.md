@@ -15,7 +15,7 @@ src/
   core/               pure logic: no DOM, no storage, no network
     safety/             the app's side of safety: the stored limit and step (format, confirmation above 6 km/h), the
                         disclaimer, quiet and developer mode, the settings lock, which key stops or changes the speed, speed
-                        presets, incline levels
+                        presets, incline levels, the warning when the desktop window crashed
     training/           workouts, the program runner, step panel logic, what the training view is about
     routes/             routes, GPX, route packages, the texts of a route, countries, map settings
     store/              the route store: its index (strict reading, entries from package files, filter) and the check of a download

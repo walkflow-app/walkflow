@@ -64,9 +64,9 @@ export function setupLiveData(host: LiveDataHost) {
     if (r.kcal !== undefined) cur.kcal = r.kcal;
     if (r.time !== undefined) cur.time = r.time;
     if (r.hr !== undefined && r.hr > 0) cur.hr = r.hr;
-    host.renderStats();
-    // Notifications also arrive in throttled background tabs
+    // The program first: a display error must not skip its tick (#49 D). Notifications also arrive in throttled background tabs
     runner.tick();
+    host.renderStats();
 
     const ts = Date.now();
     if (ts - lastSample >= 1000) {

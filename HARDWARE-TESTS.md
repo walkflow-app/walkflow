@@ -134,6 +134,7 @@ The settings dialog and the training view only change what is shown, plus one se
 
 ## Desktop app
 
+- [ ] **Window crash.** Demo or treadmill connected, belt running at a low speed. Kill the renderer process (macOS Activity Monitor: “Walkflow Helper (Renderer)”; Windows Task Manager, details view: the “Walkflow” sub-process with the most memory; Linux: `pkill -f -- --type=renderer`). Expected: a native error message “Walkflow stopped working / Stop the belt on the treadmill now.”, and after OK the window loads again, not connected; Cmd/Ctrl+Shift+Space no longer logs anything until you connect again. Reconnecting after the reload is not confirmed yet. On a treadmill also note whether the belt kept running (it is expected to).
 - [ ] macOS: on the first “Connect”, macOS asks for Bluetooth. Does the chooser with the treadmill appear afterwards? Is the prompt text in the system language?
 - [ ] The chooser lists only devices with a name (the treadmill, e.g. `sPad500-…`); the nameless ones (“Unbekanntes oder nicht unterstütztes Gerät (…)”) are behind “Show N nameless devices”. Is the treadmill listed without opening that link? If it only shows up there, note what its entry says: the filter then needs another rule.
 - [ ] Second connect with “connect automatically” ticked: is the treadmill selected without the chooser? Log: `Automatically selected the last connected device`.

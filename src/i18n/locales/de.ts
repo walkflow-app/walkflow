@@ -803,5 +803,8 @@ export const de: Messages = {
     closeDetail: 'Nach dem Schließen kann die App es nicht mehr stoppen. Stoppe es besser vorher.',
     closeCancel: 'Abbrechen',
     closeAnyway: 'Trotzdem schließen',
+    rendererGoneTitle: 'Walkflow funktioniert nicht mehr',
+    rendererGoneMessage: 'Stoppe das Band jetzt am Laufband.',
+    rendererGoneDetail: 'Das Fenster ist abgestürzt, die App kann kein Stopp mehr senden. Nimm die Stopp-Taste oder den Sicherheitsschlüssel des Laufbands. Walkflow öffnet sich nach dieser Meldung wieder.',
   },
 };
