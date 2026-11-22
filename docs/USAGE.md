@@ -1,8 +1,9 @@
 # Anonymous usage counts
 
 Walkflow counts anonymously how often it is used, to improve it. This page lists every name the app can send and what is
-never sent. The names are built by the code from fixed parts (`src/core/usage/events.ts`); nothing typed, measured or
-identifying is ever part of one. A test (`tests/usage-docs.test.ts`) keeps the lists below equal to the code.
+never sent. The names are built by the code from fixed parts (`src/core/usage/events.ts`, `src/core/usage/treadmill.ts`); the only part
+that is not fixed is the treadmill's maker and model as it reports them, and only after a guard (see *Names*). Nothing
+typed, measured or identifying is ever part of one. A test (`tests/usage-docs.test.ts`) keeps the lists below equal to the code.
 
 ## How it is sent
 
@@ -40,6 +41,19 @@ Level 2:
 - `lang.de`
 - `lang.fr`
 - `lang.uk`
+- `tm.<maker>.<model>`
+- `tm.<maker>.unknown`
+- `tm.unknown.<model>`
+- `tm.unknown`
+- `tm.demo`
+
+The treadmill: once after a treadmill is connected, `tm.<maker>.<model>` from the manufacturer and model number the treadmill
+reports about itself (Device Information), lower case, spaces as `-`. There is no fixed list; a guard keeps out a string
+that is not 1 to 32 characters from `a-z 0-9 . _ - +`, has 5 or more digits in a row, 6 or more hex digits in a row, looks
+like an address or UUID, or is only digits. A part that is left out is written `unknown` (`tm.<maker>.unknown`,
+`tm.unknown.<model>`), and `tm.unknown` is sent when both are left out or the treadmill reported none. The demo is `tm.demo`.
+Never used: the advertised name, the serial number, the Bluetooth address, the firmware. The values name the treadmill's
+Bluetooth module, which other treadmills may share. Nothing is sent when connecting fails.
 
 The platform is `web` for the web build, otherwise the desktop app's system. The version is the app's version, and only a
 plain `x.y.z` (a pre-release sends nothing). The product page will be counted separately, by its own pixel (`site.en`, `site.de`); it is not part of the app.

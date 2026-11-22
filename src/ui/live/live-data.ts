@@ -5,6 +5,7 @@
 import type { Sample } from '../../core/history/export';
 import type { RunRecorder, RunSource } from '../../core/history/runs';
 import type { ProgramRunner } from '../../core/training/program';
+import type { DeviceInfo } from '../../core/usage/treadmill';
 import type { EndReason, Treadmill } from 'ftms-treadmill';
 import { t, type Text } from '../../i18n/i18n';
 import type { BeltBanner } from './belt-banner';
@@ -56,6 +57,8 @@ export function setupLiveData(host: LiveDataHost) {
   const { cur, samples } = figures;
   let lastSample = 0;
   let source: RunSource = 'ble';
+  // Manufacturer and model of this connection, for the usage count; firmware is ignored. Reset on every connect.
+  let deviceInfo: DeviceInfo = {};
 
   tm.on('data', r => {
     if (r.speed !== undefined) { cur.speed = r.speed; banner.speed(r.speed, host.now()); }
@@ -101,11 +104,18 @@ export function setupLiveData(host: LiveDataHost) {
   });
   tm.on('trainingStatus', ({ hex, text }) => host.log(t.machine.training(hex, text)));
   tm.on('controlResponse', r => host.log(`← ${describeControlPointResponse(r)}`));
-  tm.on('notice', n => host.log(noticeText(n)));
+  tm.on('notice', n => {
+    host.log(noticeText(n));
+    if (n.code === 'device-info' && (n.field === 'manufacturer' || n.field === 'model')) deviceInfo = { ...deviceInfo, [n.field]: n.value };
+  });
   tm.on('log', msg => host.log(msg));
 
   return {
     /** Where the samples come from; the history keeps demo runs apart */
     setSource(s: RunSource) { source = s; },
+    /** A new connection starts: what the last one reported is forgotten */
+    resetDeviceInfo() { deviceInfo = {}; },
+    /** What this connection reported about the treadmill (manufacturer, model) */
+    deviceInfo: (): DeviceInfo => deviceInfo,
   };
 }

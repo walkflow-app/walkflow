@@ -187,7 +187,7 @@ const live = setupLiveData({
 const renderSettingsLock = () => settings.setLocked(settingsLocked(tm.state));
 
 const connection = setupConnection({
-  tm, banner, runner, speed, incline, background, recorder, live, now,
+  tm, banner, runner, speed, incline, background, recorder, live, now, count,
   stop: reason => belt.stop(reason),
   renderStats: readout.renderStats,
   renderBanner: readout.renderBanner,

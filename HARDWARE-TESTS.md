@@ -201,6 +201,15 @@ Covered by tests without hardware (`belt-commands.test.ts`, `reports.test.ts`, `
 - [ ] **Pause while standing, Start while running:** note the `←` answers as well; a refused Set Speed (`← Set Speed: …` other than OK) now ends the ramp with `The treadmill refused the speed`.
 - [ ] **Stop that does not get through.** Hard to provoke on purpose; if `Write error` follows a `→ 08 01`, the log must show the stop up to three times, about 0.3 s apart, and then the red warning.
 
+## Usage count of the treadmill model (not yet checked on a treadmill)
+
+The treadmill model is counted once after connecting (#77, docs/USAGE.md). No change in what is read or sent to the treadmill; what only a treadmill can show is that connecting, start and stop are unchanged and the right strings are counted. **Precondition:** a build with `WALKFLOW_USAGE=https://<test site>.goatcounter.com` (without it nothing is sent and no `usage:` line appears), Settings → General → Developer mode on, the first-start popup accepted. Belt standing, low speed, standing on the side rails.
+
+- [ ] **After connecting.** Expected in the log, in this order: `Device: …`, `Manufacturer: <v>`, `Model: <v>` (if the treadmill reports them), `Speed range: …`, `→ 00`, `← Request Control: OK`, and **once** `usage: tm.<maker>.<model>` (for the sPad 500: `usage: tm.fithome.jj-bt2-dl`; `tm.unknown` if nothing was reported). Suspicious: no `usage:` line although both lines were logged, the line twice, a `usage:` line before `← Request Control: OK`, `❌`. Paste the `Manufacturer` and `Model` lines of every treadmill; whether the Web Bluetooth blocklist hides either is to find out. The count must show up in the counter's list.
+- [ ] **Start and stop.** Press Start, confirm. Expected: `→ 00`, `→ 02 64 00`, `→ 07`, each answered with OK, then, once the run counts of #74 are built, one `usage: run.…` line (until then no `usage:` line); press Stop: `→ 08 01` at once. Bytes and order as before this change.
+- [ ] **The same with the counter blocked** (ad blocker or DevTools request blocking for the counter) **and slow** (DevTools throttling): connecting takes as long as without it, the bytes and their order are unchanged, no `❌`.
+- [ ] **Connect twice.** Disconnect and connect again in the same session: no second `usage: tm.…` line (a name is sent once per start of the app).
+
 ## ftms-treadmill 0.3.0 (not yet checked on a treadmill)
 
 Library changes [#31](https://github.com/walkflow-app/ftms-treadmill/pull/31) (`sendRaw` checks and sends one copy of the bytes) and [#32](https://github.com/walkflow-app/ftms-treadmill/pull/32) (smaller promise gaps), both `safety`. Covered by the library's tests; what only a treadmill can show is that nothing on the belt got worse. **The app must run the new library**: the build after the version bump to 0.3.0, or, before it, `npm run build` in `ftms-treadmill` and `npm link ../ftms-treadmill` here. `npm ls ftms-treadmill` in this repository shows which one the build has (the app itself does not show the library's version). Open the log (Settings → General → Developer mode); belt standing, low speed, standing on the side rails.
