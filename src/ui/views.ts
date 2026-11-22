@@ -3,6 +3,7 @@
 // data-view and data-stop attributes on <html>.
 
 import { COMMUNITY_ENABLED } from '../platform/features';
+import { countView } from './views-count';
 
 export type View = 'training' | 'history' | 'workouts' | 'routes' | 'community';
 /** In the order of the navigation; there is no Community view in a build without Community (platform/features.ts) */
@@ -31,6 +32,7 @@ export function setupViews(onChange: (v: View) => void) {
     }
     if (current !== null && current !== v) window.scrollTo({ top: 0 });
     current = v;
+    countView(v);
     onChange(v);
   };
   window.addEventListener('hashchange', apply);

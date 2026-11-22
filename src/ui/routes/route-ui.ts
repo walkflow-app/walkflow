@@ -33,6 +33,8 @@ import { COMMUNITY_ENABLED } from '../../platform/features';
 import { $, $button, download } from '../ui';
 import { el, iconButton } from '../components/elements';
 import { store } from '../store';
+import { featureName } from '../../core/usage/events';
+import { count } from '../usage';
 import { getWorkoutStore } from '../../data/workout-store';
 import { todayGoal, type DayGoal } from '../../core/training/workouts';
 
@@ -92,6 +94,7 @@ export function setupRoutes(host: RoutesHost) {
   function setMapOn(on: boolean) {
     mapOn = on;
     store.set(MAP_STORAGE_KEY, on ? '1' : '0');
+    if (on) count(featureName('route.map-on'));
     training.slot?.setEnabled(on);
     renderMaps();
     host.changed();
@@ -206,6 +209,7 @@ export function setupRoutes(host: RoutesHost) {
     const next = result.route;
     try { await (await ready).put(next); } catch (e) { editor.status.textContent = t.routes.failed(String(e)); return; }
     editor = null;
+    count(featureName('route.own'));
     await reload();
   }
 
