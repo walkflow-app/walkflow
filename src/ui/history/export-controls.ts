@@ -17,7 +17,8 @@ export function setupExportControls(samples: Sample[], onCleared: () => void) {
 
   $button('csv').onclick = () => {
     if (!samples.length) { log(t.settings.noData); return; }
-    download(toCsv(samples), 'text/csv', exportFilename(new Date(), 'csv'));
+    // Named after the start of the recording, like the files of a saved run, not after the moment of the export
+    download(toCsv(samples), 'text/csv', exportFilename(new Date(samples[0]!.ts), 'csv'));
   };
 
   $button('tcx').onclick = () => {

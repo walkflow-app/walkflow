@@ -21,8 +21,11 @@ export function toCsv(samples: readonly Sample[]): string {
   return rows.join('\n');
 }
 
+/** The file name says when the run started on the person's clock (local time), not in UTC */
 export function exportFilename(date: Date, ext: string): string {
-  return `walkflow-${date.toISOString().slice(0, 16).replace(':', '-')}.${ext}`;
+  const two = (n: number) => String(n).padStart(2, '0');
+  const day = `${date.getFullYear()}-${two(date.getMonth() + 1)}-${two(date.getDate())}`;
+  return `walkflow-${day}T${two(date.getHours())}-${two(date.getMinutes())}.${ext}`;
 }
 
 // ---------- TCX (Training Center XML, e.g. for Strava or Garmin Connect) ----------
