@@ -58,7 +58,8 @@ request; Dependabot keeps the GitHub Actions, which are pinned by commit, and th
   `ci`, `style`, `chore` do not appear in the release notes. Example: `fix(routes): keep the progress when a route is updated`.
 - **Safety first.** Code that decides what is sent to the treadmill (the app's `src/core/safety/`, and the library [`ftms-treadmill`](https://github.com/walkflow-app/ftms-treadmill), which has its own repository)
   gets its test first, and the change must not weaken a limit, a delay or a warning. If you are not sure, say so in the pull request.
-  The CI job `safety-gate` fails a pull request that changes `src/core/safety/` or `src/ui/live/` without changing a test, and warns
+  The CI job `safety-gate` fails a pull request that changes `src/core/safety/`, `src/ui/live/`, `src/core/training/program.ts`,
+  `src/ui/background.ts`, `src/main.ts` or `electron/` without changing a test next to that code or under `tests/`, and warns
   when such a change has no `safety` title or no update of HARDWARE-TESTS.md.
 - **Small and focused.** One change per pull request, with the tests that show it works.
 - **Through a pull request only.** `main` takes no direct pushes; a pull request is merged once CI (`test`) is green.
