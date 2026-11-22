@@ -15,6 +15,7 @@ import {
 } from '../../core/safety/speed-presets';
 import { speedFieldText, speedFromInput, speedStep } from '../../i18n/units';
 import { confirmDialog } from '../components/dialogs';
+import { safetySettingsEditable } from '../../core/safety/settings-lock';
 import { $, $button, $input, log } from '../ui';
 import { store } from '../store';
 
@@ -117,8 +118,17 @@ export function setupSpeedControls(host: SpeedControlsHost) {
     }
   }
 
+  /** While the belt runs a change is not taken (a field fires its change as the locked dialog closes): the fields go back */
+  function editable(): boolean {
+    if (safetySettingsEditable(tm.state)) return true;
+    log(t.settings.lockedHint);
+    renderLimitFields();
+    return false;
+  }
+
   async function limitChanged() {
     const input = $input('cap');
+    if (!editable()) return;
     const d = decideLimitChange(speedFromInput(input.value), limit);
     if (!d.ok) { log(`❌ ${noticeText(d.reason)}`); renderLimitFields(); return; }
     let confirmed = d.value > LIMIT_CONFIRM_ABOVE && limitConfirmed;
@@ -128,6 +138,8 @@ export function setupSpeedControls(host: SpeedControlsHost) {
         t.limit.onlyIf,
       ], t.limit.allow(d.value));
       if (!ok) { renderLimitFields(); return; }
+      // The belt may have started while the question was open
+      if (!editable()) return;
       confirmed = true;
     }
     limit = d.value;
@@ -141,6 +153,7 @@ export function setupSpeedControls(host: SpeedControlsHost) {
 
   function maxStepChanged() {
     const input = $input('maxStep');
+    if (!editable()) return;
     const v = parseMaxStep(speedFromInput(input.value));
     if (v === null) { log(t.limit.maxStepRange(MAX_STEP_MIN, MAX_STEP_MAX)); renderLimitFields(); return; }
     tm.setLimits({ maxStep: v });

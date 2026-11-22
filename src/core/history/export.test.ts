@@ -15,8 +15,10 @@ describe('CSV', () => {
     expect(csv).toBe('time_s,speed_kmh,dist_m,incl_pct,hr_bpm,kcal\n0,3,0,,,\n1,3.1,1,0,90,2');
   });
 
-  it('file name', () => {
-    expect(exportFilename(new Date(T0), 'tcx')).toBe('walkflow-2026-10-31T09-00.tcx');
+  it('file name in local time', () => {
+    expect(exportFilename(new Date(2026, 9, 31, 9, 0), 'tcx')).toBe('walkflow-2026-10-31T09-00.tcx');
+    // Late in the evening: the local day and hour, whatever the time zone of the device
+    expect(exportFilename(new Date(2026, 0, 5, 23, 7), 'csv')).toBe('walkflow-2026-01-05T23-07.csv');
   });
 });
 

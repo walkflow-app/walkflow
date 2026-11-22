@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.2](https://github.com/walkflow-app/walkflow/compare/v0.7.1...v0.7.2) (2026-11-16)
+
+
+### Fixes
+
+* **history:** name exported files after the local time ([#61](https://github.com/walkflow-app/walkflow/issues/61)) ([50f46a6](https://github.com/walkflow-app/walkflow/commit/50f46a62300d3d43529629e91474e0bb80250eef))
+* **history:** name the CSV of the current recording after its start ([#62](https://github.com/walkflow-app/walkflow/issues/62)) ([c28c904](https://github.com/walkflow-app/walkflow/commit/c28c9045506698b4a4b9c604788ede20407ccda3))
+
 ## [0.7.1](https://github.com/walkflow-app/walkflow/compare/v0.7.0...v0.7.1) (2026-11-13)
 
 

@@ -70,12 +70,18 @@ npm run dev                                     # Demo (no treadmill) in the con
   the other way round; when that is unclear, Opus for safety code, Bluetooth, sharing, the library version or big changes,
   else Sonnet. On GitHub `.github/scripts/review-model.sh` picks it the same way, from the Co-Authored-By lines of the
   commits.
-- **Treadmill checks**: skill `hardware-check` writes them into HARDWARE-TESTS.md, and reads a log the maintainer pastes.
+- **Treadmill checks**: skill `hardware-check` writes them into HARDWARE-TESTS.md, reads a log the maintainer pastes, and
+  prepares a guided session at the treadmill (mode C: the build running, the log followed, the steps).
 - **Website**: agent `site-editor`.
 - **"release"**: skill `release` (the whole chain, publishing included; it stops before publishing safety changes).
+- **Agent pipeline** (`AGENT_PIPELINE` = `on`, CONTRIBUTING.md → *Agents on GitHub*): agents review, fix and merge pull
+  requests themselves; changes that reach the belt wait for the maintainer's `/hardware-ok` before a release, and the paths
+  in `PROTECTED` of `scripts/agent-pipeline.mjs` are never merged by an agent. Never change that list, the gates or the
+  workflows to let more through without being asked.
 - **On GitHub:** `agent-review.yml` runs the reviewers on every new pull request and posts their verdicts (comment
   `@claude review` to run it again); `claude.yml` takes on `@claude …` requests and issues labelled `agent-ready`, never ones
-  labelled `safety`. Both only work on branches and pull requests; a maintainer merges. Scheduled: `docs-check.yml` (monthly,
+  labelled `safety`; `dispatch.yml` starts the tasks of approved features whose blockers are closed
+  (`scripts/feature-gate.mjs`). The agents only work on branches and pull requests; with the pipeline off a maintainer merges. Scheduled: `docs-check.yml` (monthly,
   an issue "Docs out of date"), `relays.yml` (weekly, an issue when a relay fails twice). New issues from outside:
   `triage.yml` (labels and one comment, never `agent-ready`).
 
