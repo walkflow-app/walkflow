@@ -40,20 +40,23 @@ request waiting for `/hardware-ok`), prepare it so they can start at once, and r
    or one branch or pull request. Say which, and what each item checks.
 2. **Start it**, with `scripts/hardware-session.mjs` (from this repository's `main`):
    - a branch or pull request: `node scripts/hardware-session.mjs serve <ref | PR number>`, in the background; it builds in a
-     worktree of its own and serves on `http://localhost:4173/`;
+     worktree of its own and serves on `http://localhost:4173/`. `npm ci` and the build run that code on the maintainer's
+     computer: read the diff first for changed dependencies, scripts or build config (the script refuses forks);
    - `node scripts/hardware-session.mjs chrome <url>`: a Chrome with a profile of its own and the DevTools port, the app in
-     English (`?lang=en`) so the log reads as quoted here;
+     English (`?lang=en`) so the log reads as quoted here (macOS; elsewhere set `$CHROME` to the browser);
    - `node scripts/hardware-session.mjs watch`, in the background: every line of the Log card, console warnings and errors
      and uncaught exceptions go into a file (it prints where). Start it before handing over, and check the file says
-     `attached`; for a local build it then drops the old service worker and loads the page again.
+     `attached` (`no tab with the app yet` means Chrome is not open on the app); for a local build it then drops the old
+     service worker and loads the page again.
 3. **Hand over a numbered list**: one action per step, what they should see, where to stop and tell you. Safe first (belt
    standing, then standing on the side rails, low speed), the treadmill's own stop in reach in every step; never a step
    where only the app could stop the belt. If the test needs nothing from the person but "done", say so.
 4. **Read the log** when they report (or at a step where you asked them to): Mode B, from the file. Ask only for what no log
    shows (the treadmill's display, what the belt did, a text on the screen).
 5. **Record**: tick the items here (Mode B, in a pull request), comment the results on the issue or pull request. The
-   advertised device name (`Device: …`) stays out of public comments unless the item needs it. Stop the watcher; the
-   Chrome profile stays for the next session.
+   advertised device name (`Device: …`) stays out of public comments unless the item needs it. Stop the watcher and the
+   server; the Chrome profile and the worktree stay for the next session (to remove the worktree:
+   `git worktree remove <dir>/build`).
 
 The desktop app is not covered yet.
 
