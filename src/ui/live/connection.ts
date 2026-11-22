@@ -14,8 +14,10 @@ import { desktop } from '../desktop';
 import { ensureDisclaimer } from '../disclaimer';
 import { bindText } from '../i18n-dom';
 import { $, $button, log } from '../ui';
+import { countError } from '../usage';
 import { stopPlacement, type View } from '../views';
 import type { BeltBanner } from './belt-banner';
+import { connectErrorKind, createLossTracker } from './error-kinds';
 import { errorText } from './treadmill-text';
 
 export interface ConnectionHost {
@@ -50,12 +52,15 @@ export function setupConnection(host: ConnectionHost) {
   const connected = () => tm.state.connected;
   const maybeRunning = () => tm.state.maybeRunning;
   let connecting = false;
+  // Counts a lost connection (docs/USAGE.md) but not the person's own Disconnect
+  const loss = createLossTracker();
 
   tm.on('disconnected', ({ wasRunning }) => onDisconnected(wasRunning));
 
   async function connect(kind: 'ble' | 'demo') {
     if (connected() || connecting || !(await ensureDisclaimer())) return;
     connecting = true;
+    loss.lost(); // forget a disconnect of the person that was never followed by the event
     $button('connect').disabled = true;
     $button('demo').disabled = true;
     try {
@@ -87,6 +92,7 @@ export function setupConnection(host: ConnectionHost) {
     } catch (e) {
       log(`❌ ${errorText(e)}`);
       if (!connected()) {
+        countError(connectErrorKind(e));
         setStatus(() => t.connection.notConnected);
         setUi(false);
       } else {
@@ -103,6 +109,7 @@ export function setupConnection(host: ConnectionHost) {
   /** The treadmill has already forgotten the belt; the page follows */
   function onDisconnected(wasRunning: boolean) {
     log(t.disconnect.log);
+    if (loss.lost()) countError('connection-lost');
     host.runner.abort(() => t.disconnect.programEnded);
     host.background.releaseWakeLock();
     desktop?.connectionChanged(false);
@@ -142,6 +149,7 @@ export function setupConnection(host: ConnectionHost) {
         }
       }
     }
+    loss.personDisconnects();
     tm.disconnect();
   }
 

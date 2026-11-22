@@ -2,7 +2,9 @@
 // a free text, a measured number or an ID. Pure: the sender is ui/usage.ts, the address platform/usage-url.ts. Everything that
 // can be sent is listed in FIXED_NAMES and PATTERNS, and docs/USAGE.md lists the same (a test compares them).
 
-/** 1 Used (always, after the first-start popup), 2 Improve (switch), 3 Errors (switch; comes with the error codes) */
+import { ERROR_PATTERNS, isErrorName } from './errors';
+
+/** 1 Used (always, after the first-start popup), 2 Improve (switch), 3 Errors (switch; errors.ts) */
 export type UsageLevel = 1 | 2 | 3;
 
 /** Settings keys of the two switches (through ui/store.ts): absent means on, "0" means off. The only thing stored for the counts. */
@@ -20,7 +22,7 @@ const LANGUAGES = ['en', 'de', 'fr', 'uk'] as const;
 export const FIXED_NAMES: readonly string[] = LANGUAGES.map(l => `lang.${l}`);
 
 /** Names with a part the code fills in, as they are written in docs/USAGE.md */
-export const PATTERNS: readonly string[] = ['app.<web|win|mac|linux>.v<x.y.z>'];
+export const PATTERNS: readonly string[] = ['app.<web|win|mac|linux>.v<x.y.z>', ...ERROR_PATTERNS];
 
 /** A name built here; the only thing the sender takes. The brand keeps an outside string from being passed by accident. */
 export type UsageName = string & { readonly __usageName: true };
@@ -50,5 +52,6 @@ export function langName(lang: string): UsageName | null {
 export function levelOf(name: string): UsageLevel | null {
   if (APP_NAME.test(name)) return 1;
   if (LANG_NAME.test(name)) return 2;
+  if (isErrorName(name)) return 3;
   return null;
 }

@@ -5,7 +5,9 @@
 
 import { DISCLAIMER_STORAGE_KEY, isDisclaimerAccepted } from '../core/safety/disclaimer';
 import { DEV_MODE_STORAGE_KEY, readDevMode } from '../core/safety/dev-mode';
-import { levelOf, USAGE_ERRORS_KEY, USAGE_IMPROVE_KEY, usageSwitchOn, type UsageLevel, type UsageName } from '../core/usage/events';
+import { errorName, type ErrorKind } from '../core/usage/errors';
+import { levelOf,USAGE_ERRORS_KEY, USAGE_IMPROVE_KEY, usageSwitchOn, type UsageLevel, type UsageName } from '../core/usage/events';
+import { APP_VERSION } from '../platform/config';
 import { USAGE_BASE } from '../platform/features';
 import { usageCountUrl } from '../platform/usage-url';
 import { store } from './store';
@@ -48,3 +50,16 @@ export const count = createSender({
   },
   log,
 });
+
+/** Level 3: a known error, with the app version; nothing of the error itself */
+export const countError = (kind: ErrorKind): void => count(errorName(kind, APP_VERSION));
+
+/**
+ * Unexpected exceptions (`error` and `unhandledrejection` of the window) become `error.unexpected`. The event is never looked
+ * at: nothing of its message, stack or file can reach a name. The page's own handling of the exception stays as it is.
+ */
+export function countUnexpected(target: Pick<EventTarget, 'addEventListener'>, report: (kind: ErrorKind) => void = countError): void {
+  const onUnexpected = () => report('unexpected');
+  target.addEventListener('error', onUnexpected);
+  target.addEventListener('unhandledrejection', onUnexpected);
+}
