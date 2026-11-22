@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { appStartName, FIXED_NAMES, langName, levelOf, PATTERNS, usageSwitchOn } from './events';
+import { appStartName, FIXED_NAMES, langName, levelOf, PATTERNS, runName, usageSwitchOn } from './events';
 
 describe('appStartName (level 1)', () => {
   it('is the platform and the version', () => {
@@ -25,6 +25,14 @@ describe('langName (level 2)', () => {
 
   it('builds nothing for any other string', () => {
     for (const l of ['', 'EN', 'es', 'en-US', 'en&x=1', 'en ', '__proto__']) expect(langName(l), l).toBeNull();
+  });
+});
+
+describe('runName (level 2)', () => {
+  it('is run.<kind> for the three kinds, nothing for any other string', () => {
+    expect(['free', 'workout', 'route'].map(runName)).toEqual(['run.free', 'run.workout', 'run.route']);
+    for (const k of ['', 'Free', 'run', 'free&x=1', '__proto__']) expect(runName(k), k).toBeNull();
+    expect(levelOf('run.route')).toBe(2);
   });
 });
 

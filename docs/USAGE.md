@@ -40,6 +40,14 @@ Level 2:
 - `lang.de`
 - `lang.fr`
 - `lang.uk`
+- `run.free`
+- `run.workout`
+- `run.route`
+
+`run.*` is counted when a run has started: free training after the belt answered the start, a workout or a route the first
+time the screen is redrawn with its program in the countdown or running (in practice at the first step; a start that fails
+counts nothing). Like every name it is sent at most once per start of the app, so it says which kinds of run are used, not
+how many runs there were. A run in the demo counts too. Nothing about the run itself is sent.
 
 The platform is `web` for the web build, otherwise the desktop app's system. The version is the app's version, and only a
 plain `x.y.z` (a pre-release sends nothing). The product page will be counted separately, by its own pixel (`site.en`, `site.de`); it is not part of the app.

@@ -16,8 +16,10 @@ const PLATFORMS = ['web', 'win', 'mac', 'linux'] as const;
 type UsagePlatform = (typeof PLATFORMS)[number];
 const LANGUAGES = ['en', 'de', 'fr', 'uk'] as const;
 
+const RUN_KINDS = ['free', 'workout', 'route'] as const;
+
 /** Names that are written out in full */
-export const FIXED_NAMES: readonly string[] = LANGUAGES.map(l => `lang.${l}`);
+export const FIXED_NAMES: readonly string[] = [...LANGUAGES.map(l => `lang.${l}`), ...RUN_KINDS.map(k => `run.${k}`)];
 
 /** Names with a part the code fills in, as they are written in docs/USAGE.md */
 export const PATTERNS: readonly string[] = ['app.<web|win|mac|linux>.v<x.y.z>'];
@@ -28,6 +30,7 @@ export type UsageName = string & { readonly __usageName: true };
 const VERSION = /^\d+\.\d+\.\d+$/;
 const APP_NAME = new RegExp(`^app\\.(${PLATFORMS.join('|')})\\.v\\d+\\.\\d+\\.\\d+$`);
 const LANG_NAME = new RegExp(`^lang\\.(${LANGUAGES.join('|')})$`);
+const RUN_NAME = new RegExp(`^run\\.(${RUN_KINDS.join('|')})$`);
 
 const DESKTOP_PLATFORMS = new Map<string, UsagePlatform>([['win32', 'win'], ['darwin', 'mac'], ['linux', 'linux']]);
 
@@ -46,9 +49,14 @@ export function langName(lang: string): UsageName | null {
   return (LANGUAGES as readonly string[]).includes(lang) ? (`lang.${lang}` as UsageName) : null;
 }
 
+/** Level 2: a run was started (docs/USAGE.md says when). Any other kind builds nothing. */
+export function runName(kind: string): UsageName | null {
+  return (RUN_KINDS as readonly string[]).includes(kind) ? (`run.${kind}` as UsageName) : null;
+}
+
 /** The level of a name, or null for anything that is not a name built here (the sender sends nothing for it) */
 export function levelOf(name: string): UsageLevel | null {
   if (APP_NAME.test(name)) return 1;
-  if (LANG_NAME.test(name)) return 2;
+  if (LANG_NAME.test(name) || RUN_NAME.test(name)) return 2;
   return null;
 }
