@@ -15,6 +15,9 @@ identifying is ever part of one. A test (`tests/usage-docs.test.ts`) keeps the l
 - A request that fails, is blocked or never answers changes nothing.
 - Your IP address reaches the counting service, as with every website. It is not stored or linked by the app, and the app
   links no two events of a person.
+  What the service does with it is GoatCounter's own statement, not the app's: its [privacy page](https://www.goatcounter.com/privacy)
+  (read 8 June 2025, checked again at every release) says that it does not store IP addresses, and that is what the small print
+  on the product page repeats.
 
 ## Levels
 
@@ -27,6 +30,9 @@ identifying is ever part of one. A test (`tests/usage-docs.test.ts`) keeps the l
 The two switches are the only thing stored for the counts: `walkflow.usageImprove` and `walkflow.usageErrors`, where
 absent means on and `0` means off. The switches come to the settings with a later version; until then levels 2 and 3 count
 as on.
+
+The small print on the product page says that the switches exist. It is built in only with `WALKFLOW_USAGE`, so the official
+build is switched on (walkflow#85) only after the switches are in the settings (walkflow#76); nothing before that says it.
 
 ## Names
 
