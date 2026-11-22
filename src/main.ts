@@ -4,7 +4,10 @@ import { desktop, setupDesktop } from './ui/desktop';
 import type { TcxSport } from './core/history/export';
 import { setupExportControls } from './ui/history/export-controls';
 import { setupHistory } from './ui/history/history';
-import { onLanguageChange, retranslate, t, type Text } from './i18n/i18n';
+import { lang, onLanguageChange, retranslate, t, type Text } from './i18n/i18n';
+import { appStartName, langName } from './core/usage/events';
+import { count } from './ui/usage';
+import { APP_VERSION, BUILD_TARGET } from './platform/config';
 import { bindText, clearText, initLanguage } from './ui/i18n-dom';
 import { setupMenu, setupPrefs } from './ui/settings/menus';
 import { setupInterval } from './ui/workouts/interval-ui';
@@ -278,3 +281,9 @@ setupDesktop({
 });
 
 if (!disclaimerAccepted()) void ensureDisclaimer();
+
+// Anonymous usage counts (docs/USAGE.md): the app start and the language. Nothing is sent before the first-start popup is accepted.
+// Without a desktop bridge in the desktop build the platform is unknown and nothing is built. After the popup, so nothing here
+// can come before it.
+count(appStartName(BUILD_TARGET === 'web' ? undefined : (desktop?.platform ?? ''), APP_VERSION));
+count(langName(lang));

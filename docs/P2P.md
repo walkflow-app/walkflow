@@ -189,7 +189,7 @@ What protects what:
 | A device offers something harmful | It is only ever text that goes through the reader of its format, with limits, with no path to the belt, and you confirm before it is saved. The hash does not help here: a hostile device offers the hash of its own file. |
 | A device floods or blocks | The limits per connection and device (see below), a limit of connections, and ignoring those who break a rule. |
 | Who made it | **Not proven.** `author` in a package is free text that anyone can write. Later: signatures of the author (Ed25519 in the browser's crypto) and a list of hashes in a catalogue that is signed by the project, which would mark an item as *verified*. Not part of the first version. |
-| The app itself is tampered with | The content security policy allows connections to the pinned relays only; the library is pinned and in the lock file; nothing is loaded from elsewhere. |
+| The app itself is tampered with | The content security policy allows connections only to the pinned relays (besides the route store and the usage counter of the build, which have no path to sharing); the library is pinned and in the lock file; nothing is loaded from elsewhere. |
 
 What remains, and is said to the person: the devices you are connected to see your IP address, the relays see that you
 connected, and in the community everyone can see what you offer and what you took.

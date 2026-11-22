@@ -5,6 +5,7 @@ import { defineConfig } from 'vitest/config';
 import { buildCsp } from './src/platform/csp.ts';
 import { sharingRelays } from './src/platform/relays.ts';
 import { resolveStoreBase } from './src/platform/store-url.ts';
+import { resolveUsageBase } from './src/platform/usage-url.ts';
 import { mapOrigins, resolveMapStyles } from './src/core/routes/map-config.ts';
 
 const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as { version: string };
@@ -24,7 +25,10 @@ const community = process.env.WALKFLOW_COMMUNITY === 'on';
 // The route store: the route-store repository next to the repository this build is made for (none without one); WALKFLOW_STORE_BASE is for trying it out
 const storeBase = resolveStoreBase(githubRepo, process.env.WALKFLOW_STORE_BASE) ?? '';
 
-const CSP = buildCsp({ mapOrigins: mapStyles ? mapOrigins(mapStyles) : [], relays: sharingRelays(community), store: storeBase || null, header: false });
+// The anonymous usage counts: only with WALKFLOW_USAGE (https://<code>.goatcounter.com); empty: nothing is ever sent
+const usageBase = resolveUsageBase(githubRepo, process.env.WALKFLOW_USAGE) ?? '';
+
+const CSP = buildCsp({ mapOrigins: mapStyles ? mapOrigins(mapStyles) : [], relays: sharingRelays(community), store: storeBase || null, usage: usageBase || null, header: false });
 
 function csp(): Plugin {
   return {
@@ -52,6 +56,7 @@ export default defineConfig({
     __MAP_STYLES__: JSON.stringify(mapStyles),
     __COMMUNITY__: JSON.stringify(community),
     __STORE_BASE__: JSON.stringify(storeBase),
+    __USAGE_BASE__: JSON.stringify(usageBase),
   },
   // The map chunk is large on purpose: it is loaded only when the map is switched on
   build: {

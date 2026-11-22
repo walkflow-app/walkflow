@@ -42,6 +42,26 @@ describe('isAllowedRequest (the desktop app blocks every other request)', () => 
   });
 });
 
+describe('the usage counter', () => {
+  const usage = 'https://walkflow.goatcounter.com';
+
+  it('allows /count of the counter, with its query, and nothing else of that host', () => {
+    expect(allowed(`${usage}/count?p=lang.en&t=lang.en&e=true`)).toBe(false);
+    expect(allowed(`${usage}/count?p=lang.en&t=lang.en&e=true`, { usage })).toBe(true);
+    expect(allowed(`${usage}/count`, { usage })).toBe(true);
+    expect(allowed(`${usage}/api/v0/stats/hits`, { usage })).toBe(false);
+    expect(allowed(`${usage}/counter`, { usage })).toBe(false);
+    expect(allowed(`${usage}/count/x`, { usage })).toBe(false);
+    expect(allowed(`${usage}/`, { usage })).toBe(false);
+  });
+
+  it('does not allow a host that only starts the same way', () => {
+    expect(allowed('https://walkflow.goatcounter.com-evil.example/count?p=x', { usage })).toBe(false);
+    expect(allowed('https://walkflow.goatcounter.com.evil.example/count', { usage })).toBe(false);
+    expect(allowed('https://evil.example/https://walkflow.goatcounter.com/count', { usage })).toBe(false);
+  });
+});
+
 describe('the route store', () => {
   const store = 'https://raw.githubusercontent.com/walkflow-app/route-store/main';
 
