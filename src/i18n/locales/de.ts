@@ -593,6 +593,7 @@ export const de: Messages = {
     hint: 'Set Speed (`02 …`) wird blockiert, wenn er über dem Limit liegt, größer als die maximale Änderung ist oder zu kurz nach dem letzten Speed-Befehl kommt. Start (`07`) nur mit Bestätigung, Set Target Heart Rate (`06`) gar nicht. Alles andere geht roh raus.',
     invalidHex: '❌ Ungültige Hex-Bytes',
     stopped: 'Gestoppt (Konsole)',
+    badBytes: 'Ein Befehl braucht 1 bis 512 Bytes mit Werten von 0 bis 255, blockiert',
     setSpeedLength: 'Set Speed braucht genau 3 Bytes (02 LSB MSB), blockiert',
     overLimit: (kmh: number, max: number) => `${n(kmh)} km/h liegt über dem Limit (${n(max)}), blockiert`,
     jump: (from: number, to: number, maxStep: number) =>
