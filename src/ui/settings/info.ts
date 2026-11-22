@@ -4,7 +4,10 @@
 import { t } from '../../i18n/i18n';
 import { BUILD_TARGET, GITHUB_REPO, APP_VERSION } from '../../platform/config';
 import { DONATION_URL } from '../../platform/donation';
-import { $ } from '../ui';
+import { USAGE_BASE } from '../../platform/features';
+import { store } from '../store';
+import { $, $input } from '../ui';
+import { readUsageSwitch, USAGE_SWITCH_KEYS, usageSection, writeUsageSwitch } from './usage-switch';
 
 export function renderInfo() {
   const ul = $('infoDisclaimer');
@@ -13,6 +16,8 @@ export function renderInfo() {
     li.textContent = text;
     return li;
   }));
+  $('infoDisclaimerUsage').textContent = t.disclaimer.usage;
+  renderUsage();
   $('infoTested').textContent = t.info.tested(t.info.testedDevice, t.info.testedFeatures, t.info.untestedFeatures);
   $('infoAffiliation').textContent = t.info.notAffiliated;
   $('infoVersion').textContent = t.info.version(APP_VERSION);
@@ -28,6 +33,22 @@ export function renderInfo() {
   const support = $<HTMLAnchorElement>('supportLink');
   support.href = DONATION_URL;
   $('footerLinks').replaceChildren(...links.flatMap((a, i) => (i ? [' · ', a] : [a])));
+}
+
+/** The section "Usage data": without a counter in the build it says so and shows no switches (docs/USAGE.md) */
+function renderUsage() {
+  const section = usageSection(USAGE_BASE);
+  $('infoUsageNone').hidden = !!section;
+  $('infoUsageBody').hidden = !section;
+  if (!section) return;
+  $('infoUsageWhere').textContent = t.info.usageWhere(section.host);
+  $('infoUsageDocs').replaceChildren(...(GITHUB_REPO
+    ? [link(`https://github.com/${GITHUB_REPO}/blob/main/docs/USAGE.md`, t.info.usageList)] : []));
+  for (const [id, key] of [['usageImproveSwitch', USAGE_SWITCH_KEYS.improve], ['usageErrorsSwitch', USAGE_SWITCH_KEYS.errors]] as const) {
+    const input = $input(id);
+    input.checked = readUsageSwitch(store, key);
+    input.onchange = () => writeUsageSwitch(store, key, input.checked);
+  }
 }
 
 function link(href: string, text: string) {

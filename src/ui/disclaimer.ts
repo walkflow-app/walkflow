@@ -13,6 +13,8 @@ export async function ensureDisclaimer(): Promise<boolean> {
   const r = await choose(() => ({
     title: t.disclaimer.title,
     list: t.disclaimer.points,
+    // The notice of the anonymous usage counts (docs/USAGE.md), apart from the safety points
+    footnotes: [t.disclaimer.usage],
     requireCheckbox: t.disclaimer.checkbox,
     buttons: [{ id: 'ok', label: t.disclaimer.accept, kind: 'primary' }, { id: 'later', label: t.disclaimer.later }],
     cancelId: 'later',
