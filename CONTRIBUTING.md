@@ -94,7 +94,10 @@ takes a pull request to `main` without a maintainer. The rules are in `scripts/a
   other fix is reviewed again. A pull request with changes requested by a person is left alone.
 - The fix agent works without a write token and hands over a patch; the app *walkflow-writer* pushes it after checking what it
   changes. A pull request `claude.yml` opened (with the workflow token, which starts no workflow) gets one empty commit by the
-  app, which starts CI and the review; the agent in `claude.yml` never gets the app's token.
+  app, which starts CI and the review; the agent in `claude.yml` never gets the app's token. The same goes for the release
+  pull request and for one labelled `needs-maintainer` (the maintainer cannot merge without the checks), as long as `test`
+  and `safety-gate` do not exist for its head: other workflows such as CodeQL do not count. A head that already is that
+  empty commit is not kicked again; if the checks still do not come, a person looks.
 - **Safety changes** (`src/core/safety/`, `src/ui/live/`, `src/core/training/`, Bluetooth devices, `src/main.ts`, a new
   `ftms-treadmill` version) are reviewed by Opus and Sonnet, merged only when both say `OK` and on top of the current `main`,
   and get the label `needs-hardware`.
