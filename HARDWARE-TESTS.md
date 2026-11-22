@@ -3,6 +3,9 @@
 Things that can only be checked on the real treadmill. Record the results here (date, firmware, what the log said).
 Always: safety key inserted, low speed, start while standing on the side rails.
 
+An agent can prepare a session (skill `hardware-check`, mode C, with `scripts/hardware-session.mjs`): it starts the right
+build in a Chrome of its own, follows the log, and gives you the steps; nothing to copy or paste.
+
 Log lines below are quoted in English. Either switch the app to English (language picker at the top right) to compare them word for word, or compare the hex bytes, which are the same in every language.
 
 ## Results so far: Sportstech sPad 500, desktop app on macOS, 2026-11-09 (BLE module FITHOME JJ-BT2-DL, HW 2.0, FW 1.023)

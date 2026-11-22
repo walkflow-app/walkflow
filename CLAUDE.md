@@ -70,7 +70,8 @@ npm run dev                                     # Demo (no treadmill) in the con
   the other way round; when that is unclear, Opus for safety code, Bluetooth, sharing, the library version or big changes,
   else Sonnet. On GitHub `.github/scripts/review-model.sh` picks it the same way, from the Co-Authored-By lines of the
   commits.
-- **Treadmill checks**: skill `hardware-check` writes them into HARDWARE-TESTS.md, and reads a log the maintainer pastes.
+- **Treadmill checks**: skill `hardware-check` writes them into HARDWARE-TESTS.md, reads a log the maintainer pastes, and
+  prepares a guided session at the treadmill (mode C: the build running, the log followed, the steps).
 - **Website**: agent `site-editor`.
 - **"release"**: skill `release` (the whole chain, publishing included; it stops before publishing safety changes).
 - **Agent pipeline** (`AGENT_PIPELINE` = `on`, CONTRIBUTING.md → *Agents on GitHub*): agents review, fix and merge pull
