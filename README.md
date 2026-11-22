@@ -186,7 +186,7 @@ A breaking change is marked with `!` (`feat!: …`) or a `BREAKING CHANGE:` foot
 
 Releasing ([release-please](https://github.com/googleapis/release-please), config in `release-please-config.json`, last released version in `.release-please-manifest.json`):
 
-1. On every push to `main`, release-please keeps a pull request “chore: release x.y.z” up to date with the next version (in `package.json`) and `CHANGELOG.md`. It is created with the workflow token, so no CI run shows on it; CI runs on `main` after merging.
+1. On every push to `main`, release-please keeps a pull request “chore: release x.y.z” up to date with the next version (in `package.json`) and `CHANGELOG.md`. It is created with the workflow token, which starts no workflow, so `test` and `safety-gate` do not run on it by themselves: with the agent pipeline on, an empty commit of the app starts them within 15 minutes (see CONTRIBUTING.md, *Agents on GitHub*); otherwise close and reopen the pull request.
 2. Merging it creates the tag `vx.y.z` and a **draft release** with the changelog. The desktop app for Windows and Linux is built and attached with checksums. macOS is left out for now (not notarized, see [Desktop app](#desktop-app)).
 3. Check the changed areas on the treadmill (`HARDWARE-TESTS.md`), then publish the draft by hand. Only published releases reach the update notice of the desktop app. Publishing also rebuilds and deploys the site (see [GitHub Pages](#github-pages)).
 
