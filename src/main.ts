@@ -9,6 +9,7 @@ import { bindText, clearText, initLanguage } from './ui/i18n-dom';
 import { setupMenu, setupPrefs } from './ui/settings/menus';
 import { setupInterval } from './ui/workouts/interval-ui';
 import { ProgramRunner } from './core/training/program';
+import { settingsLocked } from './core/safety/settings-lock';
 import { setupPwa } from './ui/pwa';
 import { setupInstall } from './ui/install';
 import { COMMUNITY_ENABLED, STORE_BASE } from './platform/features';
@@ -67,7 +68,8 @@ const history = setupHistory({
 });
 const recorder = history.recorder;
 const interval = setupInterval();
-const settings = setupSettings();
+// The lock closed the dialog: the limit and step fields show what is in force again, not a value typed into them
+const settings = setupSettings(() => speed.relabel());
 settings.onDevMode(on => desktop?.setDevMode(on));
 // The speed controls and the stored limits; the treadmill caps and ramps every speed
 const speed = setupSpeedControls({
@@ -177,8 +179,8 @@ const live = setupLiveData({
   redrawChart: readout.redrawChart,
 });
 
-// The settings are locked while the belt runs (the dialog itself checks this when it opens)
-const renderSettingsLock = () => settings.setLocked(tm.state.connected && tm.state.maybeRunning);
+// The settings are locked while the belt runs, and closed if open (the dialog itself checks this when it opens)
+const renderSettingsLock = () => settings.setLocked(settingsLocked(tm.state));
 
 const connection = setupConnection({
   tm, banner, runner, speed, incline, background, recorder, live, now,

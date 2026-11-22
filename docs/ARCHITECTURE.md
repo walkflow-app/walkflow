@@ -14,7 +14,7 @@ src/
   i18n/               texts per language, language choice, units (km/h or mph)
   core/               pure logic: no DOM, no storage, no network
     safety/             the app's side of safety: the stored limit and step (format, confirmation above 6 km/h), the
-                        disclaimer, quiet and developer mode, speed presets, incline levels
+                        disclaimer, quiet and developer mode, the settings lock, speed presets, incline levels
     training/           workouts, the program runner, step panel logic, what the training view is about
     routes/             routes, GPX, route packages, the texts of a route, countries, map settings
     store/              the route store: its index (strict reading, entries from package files, filter) and the check of a download
