@@ -60,7 +60,6 @@ export function setupConnection(host: ConnectionHost) {
   async function connect(kind: 'ble' | 'demo') {
     if (connected() || connecting || !(await ensureDisclaimer())) return;
     connecting = true;
-    loss.lost(); // forget a disconnect of the person that was never followed by the event
     $button('connect').disabled = true;
     $button('demo').disabled = true;
     try {
@@ -72,6 +71,7 @@ export function setupConnection(host: ConnectionHost) {
       host.incline.reset();
       // Connects, reads the treadmill and asks for control
       const info = await tm.connect(adapter);
+      loss.connected();
 
       host.incline.onConnected(info, source === 'ble');
       host.renderStats();
@@ -109,7 +109,7 @@ export function setupConnection(host: ConnectionHost) {
   /** The treadmill has already forgotten the belt; the page follows */
   function onDisconnected(wasRunning: boolean) {
     log(t.disconnect.log);
-    if (loss.lost()) countError('connection-lost');
+    const lost = loss.lost();
     host.runner.abort(() => t.disconnect.programEnded);
     host.background.releaseWakeLock();
     desktop?.connectionChanged(false);
@@ -125,6 +125,8 @@ export function setupConnection(host: ConnectionHost) {
       log(t.disconnect.lostWhileRunning);
     }
     host.recorder.finish();
+    // Last, so that nothing of the stop and the alarm above can wait for a count
+    if (lost) countError('connection-lost');
   }
 
   async function disconnectClicked() {

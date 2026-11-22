@@ -51,15 +51,28 @@ describe('connectErrorKind', () => {
 });
 
 describe('the loss tracker', () => {
-  it('a loss the person did not cause is a loss', () => {
+  it('a connection that was up and ended without the person is a loss, once', () => {
     const t = createLossTracker();
+    t.connected();
     expect(t.lost()).toBe(true);
+    expect(t.lost()).toBe(false);
   });
 
-  it("the person's own disconnect is not a loss, and only once", () => {
+  it("the person's own disconnect is not a loss", () => {
     const t = createLossTracker();
+    t.connected();
     t.personDisconnects();
     expect(t.lost()).toBe(false);
+  });
+
+  it('a disconnect without a successful connect (the library cleans up after a failed connect) is not a loss', () => {
+    expect(createLossTracker().lost()).toBe(false);
+  });
+
+  it('a stale disconnect of the person does not hide the loss of the next connection', () => {
+    const t = createLossTracker();
+    t.personDisconnects();
+    t.connected();
     expect(t.lost()).toBe(true);
   });
 });

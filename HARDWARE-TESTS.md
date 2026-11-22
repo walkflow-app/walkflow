@@ -47,6 +47,7 @@ If the treadmill sends different status bytes or none at all, please note the he
 - [x] **Countdown.** *sPad 500: about 3 s.* How long does the treadmill count down after start? The program waits 4.5 s before setting the first speed.
 - [ ] **Program transitions.** Program `0.5 2` / `0.5 3` / `0.5 2`. Changes at the right time? Cancel a program with the stop button on the device: does it end (status under the speed or `Belt stopped, program ended`)?
 - [ ] **Reconnecting.** Disconnect, connect again: `← Request Control: OK` and live values again?
+- [ ] **Error counts (level 3, docs/USAGE.md).** Use a build with `WALKFLOW_USAGE` set and Settings → General → Developer mode on. Connect, then switch the treadmill off (belt standing): the log shows the usual lost-connection lines, then `usage: error.connection-lost.v<version>`. Connect again and press Disconnect: no `usage: error.connection-lost` line. Cancel the device chooser: `usage: error.connect-failed.v<version>`, and no `error.connection-lost`. With `walkflow.usageErrors` set to `0` (devtools → Local Storage): no `usage: error.` line at all. In every case the alarm, the log lines and the belt behave exactly as before.
 - [ ] **Connection loss** (the dangerous assumption). At 2 km/h, standing on the side rails, turn off Bluetooth on the computer. Does the belt keep running, does it stop, after how long? Record the result here and in the project description. The app shows the warning in any case.
 
 Result connection loss: *(still open)*

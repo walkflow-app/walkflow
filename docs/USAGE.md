@@ -45,8 +45,9 @@ Level 3, `error.<kind>.v<x.y.z>`: this known error, in this app version, and not
 the cause stays in the log, which the person may copy into an issue). The kinds (`src/core/usage/errors.ts`). From the
 treadmill library, mapped in `src/ui/live/error-kinds.ts`: the notices `features-unreadable`, `speed-range-unreadable`,
 `write-failed`, `start-speed-failed`, `speed-refused`, and the errors `no-gatt`, `not-connected`, `write-timeout`. The app's own:
-`connect-failed` (connecting failed without a library code), `connection-lost` (the connection ended and the person did not
-press Disconnect), `map-style`, `file-read`, `store-add`, `update-failed`. And `unexpected`: an exception nobody caught
+`connect-failed` (connecting failed without a library code; also when the person closes the device chooser),
+`connection-lost` (a connection that was up ended and the person did not press Disconnect), and `map-style`, `file-read`,
+`store-add`, `update-failed`, which are listed already but only sent from a later version. And `unexpected`: an exception nobody caught
 (`error` and `unhandledrejection` of the window).
 
 - `error.features-unreadable.v<x.y.z>`

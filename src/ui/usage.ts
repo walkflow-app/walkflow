@@ -6,7 +6,7 @@
 import { DISCLAIMER_STORAGE_KEY, isDisclaimerAccepted } from '../core/safety/disclaimer';
 import { DEV_MODE_STORAGE_KEY, readDevMode } from '../core/safety/dev-mode';
 import { errorName, type ErrorKind } from '../core/usage/errors';
-import { levelOf,USAGE_ERRORS_KEY, USAGE_IMPROVE_KEY, usageSwitchOn, type UsageLevel, type UsageName } from '../core/usage/events';
+import { levelOf, USAGE_ERRORS_KEY, USAGE_IMPROVE_KEY, usageSwitchOn, type UsageLevel, type UsageName } from '../core/usage/events';
 import { APP_VERSION } from '../platform/config';
 import { USAGE_BASE } from '../platform/features';
 import { usageCountUrl } from '../platform/usage-url';

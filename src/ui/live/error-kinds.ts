@@ -51,15 +51,20 @@ export function connectErrorKind(e: unknown): ErrorKind {
 }
 
 /**
- * Tells a connection that was lost from one the person ended: the module calls `personDisconnects()` just before it calls
- * `tm.disconnect`, and `lost()` in the handler of the disconnect event is true only when it was not that.
+ * Tells a connection that was lost from one the person ended, and from a connect that failed on the way (the library
+ * disconnects then too). `connected()` is called when `tm.connect` has succeeded; `personDisconnects()` just before the module
+ * calls `tm.disconnect`; `lost()` in the handler of the disconnect event is true only for a connection that was up and that the
+ * person did not end. It disarms, so each connection is judged once.
  */
-export function createLossTracker(): { personDisconnects(): void; lost(): boolean } {
+export function createLossTracker(): { connected(): void; personDisconnects(): void; lost(): boolean } {
+  let up = false;
   let byPerson = false;
   return {
+    connected() { up = true; byPerson = false; },
     personDisconnects() { byPerson = true; },
     lost() {
-      const lost = !byPerson;
+      const lost = up && !byPerson;
+      up = false;
       byPerson = false;
       return lost;
     },
