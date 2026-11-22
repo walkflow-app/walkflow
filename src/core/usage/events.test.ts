@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { STORE_FILE_NAME } from '../routes/routes';
 import { appStartName, featureName, FIXED_NAMES, langName, levelOf, PATTERNS, storeRouteName, usageSwitchOn, viewName } from './events';
 
 describe('appStartName (level 1)', () => {
@@ -90,5 +91,14 @@ describe('level 2 names of the views, editors, exports and the store', () => {
 
   it('knows no other store.route name than a plain file name', () => {
     for (const s of ['store.route.', 'store.route.A', 'store.route.a b', 'store.route.a&p=1', 'store.route.a/b', 'store.other']) expect(levelOf(s), s).toBeNull();
+  });
+});
+
+describe('the store file names', () => {
+  it('are the same ones the route store accepts, so no store route silently stops being counted', () => {
+    for (const file of ['lake-x.walkflow', 'alps.v2.walkflow', 'a.walkflow', '0lake.walkflow', 'x_y-z.walkflow', `${'a'.repeat(81)}.walkflow`,
+      `${'a'.repeat(82)}.walkflow`, '.walkflow', '-x.walkflow', 'Lake.walkflow', 'lake.WALKFLOW', 'lake x.walkflow', 'lake.json', 'a/b.walkflow']) {
+      expect(storeRouteName(file, [file]) !== null, file).toBe(STORE_FILE_NAME.test(file));
+    }
   });
 });

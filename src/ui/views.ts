@@ -32,8 +32,9 @@ export function setupViews(onChange: (v: View) => void) {
     }
     if (current !== null && current !== v) window.scrollTo({ top: 0 });
     current = v;
-    countView(v);
     onChange(v);
+    // After onChange, which places the Stop bar: a count can never be in the way of it
+    countView(v);
   };
   window.addEventListener('hashchange', apply);
   apply();
