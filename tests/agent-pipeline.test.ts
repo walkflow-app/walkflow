@@ -37,7 +37,7 @@ interface State {
   mergedToday: number;
   headAgeHours: number;
   failedFixes: number;
-  anyRun: boolean;
+  headKicked: boolean;
 }
 
 /** A pull request that is reviewed OK, green and mergeable; each test changes one thing */
@@ -62,7 +62,7 @@ function state(change: (s: State) => void = () => {}) {
     mergedToday: 0,
     headAgeHours: 1,
     failedFixes: 0,
-    anyRun: true,
+    headKicked: false,
   };
   change(s);
   return decide(s);
@@ -134,7 +134,7 @@ describe('agent pipeline: what happens next', () => {
     expect(state(s => { s.pr.headRepo = 'someone/walkflow'; }).action).toBe('skip');
     expect(state(s => { s.pr.headRef = 'release-please--branches--main'; }).action).toBe('skip');
     // The release pull request only gets its checks started, it is never merged by an agent
-    expect(state(s => { s.pr.headRef = 'release-please--branches--main'; s.pr.author = { login: 'github-actions[bot]', type: 'Bot' }; s.anyRun = false; }).action).toBe('kick');
+    expect(state(s => { s.pr.headRef = 'release-please--branches--main'; s.pr.author = { login: 'github-actions[bot]', type: 'Bot' }; s.checks = {}; }).action).toBe('kick');
     expect(state(s => { s.pr.headRef = 'release-please--branches--main'; s.pr.author = { login: 'github-actions[bot]', type: 'Bot' }; }).action).toBe('skip');
     expect(state(s => { s.pr.headRef = 'dependabot/npm_and_yarn/x'; }).action).toBe('skip');
     expect(state(s => { s.pr.authorAssociation = 'CONTRIBUTOR'; }).action).toBe('skip');
@@ -163,11 +163,44 @@ describe('agent pipeline: what happens next', () => {
 
   it('starts the checks of a pull request claude.yml opened with the workflow token', () => {
     const fromClaude = (change: (s: State) => void = () => {}) => state(s => {
-      s.pr.author = { login: 'github-actions[bot]', type: 'Bot' }; s.pr.headRef = 'claude/issue-12'; s.anyRun = false; change(s);
+      s.pr.author = { login: 'github-actions[bot]', type: 'Bot' }; s.pr.headRef = 'claude/issue-12'; s.checks = {}; change(s);
     });
     expect(fromClaude()).toMatchObject({ action: 'kick', sha: HEAD });
-    expect(fromClaude(s => { s.anyRun = true; }).action).toBe('merge');
+    expect(fromClaude(s => { s.checks = { test: 'success', 'safety-gate': 'success' }; }).action).toBe('merge');
     expect(fromClaude(s => { s.pr.headRef = 'other'; }).action).toBe('skip');
+  });
+
+  it('kicks when the required checks are missing, whatever other workflows ran, and once one has started it waits', () => {
+    const fromClaude = (change: (s: State) => void) => state(s => {
+      s.pr.author = { login: 'github-actions[bot]', type: 'Bot' }; s.pr.headRef = 'claude/issue-12'; s.checks = {}; change(s);
+    });
+    // CodeQL and the like are not in `checks`, which holds only the required ones: the old test asked "did any workflow run"
+    expect(fromClaude(() => {}).action).toBe('kick');
+    expect(fromClaude(s => { s.checks = { test: 'pending' }; }).action).toBe('wait');
+    expect(fromClaude(s => { s.checks = { 'safety-gate': 'success' }; s.reviews = []; }).action).toBe('wait');
+  });
+
+  it('never kicks the same head twice: a kick that started nothing is left for a person', () => {
+    const fromClaude = (change: (s: State) => void) => state(s => {
+      s.pr.author = { login: 'github-actions[bot]', type: 'Bot' }; s.pr.headRef = 'claude/issue-12'; s.checks = {}; s.headKicked = true; change(s);
+    });
+    expect(fromClaude(() => {}).action).toBe('hold');
+    expect(fromClaude(s => { s.pr.labels = ['needs-maintainer']; }).action).toBe('skip');
+    expect(state(s => { s.pr.headRef = 'release-please--branches--main'; s.pr.author = { login: 'github-actions[bot]', type: 'Bot' }; s.checks = {}; s.headKicked = true; }).action).toBe('skip');
+  });
+
+  it('starts the checks of a pull request labelled for the maintainer too: he cannot merge without them', () => {
+    const labelled = (change: (s: State) => void = () => {}) => state(s => {
+      s.pr.author = { login: 'github-actions[bot]', type: 'Bot' }; s.pr.headRef = 'claude/issue-12'; s.pr.labels = ['needs-maintainer']; s.checks = {}; change(s);
+    });
+    expect(labelled()).toMatchObject({ action: 'kick', sha: HEAD });
+    // With the checks started it stays the maintainer's, and it is never merged
+    expect(labelled(s => { s.checks = { test: 'success', 'safety-gate': 'success' }; }).action).toBe('skip');
+    // 'hold' means leave it alone; a branch that is not claude/, a person's pull request and an outsider's issue are not touched
+    expect(labelled(s => { s.pr.labels = ['hold']; }).action).toBe('skip');
+    expect(labelled(s => { s.pr.headRef = 'other'; }).action).toBe('skip');
+    expect(labelled(s => { s.pr.author = { login: 'someone', type: 'User' }; }).action).toBe('skip');
+    expect(labelled(s => { s.issueAuthors = ['NONE']; }).action).toBe('skip');
   });
 
   it('counts only reviews of the reviewer app on the head commit', () => {

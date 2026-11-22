@@ -17,6 +17,8 @@ import { pathToFileURL } from 'node:url';
 export const WRITER = 'walkflow-writer[bot]';
 export const REVIEWER = 'walkflow-reviewer[bot]';
 export const REQUIRED_CHECKS = ['test', 'safety-gate'];
+/** The message of the empty commit that starts the checks of a pull request made with the workflow token */
+const KICK_MESSAGE = 'ci: start the checks (agent pipeline)';
 export const LIMITS = { reviews: 4, mergesPerDay: 5, unreviewedLines: 30, staleHours: 6 };
 const MEMBERS = new Set(['OWNER', 'MEMBER', 'COLLABORATOR']);
 const VERDICTS = ['OK', 'OK with remarks', 'changes needed', 'blocking'];
@@ -96,13 +98,22 @@ export function decide(s) {
   if (!s.pipeline) return out('skip', 'AGENT_PIPELINE is not on');
   if (pr.draft) return out('skip', 'draft');
   if (pr.headRepo !== pr.repo) return out('skip', 'from a fork');
+  // A pull request made with the workflow token starts no workflow, so `test` and `safety-gate` never come and `main` cannot
+  // take it. The test is whether the required checks exist, not whether any workflow ran: CodeQL starts anyway. A head that
+  // is already our kick commit is not kicked again: if the checks did not start after it, a person has to look.
+  const needsChecks = pr.author.login === 'github-actions[bot]' && !REQUIRED_CHECKS.some(n => n in s.checks) && !s.headKicked;
   // The release pull request is the maintainer's to merge, but it needs its checks to be mergeable at all: release-please
-  // makes it with the workflow token, which starts no workflow
+  // makes it with the workflow token
   if (pr.headRef.startsWith('release-please--'))
-    return pr.author.login === 'github-actions[bot]' && !s.anyRun ? out('kick', 'the release pull request has no checks yet', { sha: pr.headSha })
-      : out('skip', 'release pull request');
+    return needsChecks ? out('kick', 'the release pull request has no checks yet', { sha: pr.headSha }) : out('skip', 'release pull request');
   if (pr.headRef.startsWith('dependabot/')) return out('skip', 'Dependabot pull request');
-  if (pr.labels.includes('hold') || pr.labels.includes('needs-maintainer')) return out('skip', 'labelled for the maintainer');
+  if (pr.labels.includes('hold')) return out('skip', 'labelled for the maintainer');
+  // Also what is labelled for the maintainer gets its checks (he cannot merge without them), but nothing else: the same
+  // rules as below for whose pull request it may be
+  if (pr.labels.includes('needs-maintainer'))
+    return needsChecks && agentPr(pr) && !s.issueAuthors.some(a => !MEMBERS.has(a))
+      ? out('kick', 'it has no checks yet, and the maintainer cannot merge without them', { sha: pr.headSha })
+      : out('skip', 'labelled for the maintainer');
   if (pr.author.type === 'Bot' && !agentPr(pr)) return out('skip', `opened by ${pr.author.login}`);
   if (pr.author.type !== 'Bot' && !MEMBERS.has(pr.authorAssociation)) return out('skip', 'author outside the organisation');
   if (agentPr(pr) && s.issueAuthors.some(a => !MEMBERS.has(a)))
@@ -112,7 +123,9 @@ export function decide(s) {
   if (s.running.fix) return out('wait', 'a fix is running');
   if (s.humanChangesRequested) return out('skip', 'a person requested changes');
   // A pull request claude.yml opened with the workflow token started no workflow: one empty commit by the app starts them
-  if (pr.author.login === 'github-actions[bot]' && !s.anyRun) return out('kick', 'no checks ran yet', { sha: pr.headSha });
+  if (needsChecks) return out('kick', 'no checks ran yet', { sha: pr.headSha });
+  if (pr.author.login === 'github-actions[bot]' && s.headKicked && !REQUIRED_CHECKS.some(n => n in s.checks))
+    return out('hold', 'the checks did not start after the kick');
 
   const reviews = s.reviews.filter(r => r.user === REVIEWER)
     .map(r => ({ ...r, mark: readMarker('agent-review', r.body) }))
@@ -255,7 +268,7 @@ function readState(n, pipeline) {
     holdResetAt: reset,
     mergedToday,
     failedFixes: fixRuns.filter(r => r.status === 'completed' && !['success', 'skipped'].includes(r.conclusion)).length,
-    anyRun: headRuns.length > 0,
+    headKicked: commit.commit.message.startsWith(KICK_MESSAGE),
     // Since the commit was pushed (its first workflow run), not since it was made: a commit can be pushed days later
     headAgeHours: (Date.now() - Math.min(...headRuns.map(r => Date.parse(r.created_at)), headRuns.length ? Infinity : Date.parse(commit.commit.committer.date))) / 3.6e6,
   };
@@ -277,7 +290,7 @@ function act(n, d, s, writer) {
     // An empty commit by the app on the branch: its push starts CI and the review
     const c = api(`repos/${REPO}/git/commits/${d.sha}`);
     const made = JSON.parse(gh(['api', `repos/${REPO}/git/commits`, '--input', '-'], {
-      token: writer, input: JSON.stringify({ message: 'ci: start the checks (agent pipeline)', tree: c.tree.sha, parents: [d.sha] }),
+      token: writer, input: JSON.stringify({ message: KICK_MESSAGE, tree: c.tree.sha, parents: [d.sha] }),
     }));
     gh(['api', '-X', 'PATCH', `repos/${REPO}/git/refs/heads/${s.pr.headRef}`, '-f', `sha=${made.sha}`], { token: writer });
   } else if (d.action === 'fix') {
