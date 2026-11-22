@@ -43,6 +43,9 @@ else {
 function serve(ref, port) {
   let commit = ref;
   if (/^\d+$/.test(ref)) {
+    // npm ci and the build run the pull request's code on this computer: only for branches of this repository
+    const fork = execFileSync('gh', ['pr', 'view', ref, '--json', 'isCrossRepository', '--jq', '.isCrossRepository'], { cwd: repo });
+    if (fork.toString().trim() !== 'false') throw new Error(`#${ref} comes from a fork: read its code first, then serve a branch of your own`);
     run('git', ['fetch', 'origin', `pull/${ref}/head`]);
     commit = 'FETCH_HEAD';
   }
@@ -72,12 +75,15 @@ async function watch(file, debugPort) {
   console.log(`writing to ${file}`);
   out('--- watching');
   let fresh = true;
+  let last = '';
   for (;;) {
     try {
       await follow(debugPort, out, fresh);
       fresh = false;
+      last = '';
     } catch (e) {
-      out(`--- ${e.message}, trying again`);
+      if (e.message !== last) out(`--- ${e.message}, trying again`); // once, not every 2 s
+      last = e.message;
     }
     await new Promise(r => setTimeout(r, 2000));
   }
