@@ -4,16 +4,19 @@
 // Locked while the belt runs: the limit, the ramp and the other safety values are not changed in the middle of a run.
 
 import { confirmDialog } from '../components/dialogs';
+import { lastingDialogStopButton } from '../components/dialog-stop';
 import { t } from '../../i18n/i18n';
 import { DEV_MODE_STORAGE_KEY, readDevMode } from '../../core/safety/dev-mode';
 import { QUIET_STORAGE_KEY, readQuiet } from '../../core/safety/quiet';
+import { lockStep } from '../../core/safety/settings-lock';
 import { $, $button, $input } from '../ui';
 import { store } from '../store';
 
 export type SettingsTab = 'general' | 'safety' | 'treadmill' | 'data' | 'info';
 const TABS: readonly SettingsTab[] = ['general', 'safety', 'treadmill', 'data', 'info'];
 
-export function setupSettings() {
+/** onLockClose: the lock closed the open dialog; fields with a typed value go back to what is in force */
+export function setupSettings(onLockClose: () => void = () => {}) {
   const dlg = $<HTMLDialogElement>('settingsDlg');
   const button = $button('settingsBtn');
   const tabs = new Map(TABS.map(name => [name, $button(`tab-${name}`)] as const));
@@ -68,6 +71,8 @@ export function setupSettings() {
       if (next) { e.preventDefault(); showTab(next, true); }
     };
   }
+  // Stop within reach while the dialog is open: the belt can be started on the treadmill while it is
+  dlg.prepend(lastingDialogStopButton(dlg));
   button.onclick = () => open();
   $button('settingsClose').onclick = () => dlg.close();
   // A click on the backdrop (the dialog element itself; its content fills it)
@@ -77,7 +82,8 @@ export function setupSettings() {
     if (!quietSwitch.checked) { quiet = false; store.set(QUIET_STORAGE_KEY, '0'); applyQuiet(); return; }
     // Switching it on is asked for first; "off" needs no question
     quietSwitch.checked = false;
-    const ok = await confirmDialog(t.settings.quietConfirmTitle, t.settings.quietConfirm, t.settings.quietConfirmOk, 'stop');
+    // Not taken if the belt started while the question was open
+    const ok = await confirmDialog(t.settings.quietConfirmTitle, t.settings.quietConfirm, t.settings.quietConfirmOk, 'stop') && !locked;
     quiet = ok;
     if (ok) store.set(QUIET_STORAGE_KEY, '1');
     applyQuiet();
@@ -87,7 +93,8 @@ export function setupSettings() {
     if (!devSwitch.checked) { devMode = false; store.set(DEV_MODE_STORAGE_KEY, '0'); applyDevMode(); return; }
     // Switching it on is asked for first; "off" needs no question
     devSwitch.checked = false;
-    const ok = await confirmDialog(t.settings.devConfirmTitle, t.settings.devConfirm, t.settings.devConfirmOk, 'stop');
+    // Not taken if the belt started while the question was open
+    const ok = await confirmDialog(t.settings.devConfirmTitle, t.settings.devConfirm, t.settings.devConfirmOk, 'stop') && !locked;
     devMode = ok;
     if (ok) store.set(DEV_MODE_STORAGE_KEY, '1');
     applyDevMode();
@@ -102,8 +109,11 @@ export function setupSettings() {
     open,
     /** The belt runs (or may run): the dialog is locked, and closed if it was open */
     setLocked(on: boolean) {
-      if (on === locked) return;
-      locked = on;
+      const step = lockStep(on, dlg.open);
+      // Closing blurs a field, whose change then fires; speed-controls refuses it while the belt runs
+      if (step.close) { dlg.close(); onLockClose(); }
+      if (step.locked === locked) return;
+      locked = step.locked;
       renderLock();
     },
     /** Quiet mode: no safety notice, no question before a start */

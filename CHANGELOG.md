@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.7.3](https://github.com/walkflow-app/walkflow/compare/v0.7.2...v0.7.3) (2026-11-22)
+
+
+### Safety
+
+* Stop is one press away in every dialog and from every field ([#57](https://github.com/walkflow-app/walkflow/issues/57)) ([8625072](https://github.com/walkflow-app/walkflow/commit/862507279dfdadc6c4fe0aef8bd122d54e0f7995))
+* the settings close when the belt starts, and take no change while it runs ([#55](https://github.com/walkflow-app/walkflow/issues/55)) ([4eddd07](https://github.com/walkflow-app/walkflow/commit/4eddd07c9ec179ee5d46b7f1effc7530b0a0778a))
+
+## [0.7.2](https://github.com/walkflow-app/walkflow/compare/v0.7.1...v0.7.2) (2026-11-16)
+
+
+### Fixes
+
+* **history:** name exported files after the local time ([#61](https://github.com/walkflow-app/walkflow/issues/61)) ([50f46a6](https://github.com/walkflow-app/walkflow/commit/50f46a62300d3d43529629e91474e0bb80250eef))
+* **history:** name the CSV of the current recording after its start ([#62](https://github.com/walkflow-app/walkflow/issues/62)) ([c28c904](https://github.com/walkflow-app/walkflow/commit/c28c9045506698b4a4b9c604788ede20407ccda3))
+
 ## [0.7.1](https://github.com/walkflow-app/walkflow/compare/v0.7.0...v0.7.1) (2026-11-13)
 
 

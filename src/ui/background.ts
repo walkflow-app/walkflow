@@ -31,7 +31,15 @@ export function setupBackground(host: BackgroundHost) {
   const mode = $<HTMLSelectElement>('hiddenMode');
   const saved = store.get(HIDDEN_MODE_KEY);
   if (saved === 'warn' || saved === 'pause') mode.value = saved;
-  mode.onchange = () => store.set(HIDDEN_MODE_KEY, mode.value);
+  mode.onchange = () => {
+    // Not while the belt runs (a select that commits as the locked settings close): back to what was stored
+    if (host.connected() && host.maybeRunning()) {
+      const stored = store.get(HIDDEN_MODE_KEY);
+      mode.value = stored === 'pause' ? 'pause' : 'warn'; // 'warn' is the first option, the default
+      return;
+    }
+    store.set(HIDDEN_MODE_KEY, mode.value);
+  };
 
   async function acquireWakeLock() {
     if (wakeLock && !wakeLock.released) return;
