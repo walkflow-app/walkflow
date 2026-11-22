@@ -1,6 +1,7 @@
 // Two small conveniences, both optional: the download button names the visitor's system and the matching card is marked (on a
 // Mac the web app: there is no macOS app for now),
-// and a first visit from a German browser lands on the German page. Nothing is sent anywhere and nothing is stored.
+// and a first visit from a German browser lands on the German page. This script sends nothing anywhere and stores nothing (the
+// page's anonymous visit count is a plain image at the end of each page, not part of this script).
 (() => {
   const ua = navigator.userAgent;
   const platform = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || '';

@@ -42,7 +42,9 @@ Level 2:
 - `lang.uk`
 
 The platform is `web` for the web build, otherwise the desktop app's system. The version is the app's version, and only a
-plain `x.y.z` (a pre-release sends nothing). The product page will be counted separately, by its own pixel (`site.en`, `site.de`); it is not part of the app.
+plain `x.y.z` (a pre-release sends nothing). The product page is counted separately, by its own pixel (`site.en`, `site.de`: an image without a script or a cookie);
+it is not part of the app. `scripts/build-pages.mjs` fills the pixel's address from `WALKFLOW_USAGE` like the app build
+does; without it the pages carry no pixel and no small print about counting.
 
 ## Never sent
 

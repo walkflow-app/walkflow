@@ -6,11 +6,14 @@
 import { cpSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { build } from 'vite';
+import { resolveUsageBase } from '../src/platform/usage-url.ts';
 import { fillPage, redirectPage, releaseVersion, retiredServiceWorker, siteUrl } from './site-version.mjs';
 
 const out = 'pages';
 const version = releaseVersion(process.env.WALKFLOW_RELEASE || JSON.parse(readFileSync('package.json', 'utf8')).version);
 const site = siteUrl(process.env.SITE_URL || 'https://walkflow-app.github.io');
+// The counter of anonymous usage counts, from the same inputs as the app build; without one the pages carry no pixel and no small print
+const usage = resolveUsageBase(process.env.GITHUB_REPOSITORY ?? '', process.env.WALKFLOW_USAGE) ?? '';
 
 rmSync(out, { recursive: true, force: true });
 await build({ build: { outDir: `${out}/app`, emptyOutDir: true } });
@@ -31,7 +34,7 @@ in its \`src/\`. A ruleset lets only the deploy key push here.
 // The pages and the sitemap of the product page (the web app in app/ is built, not templated)
 const pages = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap(e =>
   e.isDirectory() ? (e.name === 'app' || e.name === 'img' ? [] : pages(join(dir, e.name))) : /\.(html|xml|txt)$/.test(e.name) ? [join(dir, e.name)] : []);
-for (const file of pages(out)) writeFileSync(file, fillPage(readFileSync(file, 'utf8'), { version, site }));
+for (const file of pages(out)) writeFileSync(file, fillPage(readFileSync(file, 'utf8'), { version, site, usage }));
 
 // The former address of the site (the project page of the repository) forwards here
 const old = process.env.OLD_PATH?.replace(/^\/+|\/+$/g, '');

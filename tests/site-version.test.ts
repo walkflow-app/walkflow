@@ -35,6 +35,16 @@ describe('fillPage', () => {
     expect(fillPage('a {{version}} b/{{version}} {{site}}/de/', { version: '0.2.0', site: 'https://x.example/w' })).toBe('a 0.2.0 b/0.2.0 https://x.example/w/de/');
   });
 
+  it('fills {{usage}} and drops only the usage markers when there is a counter address', () => {
+    const v = { version: '0.2.0', site: 'https://x.example', usage: 'https://c.goatcounter.com' };
+    expect(fillPage('a\n<!-- usage -->\n<img src="{{usage}}/count">\n<!-- /usage -->\nb<!-- usage -->*<!-- /usage -->', v)).toBe('a\n<img src="https://c.goatcounter.com/count">\nb*');
+  });
+
+  it('removes everything between the usage markers without a counter address', () => {
+    const v = { version: '0.2.0', site: 'https://x.example' };
+    expect(fillPage('a\n  <!-- usage -->\n  <img src="{{usage}}/count">\n  <!-- /usage -->\nb<!-- usage -->*<!-- /usage -->.', v)).toBe('a\nb.');
+  });
+
   it('fails on any other placeholder left in the page, so a typo is not published', () => {
     const v = { version: '0.2.0', site: 'https://x.example' };
     expect(() => fillPage('{{versoin}}', v)).toThrow(/versoin/);

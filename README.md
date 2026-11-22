@@ -1,6 +1,6 @@
 # Walkflow
 
-Open-source control for treadmills with Bluetooth FTMS (Fitness Machine Service), right in the browser via Web Bluetooth or as a desktop app. No account, no server, no tracking. The app is available in English, German, French and Ukrainian.
+Open-source control for treadmills with Bluetooth FTMS (Fitness Machine Service), right in the browser via Web Bluetooth or as a desktop app. No account, no server, no tracking of people (only anonymous usage counts, see [docs/USAGE.md](docs/USAGE.md)). The app is available in English, German, French and Ukrainian.
 
 **[Product page](https://walkflow-app.github.io/)** · **[Web app](https://walkflow-app.github.io/app/)** · **[Downloads](https://github.com/walkflow-app/walkflow/releases/latest)** · **[Route store](https://github.com/walkflow-app/route-store)**
 
@@ -101,7 +101,7 @@ npm run dev
 
 Community (sharing between devices) is off in the first release. To try it, set `WALKFLOW_COMMUNITY=on` for `npm run dev`, `npm run build`, `npm run electron` or `npm run dist` (`docs/P2P.md`).
 
-The anonymous usage counts ([docs/USAGE.md](docs/USAGE.md)) go to a GoatCounter site that is set when the app is built: `WALKFLOW_USAGE=https://<code>.goatcounter.com` for `npm run dev`, `npm run build`, `npm run electron`, `npm run electron:dev` or `npm run dist` (nothing else is accepted). It has no default for any repository: a build without it, such as a fork or a build from source, sends nothing and the policy allows no connection to a counter. Only `<address>/count` is allowed in the content security policy and the desktop request filter.
+The anonymous usage counts ([docs/USAGE.md](docs/USAGE.md)) go to a GoatCounter site that is set when the app is built: `WALKFLOW_USAGE=https://<code>.goatcounter.com` for `npm run dev`, `npm run build`, `npm run electron`, `npm run electron:dev`, `npm run dist` or `npm run build:pages` (the product page then carries its counting pixel and a small print; without it, neither) (nothing else is accepted). It has no default for any repository: a build without it, such as a fork or a build from source, sends nothing and the policy allows no connection to a counter. Only `<address>/count` is allowed in the content security policy and the desktop request filter.
 
 Without a treadmill: click “Demo (no treadmill)”. The simulator speaks real FTMS bytes and can simulate a connection loss and the safety key.
 
