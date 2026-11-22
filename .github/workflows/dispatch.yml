@@ -1,7 +1,7 @@
 name: Dispatch
 
 # Starts the tasks of features (meta decision 0010, step 6): every open issue here that is a sub-issue of an approved
-# Feature issue, with all its blockers closed and none of the labels safety, needs-maintainer or hold
+# Feature issue, with all its blockers closed and none of the labels needs-maintainer, stuck or hold
 # (scripts/feature-gate.mjs). It sets `agent-ready` as a marker and starts claude.yml with the issue number: a label set
 # with the workflow token starts no workflow. At most three tasks per run. Runs when an issue closes (a blocker may be
 # gone), every hour (a blocker in another repository), and by hand.
