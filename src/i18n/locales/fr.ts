@@ -596,6 +596,7 @@ export const fr: Messages = {
     hint: 'Set Speed (`02 …`) est bloqué s’il dépasse la limite, s’il est supérieur à la variation maximale ou s’il arrive trop tôt après la dernière commande de vitesse. Start (`07`) uniquement après confirmation, Set Target Heart Rate (`06`) jamais. Tout le reste est envoyé tel quel.',
     invalidHex: '❌ Octets hexadécimaux invalides',
     stopped: 'Arrêté (console)',
+    badBytes: 'Une commande nécessite 1 à 512 octets, chacun de 0 à 255, bloquée',
     setSpeedLength: 'Set Speed nécessite exactement 3 octets (02 LSB MSB), bloqué',
     overLimit: (kmh: number, max: number) => `${n(kmh)} km/h dépasse la limite (${n(max)}), bloqué`,
     jump: (from: number, to: number, maxStep: number) =>
