@@ -29,15 +29,18 @@ const STATE = { OK: 'APPROVED', 'OK with remarks': 'COMMENTED', 'changes needed'
 // What reaches the belt (SAFETY: two models, label needs-hardware, a check on the treadmill before the release) and what talks to
 // others (TRUST: two models, no treadmill) are listed in scripts/paths.mjs, shared with the safety gate and review-model.sh
 export { SAFETY, TRUST };
-/** Never merged by an agent: the rules, the gates, the pipeline itself, dependencies, the build, and what CODEOWNERS keeps for
- *  a person. A deny list for the trial; an allow list is the follow-up */
+/** Never merged by an agent: the rules (CLAUDE.md, .claude/, .github/, scripts/), the build and test configuration, dependencies
+ *  until their own rule, and the legal pages: the stop list of meta process/PRINCIPLES.md. A deny list */
 export const PROTECTED = [
-  /^\.github\//, /^\.claude\//, /(^|\/)CLAUDE\.md$/, /^HARDWARE-TESTS\.md$/, /^scripts\//, /^tests\/architecture\.test\.ts$/,
-  /^package(-lock)?\.json$/, /^\.npmrc$/, /^\.nvmrc$/, /^\.node-version$/, /^\.husky\//, /^\.gitignore$/, /^\.gitattributes$/,
-  /^\.oxlintrc\.json$/, /^knip\.json$/, /^tsconfig[^/]*\.json$/, /^vite\.config\.ts$/, /^vitest\.config/, /^index\.html$/, /^build\//,
+  /^\.github\//, /^\.claude\//, /(^|\/)CLAUDE\.md$/, /^scripts\//, /^tests\/architecture\.test\.ts$/,
+  /^package(-lock)?\.json$/, /^\.npmrc$/, /^\.nvmrc$/, /^\.node-version$/, /^\.husky\//,
+  /^\.oxlintrc\.json$/, /^knip\.json$/, /^tsconfig[^/]*\.json$/, /^vite\.config\.ts$/, /^vitest\.config/,
   /^release-please-config\.json$/, /^\.release-please-manifest\.json$/, /^electron-builder\.config\.cjs$/,
   /^public\/legal\//,
 ];
+/** HARDWARE-TESTS.md is ordinary for an agent that adds checks, but only a person checks one off or removes it */
+const CHECKLIST = 'HARDWARE-TESTS.md';
+const CHECK_REMOVED = /^-\s*- \[[ xX]\]/m;
 const TEST = /\.test\.(ts|mjs)$/;
 const CONVENTIONAL = /^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert|safety)(\([^)]+\))?: \S/;
 /** The GitHub API lists at most this many files of a pull request; more and we cannot know what it changes */
@@ -55,7 +58,11 @@ export function classify(files) {
   return {
     safety: all.some(n => SAFETY.some(p => p.test(n))) || files.some(f => f.filename === 'package.json' && LIBRARY_BUMP.test(f.patch ?? '')),
     trust: all.some(n => TRUST.some(p => p.test(n))),
-    protected: files.length >= MAX_FILES ? ['(too many files to check)'] : [...new Set(all.filter(n => PROTECTED.some(p => p.test(n))))],
+    protected: files.length >= MAX_FILES ? ['(too many files to check)'] : [...new Set([
+      ...all.filter(n => PROTECTED.some(p => p.test(n))),
+      // A hardware check removed or ticked off, or a patch too big for the API to show: a person decides
+      ...files.filter(f => names(f).includes(CHECKLIST) && (f.status === 'removed' || f.status === 'renamed' || f.patch === undefined && f.changes > 0 || CHECK_REMOVED.test(f.patch ?? ''))).map(() => CHECKLIST),
+    ])],
     removedTests: files.filter(f => f.status === 'removed' && TEST.test(f.filename)).map(f => f.filename),
     lines: files.reduce((s, f) => s + (f.additions ?? 0) + (f.deletions ?? 0), 0),
   };
@@ -113,18 +120,21 @@ export function decide(s) {
     return needsChecks ? out('kick', 'the release pull request has no checks yet', { sha: pr.headSha }) : out('skip', 'release pull request');
   if (pr.headRef.startsWith('dependabot/')) return out('skip', 'Dependabot pull request');
   if (pr.labels.includes('hold')) return out('skip', 'labelled for the maintainer');
-  // Also what is labelled for the maintainer gets its checks (he cannot merge without them), but nothing else: the same
-  // rules as below for whose pull request it may be
-  if (pr.labels.includes('needs-maintainer'))
+  // Also what is labelled `needs-maintainer` (a stop-list item: the maintainer decides) or `stuck` (the pipeline gave up: the PM
+  // looks) gets its checks (neither can merge without them), but nothing else: the same rules as below for whose pull request it may be
+  const parked = ['needs-maintainer', 'stuck'].find(l => pr.labels.includes(l));
+  if (parked)
     return needsChecks && agentPr(pr) && !s.issueAuthors.some(a => !MEMBERS.has(a))
-      ? out('kick', 'it has no checks yet, and the maintainer cannot merge without them', { sha: pr.headSha })
-      : out('skip', 'labelled for the maintainer');
+      ? out('kick', `it has no checks yet, and nobody can merge it without them`, { sha: pr.headSha })
+      : out('skip', parked === 'stuck' ? 'labelled stuck: the PM looks' : 'labelled for the maintainer');
   if (pr.author.type === 'Bot' && !agentPr(pr)) return out('skip', `opened by ${pr.author.login}`);
   if (pr.author.type !== 'Bot' && !MEMBERS.has(pr.authorAssociation)) return out('skip', 'author outside the organisation');
   if (agentPr(pr) && s.issueAuthors.some(a => !MEMBERS.has(a)))
     return out('hold', 'it closes an issue written by someone outside the organisation');
-  if (files.protected.length) return out('hold', `it changes files only the maintainer merges: ${files.protected.join(', ')}`);
-  if (s.failedFixes > 0) return out('hold', 'a fix run of the agent failed');
+  // The only hold that is the maintainer's: the rules themselves (PROTECTED, meta process/PRINCIPLES.md). Every other hold is `stuck`
+  if (files.protected.length) return out('hold', `it changes the rules themselves, only the maintainer merges: ${files.protected.join(', ')}`, { label: 'needs-maintainer' });
+  // One retry: a failed fix run is tried again, the second one parks the pull request
+  if (s.failedFixes > 1) return out('hold', 'two fix runs of the agent failed');
   if (s.running.fix) return out('wait', 'a fix is running');
   if (s.humanChangesRequested) return out('skip', 'a person requested changes');
   // A pull request claude.yml opened with the workflow token started no workflow: one empty commit by the app starts them
@@ -199,6 +209,9 @@ export function decide(s) {
   return out('merge', 'reviewed, green, up to date', { sha: pr.headSha });
 }
 
+/** The label a hold gets: `needs-maintainer` for the rules themselves (the stop list), `stuck` for everything else (the PM looks) */
+export const holdLabel = d => d.label ?? 'stuck';
+
 /** The models that review a pull request: safety changes by both, otherwise the one review-model.sh chose */
 export const reviewModels = (files, chosen, pipeline) => (pipeline && (c => c.safety || c.trust)(classify(files)) ? ['opus', 'sonnet'] : [chosen]);
 
@@ -237,7 +250,7 @@ function readState(n, pipeline) {
   for (const c of pages(`repos/${REPO}/commits/${head}/check-runs?per_page=100`).flatMap(x => x.check_runs ?? x))
     if (REQUIRED_CHECKS.includes(c.name)) checks[c.name] = c.status === 'completed' ? c.conclusion : 'pending';
   const events = pages(`repos/${REPO}/issues/${n}/events?per_page=100`);
-  const reset = events.findLast(e => e.event === 'unlabeled' && e.label?.name === 'needs-maintainer')?.created_at ?? null;
+  const reset = events.findLast(e => e.event === 'unlabeled' && ['needs-maintainer', 'stuck'].includes(e.label?.name))?.created_at ?? null;
   const lastReviewed = reviews.findLast(r => r.user === REVIEWER && r.commitId !== head)?.commitId;
   let sinceReviewed = null;
   if (lastReviewed) {
@@ -283,13 +296,16 @@ function act(n, d, s, writer) {
   const say = text => gh(['api', `repos/${REPO}/issues/${n}/comments`, '-f', `body=${quiet(text)}`], { token: writer });
   if (d.addLabels.length) gh(['api', `repos/${REPO}/issues/${n}/labels`, ...d.addLabels.flatMap(l => ['-f', `labels[]=${l}`])], { token: writer });
   if (d.action === 'hold') {
-    gh(['api', `repos/${REPO}/issues/${n}/labels`, '-f', 'labels[]=needs-maintainer'], { token: writer });
-    say(`Agent pipeline: this pull request waits for the maintainer: ${d.reason}. Remove the label \`needs-maintainer\` to hand it back to the agents.`);
+    const label = holdLabel(d);
+    gh(['api', `repos/${REPO}/issues/${n}/labels`, '-f', `labels[]=${label}`], { token: writer });
+    say(label === 'stuck'
+      ? `Agent pipeline: stuck: ${d.reason}. The PM looks at it; removing the label \`stuck\` hands it back to the agents.`
+      : `Agent pipeline: this pull request waits for the maintainer (Stop: the rules themselves): ${d.reason}. Remove the label \`needs-maintainer\` to hand it back to the agents.`);
   } else if (d.action === 'update') {
     try {
       gh(['api', '-X', 'PUT', `repos/${REPO}/pulls/${n}/update-branch`, '-f', `expected_head_sha=${d.sha}`], { token: writer });
     } catch (e) {
-      act(n, { ...d, addLabels: [], action: 'hold', reason: `bringing it up to date with main failed (${String(e.stderr ?? e.message).trim().slice(0, 200)})` }, s, writer);
+      act(n, { ...d, addLabels: [], action: 'hold', label: undefined, reason: `bringing it up to date with main failed (${String(e.stderr ?? e.message).trim().slice(0, 200)})` }, s, writer);
     }
   } else if (d.action === 'kick') {
     // An empty commit by the app on the branch: its push starts CI and the review

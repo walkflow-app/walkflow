@@ -92,14 +92,16 @@ takes a pull request to `main` without a maintainer. The rules are in `scripts/a
   `changes needed` and `blocking` request changes. It runs again on every new commit.
 - `agent-pipeline.yml` (after a review, CI or a fix, and every 15 minutes) decides: merge (squash) when the head commit is
   approved, `test` and `safety-gate` are green and there is no conflict; start `agent-fix.yml` for remarks, a failing check or
-  a conflict (one try per commit); or hand over to the maintainer with the label `needs-maintainer` and a comment why. Removing
-  the label hands it back. At most 4 reviewed commits per pull request; past 5 agent merges a day the rest waits for the next
+  a conflict (one try per commit, a failed fix run is tried once more); or park the pull request with a comment why: the label
+  `stuck` (the pipeline gave up; the PM looks) or, only for the rules themselves (`PROTECTED`: `CLAUDE.md`, `.claude/`, `.github/`,
+  `scripts/`, build and test configuration, dependencies, the legal pages, a hardware check removed or ticked off), the label
+  `needs-maintainer`. Removing the label hands it back. At most 4 reviewed commits per pull request; past 5 agent merges a day the rest waits for the next
   day. A small fix of remarks (30 lines, no safety path, no deleted test) is merged without waiting for another review; every
   other fix is reviewed again. A pull request with changes requested by a person is left alone.
 - The fix agent works without a write token and hands over a patch; the app *walkflow-writer* pushes it after checking what it
   changes. A pull request `claude.yml` opened (with the workflow token, which starts no workflow) gets one empty commit by the
   app, which starts CI and the review; the agent in `claude.yml` never gets the app's token. The same goes for the release
-  pull request and for one labelled `needs-maintainer` (the maintainer cannot merge without the checks), as long as `test`
+  pull request and for one labelled `needs-maintainer` or `stuck` (nobody can merge without the checks), as long as `test`
   and `safety-gate` do not exist for its head: other workflows such as CodeQL do not count. A head that already is that
   empty commit is not kicked again; if the checks still do not come, a person looks.
 - **Safety changes** (`src/core/safety/`, `src/ui/live/`, `src/core/training/`, Bluetooth devices, `src/main.ts`, a new
