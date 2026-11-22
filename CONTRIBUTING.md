@@ -81,6 +81,10 @@ with the label `agent-ready` (`.github/workflows/claude.yml`); agents never take
 from forks are not reviewed by agents. A review runs with another model than the one that wrote the change (Opus and Sonnet
 check each other; `.github/scripts/review-model.sh`).
 
+What counts as belt code (`SAFETY`: two reviews by two models, `needs-hardware`, a check on the treadmill before the release) and as
+trust-boundary code (`TRUST`: `src/net/`, `src/core/share/`: two reviews, no treadmill) is listed once, in `scripts/paths.mjs`; the
+safety gate, the pipeline and `review-model.sh` read it.
+
 **The agent pipeline** (repository variable `AGENT_PIPELINE` = `on`; off, the verdict is a comment and a maintainer merges)
 takes a pull request to `main` without a maintainer. The rules are in `scripts/agent-pipeline.mjs` and its tests:
 
