@@ -7,7 +7,7 @@ import {
 } from 'electron';
 import { detectLanguage, isLang, setLanguage, t } from '../src/i18n/i18n';
 import { buildCsp } from '../src/platform/csp';
-import { COMMUNITY_ENABLED, STORE_BASE } from '../src/platform/features';
+import { COMMUNITY_ENABLED, STORE_BASE, USAGE_BASE } from '../src/platform/features';
 import { sharingRelays } from '../src/platform/relays';
 import { isAllowedRequest } from '../src/platform/request-filter';
 import { devToolsAllowed } from '../src/core/safety/dev-mode';
@@ -45,7 +45,7 @@ const background = () => (nativeTheme.shouldUseDarkColors ? BACKGROUND.dark : BA
 const MAP_STYLES = resolveMapStyles(__MAP_STYLE_RAW__, __MAP_STYLE_DARK_RAW__);
 const MAP_ORIGINS = MAP_STYLES ? mapOrigins(MAP_STYLES) : [];
 const RELAYS = sharingRelays(COMMUNITY_ENABLED);
-const CSP = buildCsp({ mapOrigins: MAP_ORIGINS, relays: RELAYS, store: STORE_BASE, header: true });
+const CSP = buildCsp({ mapOrigins: MAP_ORIGINS, relays: RELAYS, store: STORE_BASE, usage: USAGE_BASE, header: true });
 
 /** Allowed permission requests. Everything else (camera, microphone, location, notifications …) is denied. */
 const ALLOWED_PERMISSIONS = new Set(['screen-wake-lock', 'fullscreen']);
@@ -405,9 +405,9 @@ if (!app.requestSingleInstanceLock()) {
       // oxlint-disable-next-line promise/no-callback-in-promise -- Electron's permission callback, which has to be called here
       callback(ok);
     });
-    // No requests to remote hosts from the renderer, except the map servers of this build (only used once the map is on) and the relays for sharing
+    // No requests to remote hosts from the renderer, except the map servers of this build (only used once the map is on) the relays for sharing, the route store and the usage counter's /count
     session.defaultSession.webRequest.onBeforeRequest((details, callback) => {
-      const ok = isAllowedRequest(details.url, { origin: ORIGIN, devOrigin: DEV_ORIGIN, mapOrigins: MAP_ORIGINS, relays: RELAYS, store: STORE_BASE });
+      const ok = isAllowedRequest(details.url, { origin: ORIGIN, devOrigin: DEV_ORIGIN, mapOrigins: MAP_ORIGINS, relays: RELAYS, store: STORE_BASE, usage: USAGE_BASE });
       if (!ok) console.log(`Blocked: ${details.url}`);
       // oxlint-disable-next-line promise/no-callback-in-promise -- Electron's request callback, which has to be called here
       callback({ cancel: !ok });

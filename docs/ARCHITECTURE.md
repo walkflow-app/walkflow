@@ -21,8 +21,9 @@ src/
     store/              the route store: its index (strict reading, entries from package files, filter) and the check of a download
     share/              the share code and the messages and rules of an exchange with another device
     history/            runs, statistics, CSV/TCX export
+    usage/              the names of the anonymous usage counts (docs/USAGE.md): built only from fixed parts, with their levels
     id.ts               ids of things the person creates
-  platform/           pure helpers around the shell: build settings, features that are on or off, version, the logic of the desktop update (two yeses, never while connected), CSP, MIME types, dev server address, opened files
+  platform/           pure helpers around the shell: build settings (the addresses of the route store and of the usage counter, usage-url.ts: none without a build setting, so nothing is sent), features that are on or off, version, the logic of the desktop update (two yeses, never while connected), CSP, MIME types, dev server address, opened files
   net/                the connection to other people's devices for sharing (built, off in the first release: platform/features.ts, docs/P2P.md); never the treadmill
   data/               IndexedDB storage (workouts, routes, runs)
   ui/                 everything that draws or listens
@@ -36,6 +37,7 @@ src/
     background.ts       wake lock, tab in the background, leaving the page
     desktop.ts pwa.ts theme.ts views.ts i18n-dom.ts   integration of the page
     ui.ts store.ts      DOM lookups, log and download; the storage wrapper that never throws
+    usage.ts            the sender of the usage counts: synchronous, never throws, never awaited, once per name and start, only after the first-start popup is accepted. Like core/usage/ and platform/usage-url.ts it imports nothing of the treadmill library (tests/architecture.test.ts)
 electron/             main process and preload of the desktop app
 tests/                tests about the project itself
 

@@ -101,6 +101,8 @@ npm run dev
 
 Community (sharing between devices) is off in the first release. To try it, set `WALKFLOW_COMMUNITY=on` for `npm run dev`, `npm run build`, `npm run electron` or `npm run dist` (`docs/P2P.md`).
 
+The anonymous usage counts ([docs/USAGE.md](docs/USAGE.md)) go to a GoatCounter site that is set when the app is built: `WALKFLOW_USAGE=https://<code>.goatcounter.com` for `npm run dev`, `npm run build`, `npm run electron`, `npm run electron:dev` or `npm run dist` (nothing else is accepted). It has no default for any repository: a build without it, such as a fork or a build from source, sends nothing and the policy allows no connection to a counter. Only `<address>/count` is allowed in the content security policy and the desktop request filter.
+
 Without a treadmill: click “Demo (no treadmill)”. The simulator speaks real FTMS bytes and can simulate a connection loss and the safety key.
 
 ### Map
@@ -124,10 +126,10 @@ The source is split into layers, each in its own folder; a layer only uses the o
 | Folder | Contents |
 | --- | --- |
 | `src/i18n/` | Language selection, texts per language (`locales/`), units (km/h or mph) |
-| `src/core/` | Pure logic without browser: the stored safety settings, workouts and programs, routes and route packages, runs and statistics |
-| `src/platform/` | Pure helpers around the app's shell: build settings, version, security policy, file types, desktop file opening |
+| `src/core/` | Pure logic without browser: the stored safety settings, workouts and programs, routes and route packages, runs and statistics, the names of the anonymous usage counts (`core/usage/`) |
+| `src/platform/` | Pure helpers around the app's shell: build settings (the route store and usage counter addresses), version, security policy, file types, desktop file opening |
 | `src/data/` | Storage in the browser (IndexedDB) |
-| `src/ui/` | Everything that draws or listens: views per feature, components, theme, desktop integration; vanilla TS |
+| `src/ui/` | Everything that draws or listens: views per feature, components, theme, desktop integration, the sender of the usage counts (`usage.ts`); vanilla TS |
 | `src/main.ts` | Wires it all together |
 | `electron/` | Main process and preload of the desktop app (uses only pure code of `src/`) |
 | `tests/` | Tests about the project itself (structure rules); unit tests sit next to their code |

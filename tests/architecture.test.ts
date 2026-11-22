@@ -119,6 +119,16 @@ describe('project structure', () => {
     expect(bad).toEqual([]);
   });
 
+  it('keeps the usage counts away from the treadmill library: the sender and the names get plain strings', () => {
+    const bad: string[] = [];
+    const usage = (f: string) => ['src/core/usage/', 'src/platform/usage-url.ts', 'src/ui/usage.ts'].some(p => rel(f).split(sep).join('/').startsWith(p));
+    for (const file of walk(SRC).filter(p => p.endsWith('.ts') && usage(p))) {
+      for (const { spec } of packageImportsOf(readFileSync(file, 'utf8'))) if (isLib(spec)) bad.push(`${rel(file)} → ${spec}`);
+    }
+    expect(bad).toEqual([]);
+    expect(walk(SRC).filter(usage).length).toBeGreaterThan(3);
+  });
+
   it('lets the app use the treadmill library only through its entry points', () => {
     const bad: string[] = [];
     for (const file of [...walk(SRC), ...walk(join(ROOT, 'electron'))].filter(p => p.endsWith('.ts'))) {
