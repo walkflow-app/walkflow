@@ -1,5 +1,6 @@
-// Routes view and the route card in the training view. A route only shows where on the track you are: it follows the
-// treadmill's own distance counter and never sends anything to the treadmill (no speed, no incline).
+// Routes view and the route card in the training view. The card shows where on the track you are: it follows the
+// treadmill's own distance counter. Walking a route starts a workout at the route's speed (capped by the person's limit;
+// one from outside is at most ROUTE_IMPORT_SPEED_MAX), which drives the belt like any workout; no incline.
 // Import reads the file on this device (src/core/routes/gpx.ts); what is saved has passed readRoute.
 
 import { countryName } from '../../core/routes/country';

@@ -89,6 +89,7 @@ With a route chosen, **Start** (its tooltip reads “Strecke gehen” / “Walk 
 
 - [ ] Start a short route (about 200 m) at a low speed (3 km/h). The confirmation names the route, its length and the speed. After confirming, the log shows Request Control and Start, then speed commands that follow the ramp (0.5 km/h per command, at least 1.5 s apart). There is no incline command at all.
 - [ ] Give the route a walking speed above your limit (**Routes** → arrow → pencil icon): the confirmation says it is capped, and the belt never goes above the limit.
+- [ ] Import a `.walkflow` file whose `defaultSpeed` is 12 (edit it in a text editor): the route shows 3 km/h, and the confirmation and the speed commands in the log go to 3 km/h (`→ 02 2c 01` at most), not 12. A file with `defaultSpeed` 5 keeps 5.
 - [ ] Let it run to the end: the belt stops by itself, the status says the program is done, and the route card says “Route completed”. How far apart are the route progress and the end of the program on the treadmill’s display? (Both use the distance counter, a few metres are expected.)
 - [ ] Press **Stop** or Space halfway: the belt stops at once. The run appears in the history as “Started from: Route: …, stopped early”.
 - [ ] After a complete walk of more than a minute the run shows “completed”, and its minutes count toward today’s goal in **Workouts → week plan**. Check that the minutes match the treadmill’s time (they are moving seconds without pauses).
