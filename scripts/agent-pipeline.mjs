@@ -317,8 +317,9 @@ function readState(n, pipeline) {
     mergedToday,
     failedFixes: failedFixRuns(fixRuns, reset),
     headKicked: commit.commit.message.startsWith(KICK_MESSAGE),
-    reviewFailed: headRuns.some(r => r.name === 'Agent review' && r.status === 'completed'
-      && ['failure', 'cancelled', 'timed_out', 'action_required', 'startup_failure'].includes(r.conclusion)),
+    // The latest review run of the head failed (not: found something)
+    reviewFailed: ['failure', 'cancelled', 'timed_out', 'action_required', 'startup_failure']
+      .includes(headRuns.filter(r => r.name === 'Agent review').sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at)).at(0)?.conclusion ?? ''),
     // Since the commit was pushed (its first workflow run), not since it was made, and not before `stuck` was taken off
     headAgeHours: headAge(Date.now(), headRuns.map(r => r.created_at), commit.commit.committer.date, reset),
   };
