@@ -78,7 +78,8 @@ request; Dependabot keeps the GitHub Actions, which are pinned by commit, and th
 
 Every new pull request gets a review by AI agents (`.github/workflows/agent-review.yml`): they check what this repository's
 `CLAUDE.md` asks for and post their verdict. Maintainers can ask for more with `@claude …` in a comment, or hand over an issue
-with the label `agent-ready` (`.github/workflows/claude.yml`); agents never take on issues labelled `safety`. Pull requests
+with the label `agent-ready` (`.github/workflows/claude.yml`); belt code is built like any other issue, with the safeguards that stay: the test first, the safety reviewer, two reviews by two
+models, the label `needs-hardware`, and one check on a treadmill before the release. Pull requests
 from forks are not reviewed by agents. A review runs with another model than the one that wrote the change (Opus and Sonnet
 check each other; `.github/scripts/review-model.sh`).
 
@@ -121,7 +122,7 @@ takes a pull request to `main` without a maintainer. The rules are in `scripts/a
 **Features** are built as tasks: sub-issues of an issue of type *Feature*, each with its blockers ("blocked by"). The
 feature is approved by a comment that is only `approved`, by an owner in `.github/CODEOWNERS`. `dispatch.yml` (when an
 issue closes, and every hour) starts each open task of an approved feature whose blockers are all closed and that has none
-of `safety`, `needs-maintainer` and `hold`: it sets `agent-ready` and starts `claude.yml` with the issue number, at most
+of `needs-maintainer`, `stuck` and `hold`: it sets `agent-ready` and starts `claude.yml` with the issue number, at most
 three per run. `claude.yml` checks the same before it builds an issue labelled `agent-ready`; if it may not start, the label
 comes off and the issue says why (`scripts/feature-gate.mjs`). An agent that finds a gap in the feature comments `Spec gap:`
 and stops.

@@ -1,7 +1,9 @@
 # Walkflow: notes for agents
 
-Walkflow drives a real treadmill that a person is standing on. Treat every change that can end in a command to the belt as
-safety-relevant. Read [README.md](README.md), [CONTRIBUTING.md](CONTRIBUTING.md) and
+Walkflow drives a real treadmill that a person is standing on. Safety is a matter of course here, not the goal that overrides
+everything: code that can end in a command to the belt (**belt code**, the list `SAFETY` in `scripts/paths.mjs`) is built test
+first and reviewed twice; everything else, also what lies nearby, is ordinary work. Agents build and merge belt code (the
+maintainer's decision, 2026-11-22); the check on a treadmill comes once, bundled, before the release. Read [README.md](README.md), [CONTRIBUTING.md](CONTRIBUTING.md) and
 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) before changing code; this file only adds what an agent tends to miss.
 
 ## The repositories of walkflow-app
@@ -62,8 +64,8 @@ npm run dev                                     # Demo (no treadmill) in the con
 - **Bigger features start as a spec** (skill `write-spec`, in `docs/specs/`); code starts once the maintainer set it to
   `accepted`. Small fixes need none.
 - **Before opening a pull request**, run the reviewers that apply and fix what they find (or say in the pull request why not):
-  - `safety-reviewer` when the diff touches `src/core/safety/`, `src/ui/live/`, Bluetooth, the `ftms-treadmill` version, or
-    anything that ends in a call that drives the belt;
+  - `safety-reviewer` when the diff touches belt code (`SAFETY` in `scripts/paths.mjs`), trust-boundary code (`TRUST`:
+    `src/net/`, `src/core/share/`), Bluetooth, the `ftms-treadmill` version, or anything that ends in a call that drives the belt;
   - `docs-i18n-reviewer` for every change to behaviour, settings, UI texts or the site;
   - `architect` for a spec, a refactor, or a change across layers or repositories.
   Reviewers run with another model than the one that wrote the change: written with Opus, the reviewer runs with Sonnet, and
@@ -79,8 +81,8 @@ npm run dev                                     # Demo (no treadmill) in the con
   in `PROTECTED` of `scripts/agent-pipeline.mjs` are never merged by an agent. Never change that list, the gates or the
   workflows to let more through without being asked.
 - **On GitHub:** `agent-review.yml` runs the reviewers on every new pull request and posts their verdicts (comment
-  `@claude review` to run it again); `claude.yml` takes on `@claude …` requests and issues labelled `agent-ready`, never ones
-  labelled `safety`; `dispatch.yml` starts the tasks of approved features whose blockers are closed
+  `@claude review` to run it again); `claude.yml` takes on `@claude …` requests and issues labelled `agent-ready` (belt code
+  too: test first, with the safety reviewer; not `needs-maintainer`, `stuck` or `hold`); `dispatch.yml` starts the tasks of approved features whose blockers are closed
   (`scripts/feature-gate.mjs`). The agents only work on branches and pull requests; with the pipeline off a maintainer merges. Scheduled: `docs-check.yml` (monthly,
   an issue "Docs out of date"), `relays.yml` (weekly, an issue when a relay fails twice). New issues from outside:
   `triage.yml` (labels and one comment, never `agent-ready`).
