@@ -16,7 +16,7 @@ import { pathToFileURL } from 'node:url';
 import { owners } from './release-gate.mjs';
 
 /** Labels that keep a task from being started by an agent */
-export const HOLD = ['safety', 'needs-maintainer', 'hold'];
+export const HOLD = ['needs-maintainer', 'stuck', 'hold'];
 /** At most this many tasks started by one run of the dispatcher */
 export const MAX_START = 3;
 

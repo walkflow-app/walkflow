@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 // @ts-expect-error plain script without types, also run by node in CI
-import { checkFix, classify, decide, LIMITS, marker, parseVerdict, quiet, reviewEvent, reviewModels, REVIEWER, WRITER } from '../scripts/agent-pipeline.mjs';
+import { checkFix, classify, decide, failedFixRuns, holdLabel, LIMITS, marker, parseVerdict, quiet, resolveMember, reviewEvent, reviewModels, REVIEWER, WRITER } from '../scripts/agent-pipeline.mjs';
 // @ts-expect-error plain script without types, also run by node in CI
 import { confirms, owners, releaseGate } from '../scripts/release-gate.mjs';
 
@@ -91,13 +91,52 @@ describe('agent pipeline: the verdict', () => {
   });
 });
 
+describe('agent pipeline: who is a member', () => {
+  const yes = () => true;
+  const no = () => false;
+  const broken = () => { throw new Error('API down'); };
+  it('keeps an association that already says member, without asking', () => {
+    for (const a of ['OWNER', 'MEMBER', 'COLLABORATOR']) expect(resolveMember('x', a, broken)).toBe(a);
+  });
+  it('asks the organisation when the association says outside (a private membership shows as CONTRIBUTOR)', () => {
+    expect(resolveMember('maintainer', 'CONTRIBUTOR', yes)).toBe('MEMBER');
+    expect(resolveMember('maintainer', 'NONE', yes)).toBe('MEMBER');
+  });
+  it('stays outside when the organisation says no', () => {
+    expect(resolveMember('stranger', 'CONTRIBUTOR', no)).toBe('CONTRIBUTOR');
+    expect(resolveMember('stranger', 'FIRST_TIME_CONTRIBUTOR', no)).toBe('FIRST_TIME_CONTRIBUTOR');
+  });
+  it('does not ask for a login that is not known (a deleted account)', () => {
+    expect(resolveMember(undefined, 'NONE', broken)).toBe('NONE');
+    expect(resolveMember(null, 'NONE', broken)).toBe('NONE');
+  });
+});
+
 describe('agent pipeline: the files', () => {
   it('finds safety paths and protected paths, also under the old name of a rename', () => {
     expect(classify(safetyFiles).safety).toBe(true);
     expect(classify([{ filename: 'src/ui/x.ts', previous_filename: '.github/workflows/ci.yml', status: 'renamed' }]).protected).toEqual(['.github/workflows/ci.yml']);
-    for (const f of ['CLAUDE.md', 'package.json', 'scripts/safety-gate.mjs', 'electron/main.ts', 'src/net/relay.ts', 'HARDWARE-TESTS.md', 'tests/architecture.test.ts'])
+    for (const f of ['CLAUDE.md', 'package.json', 'scripts/safety-gate.mjs', 'public/legal/privacy.html', 'tests/architecture.test.ts'])
       expect(classify([{ filename: f }]).protected).toEqual([f]);
     expect(classify([{ filename: 'src/ui/routes/list.ts' }]).protected).toEqual([]);
+  });
+
+  it('belt code and trust-boundary code are not protected: the pipeline merges them after two reviews (meta process/flow.md)', () => {
+    for (const f of ['electron/main.ts', 'src/ui/background.ts']) expect(classify([{ filename: f }])).toMatchObject({ safety: true, trust: false, protected: [] });
+    for (const f of ['src/net/relay.ts', 'src/core/share/link.ts']) expect(classify([{ filename: f }])).toMatchObject({ safety: false, trust: true, protected: [] });
+    expect(classify([{ filename: 'src/ui/routes/list.ts' }])).toMatchObject({ safety: false, trust: false });
+  });
+
+  it('a hardware check may be added by an agent, but removed or ticked off only by a person', () => {
+    const f = (patch?: string, extra = {}) => classify([{ filename: 'HARDWARE-TESTS.md', status: 'modified', patch, ...extra }]).protected;
+    expect(f('+- [ ] new check')).toEqual([]);
+    expect(f('@@\n text\n-old text\n+new text')).toEqual([]);
+    expect(f('-- [ ] a check')).toEqual(['HARDWARE-TESTS.md']);
+    expect(f('+- [x] a new check that is already ticked off')).toEqual(['HARDWARE-TESTS.md']);
+    expect(f('+- [X] same')).toEqual(['HARDWARE-TESTS.md']);
+    expect(f('-- [x] a done check\n+- [ ] again')).toEqual(['HARDWARE-TESTS.md']);
+    expect(f(undefined, { changes: 900 })).toEqual(['HARDWARE-TESTS.md']);
+    expect(classify([{ filename: 'HARDWARE-TESTS.md', status: 'removed' }]).protected).toEqual(['HARDWARE-TESTS.md']);
   });
 
   it('fails closed when the API cannot list all files', () => {
@@ -108,13 +147,15 @@ describe('agent pipeline: the files', () => {
     expect(reviewModels(safetyFiles, 'sonnet', true)).toEqual(['opus', 'sonnet']);
     expect(reviewModels([{ filename: 'README.md' }], 'sonnet', true)).toEqual(['sonnet']);
     expect(reviewModels(safetyFiles, 'opus', false)).toEqual(['opus']);
+    expect(reviewModels([{ filename: 'src/net/relay.ts' }], 'sonnet', true)).toEqual(['opus', 'sonnet']);
   });
 
   it('never pushes a fix that reaches a protected file, whatever its name', () => {
     expect(checkFix(['src/ui/a.ts']).ok).toBe(true);
     expect(checkFix(['src/ui/a.ts', '.github/workflows/agent-fix.yml']).ok).toBe(false);
     expect(checkFix(['scripts/é.mjs']).ok).toBe(false);
-    for (const f of ['.npmrc', '.gitattributes', '.gitignore', 'index.html']) expect(checkFix([f]).ok).toBe(false);
+    for (const f of ['.npmrc', '.husky/pre-commit', 'knip.json', 'public/legal/privacy.html']) expect(checkFix([f]).ok).toBe(false);
+    for (const f of ['.gitattributes', '.gitignore', 'index.html', 'build/icon.png', 'src/net/relay.ts', 'electron/main.ts']) expect(checkFix([f]).ok).toBe(true);
   });
 
   it('a new ftms-treadmill version is a safety change', () => {
@@ -158,7 +199,11 @@ describe('agent pipeline: what happens next', () => {
     expect(state(s => { s.reviews = []; s.running.review = true; }).action).toBe('wait');
     expect(state(s => { s.running.fix = true; }).action).toBe('wait');
     expect(state(s => { s.humanChangesRequested = true; }).action).toBe('skip');
-    expect(state(s => { s.failedFixes = 1; }).action).toBe('hold');
+    // One retry: the first failed fix run is tried again, the second parks the pull request as stuck
+    expect(state(s => { s.failedFixes = 1; }).action).toBe('merge');
+    const second = state(s => { s.failedFixes = 2; });
+    expect(second.action).toBe('hold');
+    expect(holdLabel(second)).toBe('stuck');
   });
 
   it('starts the checks of a pull request claude.yml opened with the workflow token', () => {
@@ -261,6 +306,40 @@ describe('agent pipeline: what happens next', () => {
     // Remarks the fix agent declined: the maintainer decides, a safety change is merged only on two OKs
     expect(safe(s => { s.reviews = [review('OK', 'opus'), review('OK with remarks', 'sonnet')]; s.comments = [fixDone(HEAD, 'remarks')]; }).action).toBe('hold');
     expect(safe(s => { s.reviews = [review('OK', 'opus', HEAD, 'other title'), review('OK', 'sonnet')]; }).action).toBe('hold');
+  });
+
+  it('trust-boundary code is reviewed like a safety change, but needs no treadmill', () => {
+    const trust = (change: (s: Parameters<typeof state>[0] extends ((s: infer S) => void) | undefined ? S : never) => void) =>
+      state(s => { s.files = [{ filename: 'src/net/relay.ts', status: 'modified', additions: 2, deletions: 2 }]; change(s); });
+    expect(trust(s => { s.reviews = [review('OK', 'sonnet')]; }).action).toBe('wait');
+    expect(trust(s => { s.reviews = [review('OK', 'opus'), review('OK', 'sonnet')]; }).action).toBe('merge');
+    const behind = trust(s => { s.reviews = [review('OK', 'opus'), review('OK', 'sonnet')]; s.behindBy = 1; });
+    expect([behind.action, behind.reason]).toEqual(['update', 'a trust-boundary change is merged only on top of the current main']);
+    expect(trust(() => {}).addLabels).toEqual([]);
+  });
+
+  it('only the rules themselves go to the maintainer, every other hold is stuck', () => {
+    const rules = state(s => { s.files = [{ filename: 'CLAUDE.md' }]; });
+    expect([rules.action, holdLabel(rules)]).toEqual(['hold', 'needs-maintainer']);
+    const stuck = [
+      state(s => { s.reviews = [review('blocking', 'sonnet')]; }),
+      state(s => { s.reviews = []; s.headAgeHours = LIMITS.staleHours + 1; }),
+      state(s => { s.failedFixes = 2; }),
+    ];
+    for (const d of stuck) expect([d.action, holdLabel(d)]).toEqual(['hold', 'stuck']);
+  });
+
+  it('a handed-back pull request starts again: only the fix runs since the label came off count', () => {
+    const run = (conclusion: string, created_at: string) => ({ status: 'completed', conclusion, created_at });
+    const runs = [run('failure', '2026-11-20T10:00:00Z'), run('failure', '2026-11-20T11:00:00Z'), run('success', '2026-11-21T09:00:00Z'), run('failure', '2026-11-22T09:00:00Z')];
+    expect(failedFixRuns(runs, null)).toBe(3);
+    expect(failedFixRuns(runs, '2026-11-21T00:00:00Z')).toBe(1);
+    expect(failedFixRuns([{ status: 'in_progress', conclusion: null, created_at: '2026-11-22T10:00:00Z' }], null)).toBe(0);
+  });
+
+  it('leaves a pull request that is stuck or for the maintainer alone', () => {
+    expect(state(s => { s.pr.labels = ['stuck']; })).toMatchObject({ action: 'skip', reason: 'labelled stuck: the PM looks' });
+    expect(state(s => { s.pr.labels = ['needs-maintainer']; }).action).toBe('skip');
   });
 
   it('labels a safety change needs-hardware', () => {
