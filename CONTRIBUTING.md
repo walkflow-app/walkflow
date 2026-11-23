@@ -113,7 +113,9 @@ takes a pull request to `main` without a maintainer. The rules are in `scripts/a
 - **Never merged by an agent** (`PROTECTED` in `scripts/agent-pipeline.mjs`: the rules themselves): changes to `.github/`, `.claude/`,
   `CLAUDE.md`, `scripts/`, dependencies and npm settings, the test, lint, build and release configuration, `public/legal/`, and a
   check in `HARDWARE-TESTS.md` that is removed, ticked off or added as ticked (adding a check is ordinary); also drafts, pull
-  requests from forks or from outside the organisation, release-please and Dependabot, anything labelled `hold`.
+  requests from forks or from outside the organisation, release-please and Dependabot, anything labelled `hold`. Who is inside
+  is asked of the organisation (the app *walkflow-writer* needs the permission "Organization members: read"; the association GitHub
+  shows says "contributor" for a member who keeps the membership private); anything but a clear yes counts as outside.
 - **The release gate:** a release is built only when every pull request since the last release that touches a safety path or
   has `needs-hardware` has a comment that is only `/hardware-ok`, by an owner in `.github/CODEOWNERS` and written after its
   merge (or one on the release pull request after the last of them was merged), once its checks in HARDWARE-TESTS.md passed
