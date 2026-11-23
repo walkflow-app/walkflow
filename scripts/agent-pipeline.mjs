@@ -60,7 +60,7 @@ export function classify(files) {
     trust: all.some(n => TRUST.some(p => p.test(n))),
     protected: files.length >= MAX_FILES ? ['(too many files to check)'] : [...new Set([
       ...all.filter(n => PROTECTED.some(p => p.test(n))),
-      // A hardware check removed, ticked off or added as ticked, or a patch too big for the API to show: a person decides
+      // A hardware check removed, ticked off or added as ticked, or a patch too big for the API to show: only the maintainer merges it
       ...files.filter(f => names(f).includes(CHECKLIST) && (f.status === 'removed' || f.status === 'renamed' || f.patch === undefined && f.changes > 0 || CHECK_REMOVED.test(f.patch ?? ''))).map(() => CHECKLIST),
     ])],
     removedTests: files.filter(f => f.status === 'removed' && TEST.test(f.filename)).map(f => f.filename),

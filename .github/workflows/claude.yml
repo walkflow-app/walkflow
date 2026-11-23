@@ -79,8 +79,9 @@ jobs:
             ${{ github.event_name == 'workflow_dispatch' && format('Build issue #{0} of {1}. Read it with its comments
             (gh issue view {0} --comments) and, if it is a task of a feature, the Feature issue it links to: that is the
             spec. Build only what the task asks for, on a branch claude/issue-{0}, and open a pull request whose description
-            says Closes #{0}. If the task and the feature leave a gap you would have to decide yourself, comment on the issue
-            a line starting with Spec gap: and what is missing, and stop.', inputs.issue, github.repository) || '' }}
+            says Closes #{0}. A small gap (a detail, a name, a place in the code) you decide yourself, and say so in the pull request.
+            Only a material gap (scope, non-goals, what a person sees) you do not guess: comment on the issue a line starting
+            with Spec gap:, what is missing and your proposal, then a line Stop: material spec gap, and stop.', inputs.issue, github.repository) || '' }}
           claude_args: |
             ${{ steps.model.outputs.model && format('--model {0}', steps.model.outputs.model) || '' }}
             --allowedTools "Read,Grep,Glob,Edit,Write,Task,Agent,Bash(npm ci),Bash(npm test:*),Bash(npm run typecheck:*),Bash(npm run lint:*),Bash(npm run build:*),Bash(npx vitest run:*),Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(git add:*),Bash(git commit:*),Bash(git push:*),Bash(git switch:*),Bash(git checkout:*),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr create:*),Bash(gh pr comment:*),Bash(gh issue view:*),Bash(gh issue comment:*),mcp__github_inline_comment__create_inline_comment"

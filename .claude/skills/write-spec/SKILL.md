@@ -5,8 +5,8 @@ description: Turn an idea or issue into a spec in docs/specs/ before anything is
 
 # Write a spec
 
-A spec is how a feature gets decided before it gets built. Code starts only when the spec says `Status: accepted`, which
-only the maintainer sets.
+A spec is how a feature gets decided before it gets built. Code starts only when the spec is accepted: for a feature, the maintainer's `approved` comment on its Feature issue is that
+acceptance; a spec without a Feature issue needs `Status: accepted`, which only the maintainer sets.
 
 ## Where
 
