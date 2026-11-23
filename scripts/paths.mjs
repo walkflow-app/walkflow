@@ -1,5 +1,5 @@
 // The paths the process distinguishes, in one place: read by the agent pipeline, the safety gate and the choice of the reviewing
-// model (.github/scripts/review-model.sh), and mirrored by CODEOWNERS. Change a list here and nowhere else (walkflow#71).
+// model (.github/scripts/review-model.sh). Change a list here and nowhere else (walkflow#71); CODEOWNERS is kept by hand.
 
 /** Belt code: what can change what is sent to the treadmill, or what the person is warned about. Test first, two reviews by two
  *  models, label needs-hardware, one check on a treadmill before the release. The pipeline merges it. `src/main.ts` wires the

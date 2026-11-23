@@ -290,7 +290,8 @@ describe('agent pipeline: what happens next', () => {
       state(s => { s.files = [{ filename: 'src/net/relay.ts', status: 'modified', additions: 2, deletions: 2 }]; change(s); });
     expect(trust(s => { s.reviews = [review('OK', 'sonnet')]; }).action).toBe('wait');
     expect(trust(s => { s.reviews = [review('OK', 'opus'), review('OK', 'sonnet')]; }).action).toBe('merge');
-    expect(trust(s => { s.reviews = [review('OK', 'opus'), review('OK', 'sonnet')]; s.behindBy = 1; }).action).toBe('update');
+    const behind = trust(s => { s.reviews = [review('OK', 'opus'), review('OK', 'sonnet')]; s.behindBy = 1; });
+    expect([behind.action, behind.reason]).toEqual(['update', 'a trust-boundary change is merged only on top of the current main']);
     expect(trust(() => {}).addLabels).toEqual([]);
   });
 
