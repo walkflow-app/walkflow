@@ -13,6 +13,7 @@ import { execFileSync } from 'node:child_process';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { SAFETY, TRUST } from './paths.mjs';
 
 export const WRITER = 'walkflow-writer[bot]';
 export const REVIEWER = 'walkflow-reviewer[bot]';
@@ -25,8 +26,9 @@ const VERDICTS = ['OK', 'OK with remarks', 'changes needed', 'blocking'];
 /** The review state each verdict is submitted as; a marker that does not match its review is not believed */
 const STATE = { OK: 'APPROVED', 'OK with remarks': 'COMMENTED', 'changes needed': 'CHANGES_REQUESTED', blocking: 'CHANGES_REQUESTED' };
 
-/** What reaches the belt: reviewed by two models, label needs-hardware, held for the hardware checks before a release */
-export const SAFETY = [/^src\/core\/safety\//, /^src\/ui\/live\//, /^src\/core\/training\//, /^src\/platform\/bt-devices/, /^src\/main\.ts$/];
+// What reaches the belt (SAFETY: two models, label needs-hardware, a check on the treadmill before the release) and what talks to
+// others (TRUST: two models, no treadmill) are listed in scripts/paths.mjs, shared with the safety gate and review-model.sh
+export { SAFETY, TRUST };
 /** Never merged by an agent: the rules, the gates, the pipeline itself, dependencies, the build, and what CODEOWNERS keeps for
  *  a person. A deny list for the trial; an allow list is the follow-up */
 export const PROTECTED = [
@@ -34,7 +36,7 @@ export const PROTECTED = [
   /^package(-lock)?\.json$/, /^\.npmrc$/, /^\.nvmrc$/, /^\.node-version$/, /^\.husky\//, /^\.gitignore$/, /^\.gitattributes$/,
   /^\.oxlintrc\.json$/, /^knip\.json$/, /^tsconfig[^/]*\.json$/, /^vite\.config\.ts$/, /^vitest\.config/, /^index\.html$/, /^build\//,
   /^release-please-config\.json$/, /^\.release-please-manifest\.json$/, /^electron-builder\.config\.cjs$/,
-  /^electron\//, /^public\/legal\//, /^src\/net\//, /^src\/core\/share\//,
+  /^public\/legal\//,
 ];
 const TEST = /\.test\.(ts|mjs)$/;
 const CONVENTIONAL = /^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert|safety)(\([^)]+\))?: \S/;
@@ -47,11 +49,12 @@ const LIBRARY_BUMP = /^[+-]\s*"ftms-treadmill":/m;
 
 const names = f => [f.filename, f.previous_filename].filter(Boolean);
 
-/** The files of a diff: { safety, protected: [...], removedTests: [...], lines } */
+/** The files of a diff: { safety (belt code), trust, protected: [...], removedTests: [...], lines } */
 export function classify(files) {
   const all = files.flatMap(names);
   return {
     safety: all.some(n => SAFETY.some(p => p.test(n))) || files.some(f => f.filename === 'package.json' && LIBRARY_BUMP.test(f.patch ?? '')),
+    trust: all.some(n => TRUST.some(p => p.test(n))),
     protected: files.length >= MAX_FILES ? ['(too many files to check)'] : [...new Set(all.filter(n => PROTECTED.some(p => p.test(n))))],
     removedTests: files.filter(f => f.status === 'removed' && TEST.test(f.filename)).map(f => f.filename),
     lines: files.reduce((s, f) => s + (f.additions ?? 0) + (f.deletions ?? 0), 0),
@@ -92,7 +95,10 @@ export function decide(s) {
   const { pr } = s;
   const files = classify(s.files);
   const safety = files.safety;
-  const out = (action, reason, extra = {}) => ({ action, reason, safety, addLabels: safety && !pr.labels.includes('needs-hardware') ? ['needs-hardware'] : [], ...extra });
+  // Belt code and trust-boundary code are reviewed by both models, merged on top of the current main, and never on remarks the fix declined
+  const careful = safety || files.trust;
+  const kind = safety ? 'a safety change' : 'a trust-boundary change';
+  const out = (action, reason, extra = {}) => ({ action, reason, safety, careful, addLabels: safety && !pr.labels.includes('needs-hardware') ? ['needs-hardware'] : [], ...extra });
   const stale = s.headAgeHours > LIMITS.staleHours;
 
   if (!s.pipeline) return out('skip', 'AGENT_PIPELINE is not on');
@@ -144,7 +150,7 @@ export function decide(s) {
   // The review of the head commit: for a safety change one by each model
   const onHead = reviews.filter(r => r.commitId === pr.headSha);
   const models = new Set(onHead.map(r => r.mark.model));
-  const complete = safety ? models.has('opus') && models.has('sonnet') : onHead.length > 0;
+  const complete = careful ? models.has('opus') && models.has('sonnet') : onHead.length > 0;
   let reviewedTitles;
   if (complete) {
     const verdict = worst(onHead.map(r => r.mark.verdict));
@@ -158,16 +164,16 @@ export function decide(s) {
     if (verdict === 'OK with remarks') {
       if (!fixed(pr.headSha, 'remarks')) return out('fix', 'the review has remarks', { mode: 'remarks', sha: pr.headSha });
       // A safety change is merged only when both models say OK: remarks the fix agent declined go to the maintainer
-      if (safety) return out('hold', 'a safety change with remarks the fix agent declined');
+      if (careful) return out('hold', `${kind} with remarks the fix agent declined`);
     }
   } else {
     // A fix of "OK with remarks" after the review: merged without waiting for another review only if it is small and harmless
     const last = reviews.findLast(r => r.commitId !== pr.headSha);
     const since = s.sinceReviewed;
-    const small = since && last && since.base === last.commitId && since.status === 'ahead' && !safety && last.mark.verdict === 'OK with remarks'
+    const small = since && last && since.base === last.commitId && since.status === 'ahead' && !careful && last.mark.verdict === 'OK with remarks'
       && fixed(last.commitId, 'remarks') && (() => {
         const c = classify(since.files);
-        return !c.safety && !c.protected.length && !c.removedTests.length && c.lines <= LIMITS.unreviewedLines;
+        return !c.safety && !c.trust && !c.protected.length && !c.removedTests.length && c.lines <= LIMITS.unreviewedLines;
       })();
     if (!small) {
       if (s.running.review) return out('wait', 'the review is running');
@@ -186,7 +192,7 @@ export function decide(s) {
   const pending = REQUIRED_CHECKS.filter(n => s.checks[n] !== 'success');
   if (pending.length)
     return stale ? out('hold', `${pending.join(', ')} did not finish in ${LIMITS.staleHours} hours`) : out('wait', `waiting for ${pending.join(', ')}`);
-  if (safety && s.behindBy > 0) return out('update', 'a safety change is merged only on top of the current main', { sha: pr.headSha });
+  if (careful && s.behindBy > 0) return out('update', `${kind} is merged only on top of the current main`, { sha: pr.headSha });
   if (s.mergeable !== 'MERGEABLE') return stale ? out('hold', `GitHub still says ${s.mergeable}`) : out('wait', `GitHub says ${s.mergeable}`);
   if (!CONVENTIONAL.test(pr.title)) return out('hold', 'the title is not a Conventional Commit (a breaking "!" is merged by the maintainer)');
   if (reviewedTitles.some(t => t !== pr.title)) return out('hold', 'the title changed after the review');
@@ -195,7 +201,7 @@ export function decide(s) {
 }
 
 /** The models that review a pull request: safety changes by both, otherwise the one review-model.sh chose */
-export const reviewModels = (files, chosen, pipeline) => (pipeline && classify(files).safety ? ['opus', 'sonnet'] : [chosen]);
+export const reviewModels = (files, chosen, pipeline) => (pipeline && (c => c.safety || c.trust)(classify(files)) ? ['opus', 'sonnet'] : [chosen]);
 
 /** May the patch of a fix be pushed? It must not reach a protected file */
 export function checkFix(paths) {
@@ -295,7 +301,7 @@ function act(n, d, s, writer) {
     gh(['api', '-X', 'PATCH', `repos/${REPO}/git/refs/heads/${s.pr.headRef}`, '-f', `sha=${made.sha}`], { token: writer });
   } else if (d.action === 'fix') {
     // Started with the workflow token: workflow_dispatch is the one event it may start
-    gh(['workflow', 'run', 'agent-fix.yml', '-R', REPO, '-f', `pr=${n}`, '-f', `mode=${d.mode}`, '-f', `sha=${d.sha}`, '-f', `model=${d.safety ? 'opus' : 'sonnet'}`]);
+    gh(['workflow', 'run', 'agent-fix.yml', '-R', REPO, '-f', `pr=${n}`, '-f', `mode=${d.mode}`, '-f', `sha=${d.sha}`, '-f', `model=${d.careful ? 'opus' : 'sonnet'}`]);
   } else if (d.action === 'merge') {
     try {
       gh(['api', '-X', 'PUT', `repos/${REPO}/pulls/${n}/merge`, '-f', 'merge_method=squash', '-f', `sha=${d.sha}`,

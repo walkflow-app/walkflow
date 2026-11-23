@@ -95,9 +95,15 @@ describe('agent pipeline: the files', () => {
   it('finds safety paths and protected paths, also under the old name of a rename', () => {
     expect(classify(safetyFiles).safety).toBe(true);
     expect(classify([{ filename: 'src/ui/x.ts', previous_filename: '.github/workflows/ci.yml', status: 'renamed' }]).protected).toEqual(['.github/workflows/ci.yml']);
-    for (const f of ['CLAUDE.md', 'package.json', 'scripts/safety-gate.mjs', 'electron/main.ts', 'src/net/relay.ts', 'HARDWARE-TESTS.md', 'tests/architecture.test.ts'])
+    for (const f of ['CLAUDE.md', 'package.json', 'scripts/safety-gate.mjs', 'public/legal/privacy.html', 'tests/architecture.test.ts'])
       expect(classify([{ filename: f }]).protected).toEqual([f]);
     expect(classify([{ filename: 'src/ui/routes/list.ts' }]).protected).toEqual([]);
+  });
+
+  it('belt code and trust-boundary code are not protected: the pipeline merges them after two reviews (meta process/flow.md)', () => {
+    for (const f of ['electron/main.ts', 'src/ui/background.ts']) expect(classify([{ filename: f }])).toMatchObject({ safety: true, trust: false, protected: [] });
+    for (const f of ['src/net/relay.ts', 'src/core/share/link.ts']) expect(classify([{ filename: f }])).toMatchObject({ safety: false, trust: true, protected: [] });
+    expect(classify([{ filename: 'src/ui/routes/list.ts' }])).toMatchObject({ safety: false, trust: false });
   });
 
   it('fails closed when the API cannot list all files', () => {
@@ -108,6 +114,7 @@ describe('agent pipeline: the files', () => {
     expect(reviewModels(safetyFiles, 'sonnet', true)).toEqual(['opus', 'sonnet']);
     expect(reviewModels([{ filename: 'README.md' }], 'sonnet', true)).toEqual(['sonnet']);
     expect(reviewModels(safetyFiles, 'opus', false)).toEqual(['opus']);
+    expect(reviewModels([{ filename: 'src/net/relay.ts' }], 'sonnet', true)).toEqual(['opus', 'sonnet']);
   });
 
   it('never pushes a fix that reaches a protected file, whatever its name', () => {
@@ -261,6 +268,16 @@ describe('agent pipeline: what happens next', () => {
     // Remarks the fix agent declined: the maintainer decides, a safety change is merged only on two OKs
     expect(safe(s => { s.reviews = [review('OK', 'opus'), review('OK with remarks', 'sonnet')]; s.comments = [fixDone(HEAD, 'remarks')]; }).action).toBe('hold');
     expect(safe(s => { s.reviews = [review('OK', 'opus', HEAD, 'other title'), review('OK', 'sonnet')]; }).action).toBe('hold');
+  });
+
+  it('trust-boundary code is reviewed like a safety change, but needs no treadmill', () => {
+    const trust = (change: (s: Parameters<typeof state>[0] extends ((s: infer S) => void) | undefined ? S : never) => void) =>
+      state(s => { s.files = [{ filename: 'src/net/relay.ts', status: 'modified', additions: 2, deletions: 2 }]; change(s); });
+    expect(trust(s => { s.reviews = [review('OK', 'sonnet')]; }).action).toBe('wait');
+    expect(trust(s => { s.reviews = [review('OK', 'opus'), review('OK', 'sonnet')]; }).action).toBe('merge');
+    const behind = trust(s => { s.reviews = [review('OK', 'opus'), review('OK', 'sonnet')]; s.behindBy = 1; });
+    expect([behind.action, behind.reason]).toEqual(['update', 'a trust-boundary change is merged only on top of the current main']);
+    expect(trust(() => {}).addLabels).toEqual([]);
   });
 
   it('labels a safety change needs-hardware', () => {
