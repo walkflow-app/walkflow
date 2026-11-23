@@ -97,6 +97,7 @@ export function decide(s) {
   const safety = files.safety;
   // Belt code and trust-boundary code are reviewed by both models, merged on top of the current main, and never on remarks the fix declined
   const careful = safety || files.trust;
+  const kind = safety ? 'a safety change' : 'a trust-boundary change';
   const out = (action, reason, extra = {}) => ({ action, reason, safety, careful, addLabels: safety && !pr.labels.includes('needs-hardware') ? ['needs-hardware'] : [], ...extra });
   const stale = s.headAgeHours > LIMITS.staleHours;
 
@@ -163,7 +164,7 @@ export function decide(s) {
     if (verdict === 'OK with remarks') {
       if (!fixed(pr.headSha, 'remarks')) return out('fix', 'the review has remarks', { mode: 'remarks', sha: pr.headSha });
       // A safety change is merged only when both models say OK: remarks the fix agent declined go to the maintainer
-      if (careful) return out('hold', 'a safety change with remarks the fix agent declined');
+      if (careful) return out('hold', `${kind} with remarks the fix agent declined`);
     }
   } else {
     // A fix of "OK with remarks" after the review: merged without waiting for another review only if it is small and harmless
@@ -191,7 +192,7 @@ export function decide(s) {
   const pending = REQUIRED_CHECKS.filter(n => s.checks[n] !== 'success');
   if (pending.length)
     return stale ? out('hold', `${pending.join(', ')} did not finish in ${LIMITS.staleHours} hours`) : out('wait', `waiting for ${pending.join(', ')}`);
-  if (careful && s.behindBy > 0) return out('update', 'a safety change is merged only on top of the current main', { sha: pr.headSha });
+  if (careful && s.behindBy > 0) return out('update', `${kind} is merged only on top of the current main`, { sha: pr.headSha });
   if (s.mergeable !== 'MERGEABLE') return stale ? out('hold', `GitHub still says ${s.mergeable}`) : out('wait', `GitHub says ${s.mergeable}`);
   if (!CONVENTIONAL.test(pr.title)) return out('hold', 'the title is not a Conventional Commit (a breaking "!" is merged by the maintainer)');
   if (reviewedTitles.some(t => t !== pr.title)) return out('hold', 'the title changed after the review');

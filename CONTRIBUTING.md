@@ -58,14 +58,15 @@ request; Dependabot keeps the GitHub Actions, which are pinned by commit, and th
   `ci`, `style`, `chore` do not appear in the release notes. Example: `fix(routes): keep the progress when a route is updated`.
 - **Safety first.** Code that decides what is sent to the treadmill (the app's `src/core/safety/`, and the library [`ftms-treadmill`](https://github.com/walkflow-app/ftms-treadmill), which has its own repository)
   gets its test first, and the change must not weaken a limit, a delay or a warning. If you are not sure, say so in the pull request.
-  The CI job `safety-gate` fails a pull request that changes `src/core/safety/`, `src/ui/live/`, `src/core/training/program.ts`,
-  `src/ui/background.ts`, `src/main.ts` or `electron/` without changing a test next to that code or under `tests/`, and warns
-  when such a change has no `safety` title or no update of HARDWARE-TESTS.md.
+  The CI job `safety-gate` fails a pull request that changes belt code (the list `SAFETY` in `scripts/paths.mjs`: `src/core/safety/`,
+  `src/ui/live/`, `src/core/training/`, `src/platform/bt-devices`, `src/ui/background.ts`, `src/main.ts`, `electron/`) without
+  changing a test next to that code or under `tests/`, and warns when such a change has no `safety` title or no update of
+  HARDWARE-TESTS.md.
 - **Small and focused.** One change per pull request, with the tests that show it works.
 - **Through a pull request only.** `main` takes no direct pushes; a pull request is merged once CI (`test`) is green.
 - **Working with an AI agent?** `CLAUDE.md` holds the rules an agent needs (safety, hardware checks, texts, releases) and
   `.claude/settings.json` the commands it may and may not run, `.claude/skills/` and `.claude/agents/` the ways of working (release,
-  hardware checks, specs) and the reviewers (safety, docs and texts, architecture, the site); `.github/CODEOWNERS` names what needs a human review.
+  hardware checks, specs) and the reviewers (safety, docs and texts, architecture, the site); `.github/CODEOWNERS` names the owners and what needs their care.
 - **No new dependency without asking first** (open an issue). What the app runs is bundled at build time and kept small on purpose:
   besides its own code only the treadmill library, the map library and the sharing library.
 - **Texts.** The app is in English, German, French and Ukrainian. A new text needs all four (`src/i18n/locales/`); a test checks that
@@ -102,12 +103,12 @@ takes a pull request to `main` without a maintainer. The rules are in `scripts/a
   pull request and for one labelled `needs-maintainer` (the maintainer cannot merge without the checks), as long as `test`
   and `safety-gate` do not exist for its head: other workflows such as CodeQL do not count. A head that already is that
   empty commit is not kicked again; if the checks still do not come, a person looks.
-- **Safety changes** (`src/core/safety/`, `src/ui/live/`, `src/core/training/`, Bluetooth devices, `src/main.ts`, a new
-  `ftms-treadmill` version) are reviewed by Opus and Sonnet, merged only when both say `OK` and on top of the current `main`,
-  and get the label `needs-hardware`.
+- **Belt code** (`SAFETY` in `scripts/paths.mjs`, and a new `ftms-treadmill` version) and **trust-boundary code** (`TRUST`:
+  `src/net/`, `src/core/share/`) are reviewed by Opus and Sonnet, merged only when both say `OK` and on top of the current
+  `main`. Belt code also gets the label `needs-hardware`: one check on a treadmill before the release, not before each merge.
 - **Never merged by an agent:** changes to `.github/`, `.claude/`, `CLAUDE.md`, `scripts/`, `HARDWARE-TESTS.md`, dependencies
-  and npm settings, the test, lint, build and release configuration, `index.html`, `electron/`, `public/legal/`, `src/net/`,
-  `src/core/share/` (`PROTECTED` in `scripts/agent-pipeline.mjs`); drafts; pull requests from forks or from outside the
+  and npm settings, the test, lint, build and release configuration, `index.html`, `public/legal/`
+  (`PROTECTED` in `scripts/agent-pipeline.mjs`); drafts; pull requests from forks or from outside the
   organisation; release-please and Dependabot; anything labelled `hold`.
 - **The release gate:** a release is built only when every pull request since the last release that touches a safety path or
   has `needs-hardware` has a comment that is only `/hardware-ok`, by an owner in `.github/CODEOWNERS` and written after its
