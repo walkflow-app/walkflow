@@ -2,6 +2,8 @@
 // a free text, a measured number or an ID. Pure: the sender is ui/usage.ts, the address platform/usage-url.ts. Everything that
 // can be sent is listed in FIXED_NAMES and PATTERNS, and docs/USAGE.md lists the same (a test compares them).
 
+import { STORE_FILE_NAME } from '../routes/routes';
+
 /** 1 Used (always, after the first-start popup), 2 Improve (switch), 3 Errors (switch; comes with the error codes) */
 export type UsageLevel = 1 | 2 | 3;
 
@@ -67,7 +69,7 @@ export function viewName(view: string): UsageName | null {
   return (FEATURE_NAMES as readonly string[]).includes(name) ? (name as UsageName) : null;
 }
 
-const STORE_FILE = /^([a-z0-9][a-z0-9._-]{0,80})\.walkflow$/;
+const STORE_EXT = '.walkflow';
 const STORE_ROUTE_NAME = /^store\.route\.[a-z0-9][a-z0-9._-]{0,80}$/;
 
 /**
@@ -76,8 +78,8 @@ const STORE_ROUTE_NAME = /^store\.route\.[a-z0-9][a-z0-9._-]{0,80}$/;
  */
 export function storeRouteName(file: string, indexFiles: readonly string[]): UsageName | null {
   if (!indexFiles.includes(file)) return null;
-  const m = STORE_FILE.exec(file);
-  return m ? (`store.route.${m[1]}` as UsageName) : null;
+  if (!STORE_FILE_NAME.test(file)) return null;
+  return `store.route.${file.slice(0, -STORE_EXT.length)}` as UsageName;
 }
 
 /** The level of a name, or null for anything that is not a name built here (the sender sends nothing for it) */
