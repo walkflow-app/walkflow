@@ -94,7 +94,8 @@ takes a pull request to `main` without a maintainer. The rules are in `scripts/a
 - `agent-pipeline.yml` (after a review, CI or a fix, and every 15 minutes) decides: merge (squash) when the head commit is
   approved, `test` and `safety-gate` are green and there is no conflict; start `agent-fix.yml` for remarks, a failing check or
   a conflict (one try per commit, a failed fix run is tried once more); or park the pull request with a comment why: the label
-  `stuck` (the pipeline gave up; the PM looks) or, only for the rules themselves (`PROTECTED`: `CLAUDE.md`, `.claude/`, `.github/`,
+  `stuck` (the pipeline gave up; **the PM**, the planning agent the maintainer works with, looks: it fixes the cause, hands it back by
+  removing the label, or passes a decision of the maintainer on) or, only for the rules themselves (`PROTECTED`: `CLAUDE.md`, `.claude/`, `.github/`,
   `scripts/`, build and test configuration, dependencies, the legal pages, a hardware check removed or ticked off), the label
   `needs-maintainer`. Removing the label hands it back. At most 4 reviewed commits per pull request; past 5 agent merges a day the rest waits for the next
   day. A small fix of remarks (30 lines, no safety path, no deleted test) is merged without waiting for another review; every
@@ -108,10 +109,10 @@ takes a pull request to `main` without a maintainer. The rules are in `scripts/a
 - **Belt code** (`SAFETY` in `scripts/paths.mjs`, and a new `ftms-treadmill` version) and **trust-boundary code** (`TRUST`:
   `src/net/`, `src/core/share/`) are reviewed by Opus and Sonnet, merged only when both say `OK` and on top of the current
   `main`. Belt code also gets the label `needs-hardware`: one check on a treadmill before the release, not before each merge.
-- **Never merged by an agent:** changes to `.github/`, `.claude/`, `CLAUDE.md`, `scripts/`, `HARDWARE-TESTS.md`, dependencies
-  and npm settings, the test, lint, build and release configuration, `index.html`, `public/legal/`
-  (`PROTECTED` in `scripts/agent-pipeline.mjs`); drafts; pull requests from forks or from outside the
-  organisation; release-please and Dependabot; anything labelled `hold`.
+- **Never merged by an agent** (`PROTECTED` in `scripts/agent-pipeline.mjs`: the rules themselves): changes to `.github/`, `.claude/`,
+  `CLAUDE.md`, `scripts/`, dependencies and npm settings, the test, lint, build and release configuration, `public/legal/`, and a
+  check in `HARDWARE-TESTS.md` that is removed, ticked off or added as ticked (adding a check is ordinary); also drafts, pull
+  requests from forks or from outside the organisation, release-please and Dependabot, anything labelled `hold`.
 - **The release gate:** a release is built only when every pull request since the last release that touches a safety path or
   has `needs-hardware` has a comment that is only `/hardware-ok`, by an owner in `.github/CODEOWNERS` and written after its
   merge (or one on the release pull request after the last of them was merged), once its checks in HARDWARE-TESTS.md passed

@@ -38,9 +38,9 @@ export const PROTECTED = [
   /^release-please-config\.json$/, /^\.release-please-manifest\.json$/, /^electron-builder\.config\.cjs$/,
   /^public\/legal\//,
 ];
-/** HARDWARE-TESTS.md is ordinary for an agent that adds checks, but only a person checks one off or removes it */
+/** HARDWARE-TESTS.md is ordinary for an agent that adds checks, but only a person removes one or ticks one off (also a new one that is already ticked) */
 const CHECKLIST = 'HARDWARE-TESTS.md';
-const CHECK_REMOVED = /^-\s*- \[[ xX]\]/m;
+const CHECK_REMOVED = /^-\s*- \[[ xX]\]|^\+\s*- \[[xX]\]/m;
 const TEST = /\.test\.(ts|mjs)$/;
 const CONVENTIONAL = /^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert|safety)(\([^)]+\))?: \S/;
 /** The GitHub API lists at most this many files of a pull request; more and we cannot know what it changes */
@@ -60,7 +60,7 @@ export function classify(files) {
     trust: all.some(n => TRUST.some(p => p.test(n))),
     protected: files.length >= MAX_FILES ? ['(too many files to check)'] : [...new Set([
       ...all.filter(n => PROTECTED.some(p => p.test(n))),
-      // A hardware check removed or ticked off, or a patch too big for the API to show: a person decides
+      // A hardware check removed, ticked off or added as ticked, or a patch too big for the API to show: a person decides
       ...files.filter(f => names(f).includes(CHECKLIST) && (f.status === 'removed' || f.status === 'renamed' || f.patch === undefined && f.changes > 0 || CHECK_REMOVED.test(f.patch ?? ''))).map(() => CHECKLIST),
     ])],
     removedTests: files.filter(f => f.status === 'removed' && TEST.test(f.filename)).map(f => f.filename),
@@ -210,6 +210,10 @@ export function decide(s) {
   return out('merge', 'reviewed, green, up to date', { sha: pr.headSha });
 }
 
+/** The fix runs that failed since the label came off: a hand-back starts again with one try and one retry */
+export const failedFixRuns = (runs, reset) =>
+  runs.filter(r => r.status === 'completed' && !['success', 'skipped'].includes(r.conclusion) && (!reset || r.created_at > reset)).length;
+
 /** The label a hold gets: `needs-maintainer` for the rules themselves (the stop list), `stuck` for everything else (the PM looks) */
 export const holdLabel = d => d.label ?? 'stuck';
 
@@ -286,7 +290,7 @@ function readState(n, pipeline) {
     humanChangesRequested: [...latestHuman.values()].includes('CHANGES_REQUESTED'),
     holdResetAt: reset,
     mergedToday,
-    failedFixes: fixRuns.filter(r => r.status === 'completed' && !['success', 'skipped'].includes(r.conclusion)).length,
+    failedFixes: failedFixRuns(fixRuns, reset),
     headKicked: commit.commit.message.startsWith(KICK_MESSAGE),
     // Since the commit was pushed (its first workflow run), not since it was made: a commit can be pushed days later
     headAgeHours: (Date.now() - Math.min(...headRuns.map(r => Date.parse(r.created_at)), headRuns.length ? Infinity : Date.parse(commit.commit.committer.date))) / 3.6e6,

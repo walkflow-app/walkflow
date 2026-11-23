@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 // @ts-expect-error plain script without types, also run by node in CI
-import { checkFix, classify, decide, holdLabel, LIMITS, marker, parseVerdict, quiet, reviewEvent, reviewModels, REVIEWER, WRITER } from '../scripts/agent-pipeline.mjs';
+import { checkFix, classify, decide, failedFixRuns, holdLabel, LIMITS, marker, parseVerdict, quiet, reviewEvent, reviewModels, REVIEWER, WRITER } from '../scripts/agent-pipeline.mjs';
 // @ts-expect-error plain script without types, also run by node in CI
 import { confirms, owners, releaseGate } from '../scripts/release-gate.mjs';
 
@@ -111,6 +111,8 @@ describe('agent pipeline: the files', () => {
     expect(f('+- [ ] new check')).toEqual([]);
     expect(f('@@\n text\n-old text\n+new text')).toEqual([]);
     expect(f('-- [ ] a check')).toEqual(['HARDWARE-TESTS.md']);
+    expect(f('+- [x] a new check that is already ticked off')).toEqual(['HARDWARE-TESTS.md']);
+    expect(f('+- [X] same')).toEqual(['HARDWARE-TESTS.md']);
     expect(f('-- [x] a done check\n+- [ ] again')).toEqual(['HARDWARE-TESTS.md']);
     expect(f(undefined, { changes: 900 })).toEqual(['HARDWARE-TESTS.md']);
     expect(classify([{ filename: 'HARDWARE-TESTS.md', status: 'removed' }]).protected).toEqual(['HARDWARE-TESTS.md']);
@@ -306,7 +308,15 @@ describe('agent pipeline: what happens next', () => {
     for (const d of stuck) expect([d.action, holdLabel(d)]).toEqual(['hold', 'stuck']);
   });
 
-  it('leaves a pull request that is stuck or for the maintainer alone, and a handed-back one starts again', () => {
+  it('a handed-back pull request starts again: only the fix runs since the label came off count', () => {
+    const run = (conclusion: string, created_at: string) => ({ status: 'completed', conclusion, created_at });
+    const runs = [run('failure', '2026-11-20T10:00:00Z'), run('failure', '2026-11-20T11:00:00Z'), run('success', '2026-11-21T09:00:00Z'), run('failure', '2026-11-22T09:00:00Z')];
+    expect(failedFixRuns(runs, null)).toBe(3);
+    expect(failedFixRuns(runs, '2026-11-21T00:00:00Z')).toBe(1);
+    expect(failedFixRuns([{ status: 'in_progress', conclusion: null, created_at: '2026-11-22T10:00:00Z' }], null)).toBe(0);
+  });
+
+  it('leaves a pull request that is stuck or for the maintainer alone', () => {
     expect(state(s => { s.pr.labels = ['stuck']; })).toMatchObject({ action: 'skip', reason: 'labelled stuck: the PM looks' });
     expect(state(s => { s.pr.labels = ['needs-maintainer']; }).action).toBe('skip');
   });
