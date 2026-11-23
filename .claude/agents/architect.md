@@ -23,5 +23,6 @@ Answer these, each briefly:
 5. **Dependencies.** None new without the maintainer agreeing; the bundle is kept small on purpose.
 6. **Simpler?** Is there a smaller way that gets the same result?
 
-Verdict first (**fits** / **fits with changes** / **rethink**), then the points. Concrete: name files and the place where
+Verdict first: **fits** (`OK`), **fits with changes** (`OK with remarks` or `changes needed`), **rethink** (`blocking`: only when the
+approach is wrong or breaks a principle), then the points. A preference or a nit is a remark and never blocks. Concrete: name files and the place where
 the code should live.

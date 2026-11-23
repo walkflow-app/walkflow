@@ -87,7 +87,7 @@ What counts as belt code (`SAFETY`: two reviews by two models, `needs-hardware`,
 trust-boundary code (`TRUST`: `src/net/`, `src/core/share/`: two reviews, no treadmill) is listed once, in `scripts/paths.mjs`; the
 safety gate, the pipeline and `review-model.sh` read it.
 
-**The agent pipeline** (repository variable `AGENT_PIPELINE` = `on`; off, the verdict is a comment and a maintainer merges)
+**The agent pipeline** (repository variable `AGENT_PIPELINE` = `on`; off, the verdict is a comment and the PM or a maintainer merges)
 takes a pull request to `main` without a maintainer. The rules are in `scripts/agent-pipeline.mjs` and its tests:
 
 - The review is a review of the app *walkflow-reviewer* on the reviewed commit: `OK` approves, `OK with remarks` comments,
@@ -124,8 +124,8 @@ feature is approved by a comment that is only `approved`, by an owner in `.githu
 issue closes, and every hour) starts each open task of an approved feature whose blockers are all closed and that has none
 of `needs-maintainer`, `stuck` and `hold`: it sets `agent-ready` and starts `claude.yml` with the issue number, at most
 three per run. `claude.yml` checks the same before it builds an issue labelled `agent-ready`; if it may not start, the label
-comes off and the issue says why (`scripts/feature-gate.mjs`). An agent that finds a gap in the feature comments `Spec gap:`
-and stops.
+comes off and the issue says why (`scripts/feature-gate.mjs`). An agent decides a small gap in the feature itself and says so in the pull request; for a material gap (scope, non-goals,
+what a person sees) it comments `Spec gap:` with a proposal and `Stop: material spec gap`, and stops. The PM answers it.
 
 A new issue from someone outside the project is sorted by `triage.yml`: an agent that can only read proposes labels,
 duplicates, missing details and where in the code it is; a second job without an agent checks that and writes the labels and
