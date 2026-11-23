@@ -78,7 +78,8 @@ request; Dependabot keeps the GitHub Actions, which are pinned by commit, and th
 
 Every new pull request gets a review by AI agents (`.github/workflows/agent-review.yml`): they check what this repository's
 `CLAUDE.md` asks for and post their verdict. Maintainers can ask for more with `@claude …` in a comment, or hand over an issue
-with the label `agent-ready` (`.github/workflows/claude.yml`); belt code is built like any other issue, test first. Pull requests
+with the label `agent-ready` (`.github/workflows/claude.yml`); belt code is built like any other issue, with the safeguards that stay: the test first, the safety reviewer, two reviews by two
+models, the label `needs-hardware`, and one check on a treadmill before the release. Pull requests
 from forks are not reviewed by agents. A review runs with another model than the one that wrote the change (Opus and Sonnet
 check each other; `.github/scripts/review-model.sh`).
 
