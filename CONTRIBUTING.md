@@ -87,7 +87,7 @@ What counts as belt code (`SAFETY`: two reviews by two models, `needs-hardware`,
 trust-boundary code (`TRUST`: `src/net/`, `src/core/share/`: two reviews, no treadmill) is listed once, in `scripts/paths.mjs`; the
 safety gate, the pipeline and `review-model.sh` read it.
 
-**The agent pipeline** (repository variable `AGENT_PIPELINE` = `on`; off, the verdict is a comment and the PM or a maintainer merges)
+**The agent pipeline** (repository variable `AGENT_PIPELINE` = `on`; off, the verdict is a comment and the PM or the maintainer merges)
 takes a pull request to `main` without a maintainer. The rules are in `scripts/agent-pipeline.mjs` and its tests:
 
 - The review is a review of the app *walkflow-reviewer* on the reviewed commit: `OK` approves, `OK with remarks` comments,
