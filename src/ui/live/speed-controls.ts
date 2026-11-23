@@ -9,6 +9,7 @@ import {
 } from '../../core/safety/limit-settings';
 import { t } from '../../i18n/i18n';
 import { noticeText } from './treadmill-text';
+import { targetFigureText } from './target-figure';
 import {
   loadSpeedPresets, PRESET_KEYS, presetCommand, type PresetKey, serializeSpeedPresets, SPEED_PRESETS_STORAGE_KEY,
   type SpeedPresets,
@@ -81,7 +82,7 @@ export function setupSpeedControls(host: SpeedControlsHost) {
     const sl = $input('slider');
     const { target, lastCommand: lc, ramping } = tm.state;
     if (target !== null && !sliderDragging) sl.value = String(target);
-    $('target').textContent = t.control.speed(target ?? parseFloat(sl.value));
+    $('target').textContent = targetFigureText(target, t.control.speed);
     $('rampInfo').textContent = ramping && target !== null && lc && lc.kmh !== target
       ? t.control.ramping(lc.kmh, target)
       : ' ';
@@ -166,7 +167,7 @@ export function setupSpeedControls(host: SpeedControlsHost) {
   slider.addEventListener('pointerdown', () => { sliderDragging = true; });
   window.addEventListener('pointerup', () => { sliderDragging = false; });
   slider.oninput = () => { $('target').textContent = t.control.speed(parseFloat(slider.value)); };
-  slider.onchange = () => { sliderDragging = false; requestSpeed(parseFloat(slider.value)); };
+  slider.onchange = () => { sliderDragging = false; requestSpeed(parseFloat(slider.value)); renderSpeed(); };
   $button('minus').onclick = () => stepSpeed(-speedStep());
   $button('plus').onclick = () => stepSpeed(speedStep());
   presetButtons().forEach(b => {
