@@ -93,7 +93,7 @@ export function setupRouteImport(host: RouteImportHost) {
    */
   async function takeFromStore(file: { name: string; text: string }, opts: { storeFile: string; replace?: string }): Promise<boolean> {
     const read = readPackage(file.text, newRouteId(Date.now()), Date.now());
-    if (!read.ok) { countError('store-add'); setStatus(() => t.routes[packageFailure(read.reason)]); return false; }
+    if (!read.ok) { if (read.reason !== 'newer') countError('store-add'); setStatus(() => t.routes[packageFailure(read.reason)]); return false; }
     const name = routeName(read.route, lang);
     const revision = read.route.revision ?? 1;
     const existing = opts.replace ? (await (await host.store()).list()).find(r => r.id === opts.replace) : undefined;

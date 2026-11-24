@@ -38,6 +38,8 @@ describe('usage counts of errors', () => {
     await setup().takeFromStore({ name: 'x.walkflow', text: 'not a package' }, { storeFile: 'x.walkflow' });
     expect(countError.mock.calls).toEqual([['store-add']]);
     countError.mockClear();
+    await setup().takeFromStore({ name: 'n.walkflow', text: JSON.stringify({ ...JSON.parse(file.text), version: 999 }) }, { storeFile: 'n.walkflow' });
+    expect(countError).not.toHaveBeenCalled();
     await setup().takeFromStore(file, { storeFile: 'park.walkflow' });
     confirmDialog.mockResolvedValue(false);
     await setup().takeFromStore(file, { storeFile: 'park.walkflow' });
