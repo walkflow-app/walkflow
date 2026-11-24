@@ -8,7 +8,9 @@ import { readWorkoutPackage, WORKOUT_PACKAGE_MAX_CHARS } from '../../core/traini
 import { newWorkoutId, workoutName, type Workout } from '../../core/training/workouts';
 import type { WorkoutStore } from '../../data/workout-store';
 import { lang, t } from '../../i18n/i18n';
+import { featureName } from '../../core/usage/events';
 import { confirmDialog } from '../components/dialogs';
+import { count } from '../usage';
 
 export interface WorkoutImportHost {
   store(): Promise<WorkoutStore>;
@@ -62,6 +64,7 @@ export function setupWorkoutImport(host: WorkoutImportHost) {
     try { await (await host.store()).put(workout); } catch (e) { host.setStatus(() => t.workouts.failed(String(e))); return; }
     await host.added(workout);
     host.setStatus(() => t.workouts.imported(workoutName(workout, lang)));
+    count(featureName('workout.import'));
   }
 
   return { importFile, openPackage };

@@ -41,11 +41,35 @@ Level 2:
 - `lang.de`
 - `lang.fr`
 - `lang.uk`
+- `view.training`
+- `view.workouts`
+- `view.routes`
+- `view.history`
+- `workout.interval`
+- `workout.weekplan`
+- `workout.import`
+- `route.own`
+- `route.gpx`
+- `route.map-on`
+- `history.csv`
+- `history.tcx`
+- `store.open`
+- `store.add`
+- `store.route.<name>`
 - `tm.<maker>.<model>`
 - `tm.<maker>.unknown`
 - `tm.unknown.<model>`
 - `tm.unknown`
 - `tm.demo`
+
+When they are sent: a view name when the view is opened (the Community view counts nothing; `view.training` comes at nearly every
+start, because Training is the view the app opens on). `workout.interval` when a new
+workout is saved in the editor, `workout.weekplan` when the week plan is saved, `workout.import` when a workout package is
+imported. `route.own` when the walking speed or description of a route is saved, `route.gpx` when a GPX file is imported,
+`route.map-on` when the map is switched on. `history.csv` and `history.tcx` when the recording is exported. `store.open` when
+the route store is opened. `store.add` when a route of the store is added (updating one you have is not counted), and with it
+`store.route.<name>`: `<name>` is the route's file name in the store's list without `.walkflow` (`lake-x.walkflow` →
+`store.route.lake-x`). It is built only from that list, never from a route you made or imported.
 
 The treadmill: once after a treadmill is connected, `tm.<maker>.<model>` from the manufacturer and model number the treadmill
 reports about itself (Device Information), lower case, spaces as `-`. There is no fixed list; a guard keeps out a string

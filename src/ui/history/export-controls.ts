@@ -5,6 +5,8 @@ import { buildTcx, exportFilename, toCsv, type Sample, type TcxSport } from '../
 import { t } from '../../i18n/i18n';
 import { $, $button, download, log } from '../ui';
 import { store } from '../store';
+import { featureName } from '../../core/usage/events';
+import { count } from '../usage';
 
 const TCX_SPORT_KEY = 'walkflow.tcxSport';
 
@@ -19,6 +21,7 @@ export function setupExportControls(samples: Sample[], onCleared: () => void) {
     if (!samples.length) { log(t.settings.noData); return; }
     // Named after the start of the recording, like the files of a saved run, not after the moment of the export
     download(toCsv(samples), 'text/csv', exportFilename(new Date(samples[0]!.ts), 'csv'));
+    count(featureName('history.csv'));
   };
 
   $button('tcx').onclick = () => {
@@ -26,6 +29,7 @@ export function setupExportControls(samples: Sample[], onCleared: () => void) {
     if (!xml) { log(t.settings.noMovement); return; }
     const firstMoving = samples.find(s => (s.speed ?? 0) > 0);
     download(xml, 'application/vnd.garmin.tcx+xml', exportFilename(new Date(firstMoving?.ts ?? Date.now()), 'tcx'));
+    count(featureName('history.tcx'));
   };
 
   $button('clear').onclick = () => {

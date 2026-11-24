@@ -36,6 +36,7 @@ src/
     routes/ workouts/ history/ community/ settings/   one folder per feature view (history also has the export buttons)
     background.ts       wake lock, tab in the background, leaving the page
     desktop.ts pwa.ts theme.ts views.ts i18n-dom.ts   integration of the page
+    views-count.ts      the usage count of an opened view (view.<name>; Community counts nothing)
     ui.ts store.ts      DOM lookups, log and download; the storage wrapper that never throws
     usage.ts            the sender of the usage counts: synchronous, never throws, never awaited, once per name and start, only after the first-start popup is accepted. Like core/usage/ and platform/usage-url.ts it imports nothing of the treadmill library (tests/architecture.test.ts)
 electron/             main process and preload of the desktop app
