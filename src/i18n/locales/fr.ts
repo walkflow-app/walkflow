@@ -543,7 +543,7 @@ export const fr: Messages = {
     devLabel: 'Mode développeur',
     devHint: 'Affiche la console d’expérimentation (commandes brutes vers le tapis) et, dans l’application de bureau, les outils de développement. Pour bricoler et diagnostiquer, pas nécessaire pour marcher.',
     usageImproveLabel: 'Aider à améliorer l’application en partageant anonymement les fonctions que j’utilise',
-    usageImproveHint: 'Les vues, types de séances, éditeurs, exports et la bibliothèque de parcours que vous utilisez, les parcours de la bibliothèque que vous ajoutez, et la marque et le modèle de votre tapis tels qu’il les signale.',
+    usageImproveHint: 'La langue, les vues, types de séances, éditeurs, exports et la bibliothèque de parcours que vous utilisez, et les parcours de la bibliothèque que vous ajoutez.',
     usageErrorsLabel: 'Partager les erreurs anonymement',
     usageErrorsHint: 'Quel type d’erreur connu s’est produit, avec la version de l’application. Jamais le texte de l’erreur.',
     usageStartCounted: 'Même si les deux sont désactivés, le démarrage de l’application est compté.',

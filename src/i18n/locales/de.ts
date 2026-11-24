@@ -540,7 +540,7 @@ export const de: Messages = {
     devLabel: 'Entwicklermodus',
     devHint: 'Zeigt die Experimentier-Konsole (rohe Befehle ans Band) und in der Desktop-App die Entwicklerwerkzeuge. Zum Tüfteln und Fehlersuchen, zum Gehen brauchst du ihn nicht.',
     usageImproveLabel: 'Zum Verbessern beitragen und anonym teilen, welche Funktionen ich nutze',
-    usageImproveHint: 'Die Ansichten, Arten von Läufen, Editoren, Exporte und der Streckenspeicher, die du nutzt, die Strecken, die du aus dem Streckenspeicher hinzufügst, und Hersteller und Modell deines Laufbands, wie es sie meldet.',
+    usageImproveHint: 'Die Sprache, die Ansichten, Arten von Läufen, Editoren, Exporte und der Streckenspeicher, die du nutzt, und die Strecken, die du aus dem Streckenspeicher hinzufügst.',
     usageErrorsLabel: 'Fehler anonym teilen',
     usageErrorsHint: 'Welche bekannte Fehlerart aufgetreten ist, mit der App-Version. Nie der Fehlertext.',
     usageStartCounted: 'Auch wenn beide aus sind, wird der App-Start gezählt.',
