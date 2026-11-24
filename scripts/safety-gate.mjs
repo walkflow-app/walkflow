@@ -5,16 +5,13 @@
 //   node scripts/safety-gate.mjs <base ref> "<pull request title>"
 import { execFileSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
+import { SAFETY } from './paths.mjs';
 
-// Code that can change what is sent to the belt or what the person is warned about: the safety rules, the live view, the
-// program that sets speeds, the pause of a hidden tab, the wiring of buttons and keys (main.ts) and the desktop app
-const SAFETY = [
-  /^src\/core\/safety\//, /^src\/ui\/live\//, /^src\/core\/training\/program\.ts$/, /^src\/ui\/background\.ts$/,
-  /^src\/main\.ts$/, /^electron\//,
-];
+// Code that can change what is sent to the belt or what the person is warned about: scripts/paths.mjs (one list for the gate,
+// the pipeline and the choice of the reviewing model)
 const TEST = /\.test\.ts$/;
 // A test counts for safety code only where safety code is tested: next to it, or under tests/
-const SAFETY_TEST = [/^src\/core\/safety\//, /^src\/ui\/live\//, /^src\/core\/training\//, /^src\/ui\/background/, /^electron\//, /^tests\//];
+const SAFETY_TEST = [/^src\/core\/safety\//, /^src\/ui\/live\//, /^src\/core\/training\//, /^src\/ui\/background/, /^src\/platform\/bt-devices/, /^electron\//, /^tests\//];
 
 export function checkSafetyGate({ files, title, libraryChanged = false }) {
   const errors = [], warnings = [];

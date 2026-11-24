@@ -33,8 +33,9 @@ The maintainer pastes a log (times `HH:MM:SS`, `→` sent, `←` answers, `ℹ` 
 
 ## Mode C: a guided session at the treadmill
 
-Whenever the maintainer has to do something at the treadmill (open items here, an issue labelled `needs-hardware`, a pull
-request waiting for `/hardware-ok`), prepare it so they can start at once, and read the log yourself.
+Once per release, and only if belt code (`SAFETY`, `scripts/paths.mjs`) is in it: collect everything open here and every
+`needs-hardware` item that is merged, prepare **one** session so the maintainer can start at once, and read the log yourself.
+Not per pull request or per task; sooner only when the maintainer asks.
 
 1. **Plan the session.** Collect what needs the same build: the release (the live app, `https://walkflow-app.github.io/app/`)
    or one branch or pull request. Say which, and what each item checks.
