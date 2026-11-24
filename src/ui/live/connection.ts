@@ -77,8 +77,8 @@ export function setupConnection(host: ConnectionHost) {
       // Connects, reads the treadmill and asks for control
       const info = await tm.connect(adapter);
       loss.connected();
-      // Raised after every connect that resolved (the sender sends a name once per start of the app; a failed connect counts nothing)
-      // (the name is built inside a try: nothing about a count may skip the steps below)
+      // Counted after every connect that resolved, the name built inside a try so nothing about a count can skip the steps
+      // below (the sender sends a name once per start of the app; a failed connect counts nothing)
       try { host.count(treadmillName(kind === 'demo' ? 'demo' : 'ble', host.live.deviceInfo())); } catch { /* a count never breaks anything */ }
 
       host.incline.onConnected(info, source === 'ble');
