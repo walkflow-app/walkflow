@@ -110,7 +110,8 @@ takes a pull request to `main` without a maintainer. The rules are in `scripts/a
   review whose run failed (not one that found something), once. A head that already is that empty commit is not kicked
   again; if the checks or the review still do not come, a person looks. A pull request without a label that has a
   conflict with `main` is not kicked: GitHub starts no workflow on it, so the fix agent solves the conflict first (its push
-  starts the checks).
+  starts the checks). While GitHub does not yet know whether there is a conflict (`UNKNOWN`, for a while after `main`
+  moved) it waits for the next sweep instead of parking.
 - **Belt code** (`SAFETY` in `scripts/paths.mjs`, and a new `ftms-treadmill` version) and **trust-boundary code** (`TRUST`:
   `src/net/`, `src/core/share/`) are reviewed by Opus and Sonnet, merged only when both say `OK` and on top of the current
   `main`. Belt code also gets the label `needs-hardware`: one check on a treadmill before the release, not before each merge.

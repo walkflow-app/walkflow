@@ -249,6 +249,9 @@ describe('agent pipeline: what happens next', () => {
     expect(conflicting(s => { s.headKicked = true; })).toMatchObject({ action: 'fix', mode: 'conflict' });
     // One try only; after it a person looks
     expect(conflicting(s => { s.headKicked = true; s.comments = [fixDone(HEAD, 'conflict')]; }).action).toBe('hold');
+    // GitHub says UNKNOWN for a while after main moved: the conflict is not known yet, so wait, never park for the checks
+    expect(conflicting(s => { s.headKicked = true; s.mergeable = 'UNKNOWN'; })).toMatchObject({ action: 'wait' });
+    expect(conflicting(s => { s.headKicked = true; s.mergeable = 'UNKNOWN'; s.headAgeHours = LIMITS.staleHours + 1; }).action).toBe('hold');
     // Without the conflict the kick is as before
     expect(conflicting(s => { s.mergeable = 'MERGEABLE'; }).action).toBe('kick');
   });

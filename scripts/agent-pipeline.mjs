@@ -144,9 +144,12 @@ export function decide(s) {
   // A pull request claude.yml opened with the workflow token started no workflow: one empty commit by the app starts them.
   // Not with a conflict: GitHub starts no workflow on it, a kick cannot help, and the conflict is solved first (below)
   const conflicting = s.mergeable === 'CONFLICTING';
+  // UNKNOWN: GitHub has not worked out yet whether there is a conflict (it does not for a while after main moved). A kick that
+  // started nothing is then no proof that the checks cannot start: wait for the next sweep, and park only when it takes hours
+  const unknown = s.mergeable === 'UNKNOWN';
   if (needsChecks && !conflicting) return out('kick', 'no checks ran yet', { sha: pr.headSha });
   if (pr.author.login === 'github-actions[bot]' && s.headKicked && !REQUIRED_CHECKS.some(n => n in s.checks) && !conflicting)
-    return out('hold', 'the checks did not start after the kick');
+    return unknown && !stale ? out('wait', 'GitHub does not know yet whether there is a conflict') : out('hold', 'the checks did not start after the kick');
 
   const reviews = s.reviews.filter(r => r.user === REVIEWER)
     .map(r => ({ ...r, mark: readMarker('agent-review', r.body) }))
