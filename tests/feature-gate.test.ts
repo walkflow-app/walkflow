@@ -38,21 +38,22 @@ describe('feature gate', () => {
     ]);
   });
 
-  it('holds safety, needs-maintainer and hold, and closed tasks', () => {
+  it('holds needs-maintainer, stuck and hold, and closed tasks, but not belt code (meta process/flow.md)', () => {
     for (const l of HOLD) expect(reasons(task([l]), feature(), [], who)).toEqual([`it is labelled \`${l}\``]);
+    expect(reasons(task(['safety']), feature(), [], who)).toEqual([]);
     expect(reasons(task([], 'closed'), feature(), [], who).join()).toMatch(/is closed/);
     expect(reasons({ ...task(), type: 'Feature' }, null, [], who).join()).toMatch(/Feature issue/);
   });
 
   it('checks only labels and blockers of an issue outside a feature', () => {
     expect(reasons(task(), null, [], who)).toEqual([]);
-    expect(reasons(task(['safety']), null, [blocker('open')], who)).toHaveLength(2);
+    expect(reasons(task(['hold']), null, [blocker('open')], who)).toHaveLength(2);
   });
 
   it('looks only at open issues that are not started or held', () => {
     const issue = (number: number, labels: string[] = [], extra = {}) => ({ number, state: 'open', labels, pullRequest: false, ...extra });
     expect(candidates([
-      issue(1), issue(2, ['agent-ready']), issue(3, ['safety']), issue(4, [], { pullRequest: true }),
+      issue(1), issue(2, ['agent-ready']), issue(3, ['stuck']), issue(4, [], { pullRequest: true }),
       issue(5, [], { state: 'closed' }), issue(6, ['needs-hardware']),
     ]).map((i: { number: number }) => i.number)).toEqual([1, 6]);
   });

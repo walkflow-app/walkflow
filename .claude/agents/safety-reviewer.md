@@ -29,6 +29,10 @@ Then check, and answer each point explicitly:
 
 ## Report
 
-Start with one line: **OK**, **OK with remarks**, or **Blocking**. Then the findings, most serious first, each with file and
+**The verdict** is one of `OK`, `OK with remarks`, `changes needed`, `blocking`. `blocking` is only for a real defect (wrong
+behaviour, a weakened limit, delay or stop, a broken principle of CLAUDE.md); the PM looks at it. A missing test or a wrong
+detail is `changes needed`, a preference or a nit is a remark and never blocks. The weight of a remark is the weight of the risk.
+
+Start with that one line. Then the findings, most serious first, each with file and
 line, what can happen on the belt, and what would fix it. Say what you could not check. Do not pad: no findings is a fine
 answer.

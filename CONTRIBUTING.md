@@ -58,14 +58,15 @@ request; Dependabot keeps the GitHub Actions, which are pinned by commit, and th
   `ci`, `style`, `chore` do not appear in the release notes. Example: `fix(routes): keep the progress when a route is updated`.
 - **Safety first.** Code that decides what is sent to the treadmill (the app's `src/core/safety/`, and the library [`ftms-treadmill`](https://github.com/walkflow-app/ftms-treadmill), which has its own repository)
   gets its test first, and the change must not weaken a limit, a delay or a warning. If you are not sure, say so in the pull request.
-  The CI job `safety-gate` fails a pull request that changes `src/core/safety/`, `src/ui/live/`, `src/core/training/program.ts`,
-  `src/ui/background.ts`, `src/main.ts` or `electron/` without changing a test next to that code or under `tests/`, and warns
-  when such a change has no `safety` title or no update of HARDWARE-TESTS.md.
+  The CI job `safety-gate` fails a pull request that changes belt code (the list `SAFETY` in `scripts/paths.mjs`: `src/core/safety/`,
+  `src/ui/live/`, `src/core/training/`, `src/platform/bt-devices`, `src/ui/background.ts`, `src/main.ts`, `electron/`) without
+  changing a test next to that code or under `tests/`, and warns when such a change has no `safety` title or no update of
+  HARDWARE-TESTS.md.
 - **Small and focused.** One change per pull request, with the tests that show it works.
 - **Through a pull request only.** `main` takes no direct pushes; a pull request is merged once CI (`test`) is green.
 - **Working with an AI agent?** `CLAUDE.md` holds the rules an agent needs (safety, hardware checks, texts, releases) and
   `.claude/settings.json` the commands it may and may not run, `.claude/skills/` and `.claude/agents/` the ways of working (release,
-  hardware checks, specs) and the reviewers (safety, docs and texts, architecture, the site); `.github/CODEOWNERS` names what needs a human review.
+  hardware checks, specs) and the reviewers (safety, docs and texts, architecture, the site); `.github/CODEOWNERS` names the owners and what needs their care.
 - **No new dependency without asking first** (open an issue). What the app runs is bundled at build time and kept small on purpose:
   besides its own code only the treadmill library, the map library and the sharing library.
 - **Texts.** The app is in English, German, French and Ukrainian. A new text needs all four (`src/i18n/locales/`); a test checks that
@@ -77,34 +78,46 @@ request; Dependabot keeps the GitHub Actions, which are pinned by commit, and th
 
 Every new pull request gets a review by AI agents (`.github/workflows/agent-review.yml`): they check what this repository's
 `CLAUDE.md` asks for and post their verdict. Maintainers can ask for more with `@claude …` in a comment, or hand over an issue
-with the label `agent-ready` (`.github/workflows/claude.yml`); agents never take on issues labelled `safety`. Pull requests
+with the label `agent-ready` (`.github/workflows/claude.yml`); belt code is built like any other issue, with the safeguards that stay: the test first, the safety reviewer, two reviews by two
+models, the label `needs-hardware`, and one check on a treadmill before the release. Pull requests
 from forks are not reviewed by agents. A review runs with another model than the one that wrote the change (Opus and Sonnet
 check each other; `.github/scripts/review-model.sh`).
 
-**The agent pipeline** (repository variable `AGENT_PIPELINE` = `on`; off, the verdict is a comment and a maintainer merges)
+What counts as belt code (`SAFETY`: two reviews by two models, `needs-hardware`, a check on the treadmill before the release) and as
+trust-boundary code (`TRUST`: `src/net/`, `src/core/share/`: two reviews, no treadmill) is listed once, in `scripts/paths.mjs`; the
+safety gate, the pipeline and `review-model.sh` read it.
+
+**The agent pipeline** (repository variable `AGENT_PIPELINE` = `on`; off, the verdict is a comment and the PM or the maintainer merges)
 takes a pull request to `main` without a maintainer. The rules are in `scripts/agent-pipeline.mjs` and its tests:
 
 - The review is a review of the app *walkflow-reviewer* on the reviewed commit: `OK` approves, `OK with remarks` comments,
   `changes needed` and `blocking` request changes. It runs again on every new commit.
 - `agent-pipeline.yml` (after a review, CI or a fix, and every 15 minutes) decides: merge (squash) when the head commit is
   approved, `test` and `safety-gate` are green and there is no conflict; start `agent-fix.yml` for remarks, a failing check or
-  a conflict (one try per commit); or hand over to the maintainer with the label `needs-maintainer` and a comment why. Removing
-  the label hands it back. At most 4 reviewed commits per pull request; past 5 agent merges a day the rest waits for the next
+  a conflict (one try per commit, a failed fix run is tried once more); or park the pull request with a comment why: the label
+  `stuck` (the pipeline gave up; **the PM**, the planning agent the maintainer works with, looks: it fixes the cause, hands it back by
+  removing the label, or passes a decision of the maintainer on) or, only for the rules themselves (`PROTECTED`: `CLAUDE.md`, `.claude/`, `.github/`,
+  `scripts/`, build and test configuration, dependencies, the legal pages, a hardware check removed or ticked off), the label
+  `needs-maintainer`. Removing the label hands it back, and the 6 hours the pipeline waits for a review or a check start again
+  from that moment. At most 4 reviewed commits per pull request; past 5 agent merges a day the rest waits for the next
   day. A small fix of remarks (30 lines, no safety path, no deleted test) is merged without waiting for another review; every
   other fix is reviewed again. A pull request with changes requested by a person is left alone.
 - The fix agent works without a write token and hands over a patch; the app *walkflow-writer* pushes it after checking what it
   changes. A pull request `claude.yml` opened (with the workflow token, which starts no workflow) gets one empty commit by the
   app, which starts CI and the review; the agent in `claude.yml` never gets the app's token. The same goes for the release
-  pull request and for one labelled `needs-maintainer` (the maintainer cannot merge without the checks), as long as `test`
-  and `safety-gate` do not exist for its head: other workflows such as CodeQL do not count. A head that already is that
-  empty commit is not kicked again; if the checks still do not come, a person looks.
-- **Safety changes** (`src/core/safety/`, `src/ui/live/`, `src/core/training/`, Bluetooth devices, `src/main.ts`, a new
-  `ftms-treadmill` version) are reviewed by Opus and Sonnet, merged only when both say `OK` and on top of the current `main`,
-  and get the label `needs-hardware`.
-- **Never merged by an agent:** changes to `.github/`, `.claude/`, `CLAUDE.md`, `scripts/`, `HARDWARE-TESTS.md`, dependencies
-  and npm settings, the test, lint, build and release configuration, `index.html`, `electron/`, `public/legal/`, `src/net/`,
-  `src/core/share/` (`PROTECTED` in `scripts/agent-pipeline.mjs`); drafts; pull requests from forks or from outside the
-  organisation; release-please and Dependabot; anything labelled `hold`.
+  pull request and for one labelled `needs-maintainer` or `stuck` (nobody can merge without the checks), as long as `test`
+  and `safety-gate` do not exist for its head: other workflows such as CodeQL do not count. The same empty commit starts a
+  review whose run failed (not one that found something), once. A head that already is that empty commit is not kicked
+  again; if the checks or the review still do not come, a person looks.
+- **Belt code** (`SAFETY` in `scripts/paths.mjs`, and a new `ftms-treadmill` version) and **trust-boundary code** (`TRUST`:
+  `src/net/`, `src/core/share/`) are reviewed by Opus and Sonnet, merged only when both say `OK` and on top of the current
+  `main`. Belt code also gets the label `needs-hardware`: one check on a treadmill before the release, not before each merge.
+- **Never merged by an agent** (`PROTECTED` in `scripts/agent-pipeline.mjs`: the rules themselves): changes to `.github/`, `.claude/`,
+  `CLAUDE.md`, `scripts/`, dependencies and npm settings, the test, lint, build and release configuration, `public/legal/`, and a
+  check in `HARDWARE-TESTS.md` that is removed, ticked off or added as ticked (adding a check is ordinary); also drafts, pull
+  requests from forks or from outside the organisation, release-please and Dependabot, anything labelled `hold`. Who is inside
+  is asked of the organisation (the app *walkflow-writer* needs the permission "Organization members: read"; the association GitHub
+  shows says "contributor" for a member who keeps the membership private); anything but a clear yes counts as outside.
 - **The release gate:** a release is built only when every pull request since the last release that touches a safety path or
   has `needs-hardware` has a comment that is only `/hardware-ok`, by an owner in `.github/CODEOWNERS` and written after its
   merge (or one on the release pull request after the last of them was merged), once its checks in HARDWARE-TESTS.md passed
@@ -113,10 +126,10 @@ takes a pull request to `main` without a maintainer. The rules are in `scripts/a
 **Features** are built as tasks: sub-issues of an issue of type *Feature*, each with its blockers ("blocked by"). The
 feature is approved by a comment that is only `approved`, by an owner in `.github/CODEOWNERS`. `dispatch.yml` (when an
 issue closes, and every hour) starts each open task of an approved feature whose blockers are all closed and that has none
-of `safety`, `needs-maintainer` and `hold`: it sets `agent-ready` and starts `claude.yml` with the issue number, at most
+of `needs-maintainer`, `stuck` and `hold`: it sets `agent-ready` and starts `claude.yml` with the issue number, at most
 three per run. `claude.yml` checks the same before it builds an issue labelled `agent-ready`; if it may not start, the label
-comes off and the issue says why (`scripts/feature-gate.mjs`). An agent that finds a gap in the feature comments `Spec gap:`
-and stops.
+comes off and the issue says why (`scripts/feature-gate.mjs`). An agent decides a small gap in the feature itself and says so in the pull request; for a material gap (scope, non-goals,
+what a person sees) it comments `Spec gap:` with a proposal and `Stop: material spec gap`, and stops. The PM answers it.
 
 A new issue from someone outside the project is sorted by `triage.yml`: an agent that can only read proposes labels,
 duplicates, missing details and where in the code it is; a second job without an agent checks that and writes the labels and

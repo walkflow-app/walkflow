@@ -10,7 +10,7 @@ a Sportstech sPad 500.
 
 ## Now
 
-- **Hardware checks still open.** 67 items in [HARDWARE-TESTS.md](HARDWARE-TESTS.md) are not ticked, among them
+- **Hardware checks still open.** 64 items in [HARDWARE-TESTS.md](HARDWARE-TESTS.md) are not ticked, among them
   incline levels, program transitions, reconnecting, **the belt on a lost connection** and stop on a standing belt. Needs a
   real treadmill. `needs-hardware`
 
