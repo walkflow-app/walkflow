@@ -15,13 +15,14 @@ const MAC = /^[0-9a-f]{2}([:-][0-9a-f]{2}){5}$/;
 const UUID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/;
 
 /**
- * The string as a part of a name, or null if it is left out: 1 to 32 characters from a-z 0-9 . _ - + (after lower case and
+ * The string as a part of a name, or null if it is left out: NULs and spaces at the ends stripped, 1 to 32 characters from a-z 0-9 . _ - + (after lower case and
  * spaces to -), no run of 5 or more digits, none of 6 or more hex digits, no MAC address or UUID, not only digits.
  * (`@` and `/` are not in the character set.)
  */
 export function guardPart(raw: string | null | undefined): string | null {
   if (typeof raw !== 'string') return null;
-  const s = raw.toLowerCase().replaceAll(' ', '-');
+  // Device Information strings are often padded with NULs or spaces; only the ends are stripped
+  const s = raw.replace(/^[\0\s]+|[\0\s]+$/g, '').toLowerCase().replaceAll(' ', '-');
   if (!PLAIN.test(s)) return null;
   if (/\d{5,}/.test(s) || /[0-9a-f]{6,}/.test(s)) return null;
   // The same runs with the separators taken out: `ab12-cd34-ef56` is a serial number written in groups

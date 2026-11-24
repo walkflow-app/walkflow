@@ -72,7 +72,7 @@ the route store is opened. `store.add` when a route of the store is added (updat
 `store.route.lake-x`). It is built only from that list, never from a route you made or imported.
 
 The treadmill: once after a treadmill is connected, `tm.<maker>.<model>` from the manufacturer and model number the treadmill
-reports about itself (Device Information), lower case, spaces as `-`. There is no fixed list; a guard keeps out a string
+reports about itself (Device Information), NULs and spaces at the ends stripped, lower case, other spaces as `-`. There is no fixed list; a guard keeps out a string
 that is not 1 to 32 characters from `a-z 0-9 . _ - +`, has 5 or more digits or 6 or more hex digits in a row (also when split by `.`, `_`, `-` or `+`),
 looks like an address or UUID, or is only digits. A part that is left out is written `unknown` (`tm.<maker>.unknown`,
 `tm.unknown.<model>`), and `tm.unknown` is sent when both are left out or `unknown`, or the treadmill reported none. A string

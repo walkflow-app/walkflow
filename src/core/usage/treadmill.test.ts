@@ -21,6 +21,22 @@ describe('guardPart: what a treadmill reports about itself may become part of a 
     for (const s of bad) expect(guardPart(s), JSON.stringify(s)).toBeNull();
   });
 
+  it('strips the NUL and space padding of Device Information strings at the ends', () => {
+    expect(guardPart('FITHOME\0')).toBe('fithome');
+    expect(guardPart('FITHOME\0\0\0')).toBe('fithome');
+    expect(guardPart('FITHOME ')).toBe('fithome');
+    expect(guardPart('  JJ-BT2-DL \0')).toBe('jj-bt2-dl');
+    expect(guardPart('\0\0')).toBeNull();
+    expect(guardPart('   ')).toBeNull();
+    // Only the ends: a NUL inside is still turned down
+    expect(guardPart('FIT\0HOME')).toBeNull();
+  });
+
+  it('leaves out a word made only of hex letters, on the safe side', () => {
+    expect(guardPart('decade')).toBeNull();
+    expect(guardPart('facade')).toBeNull();
+  });
+
   it('passes the longest allowed string and short ones', () => {
     expect(guardPart('x'.repeat(32))).toBe('x'.repeat(32));
     expect(guardPart('a')).toBe('a');

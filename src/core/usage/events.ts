@@ -1,6 +1,7 @@
 // The names of the anonymous usage counts (docs/USAGE.md). An event is one name built here from fixed parts, or (tm.*) from the
-// maker and model a treadmill reports, after the guard in treadmill.ts; no event carries a typed text, a measured number or an ID. Pure: the sender is ui/usage.ts, the address platform/usage-url.ts. Everything that
-// can be sent is listed in FIXED_NAMES and PATTERNS, and docs/USAGE.md lists the same (a test compares them).
+// maker and model a treadmill reports, after the guard in treadmill.ts; no event carries a typed text, a measured number or
+// an ID. Pure: the sender is ui/usage.ts, the address platform/usage-url.ts. Everything that can be sent is
+// listed in FIXED_NAMES and PATTERNS, and docs/USAGE.md lists the same (a test compares them).
 
 import { STORE_FILE_NAME } from '../routes/routes';
 import { isTreadmillRest } from './treadmill';
