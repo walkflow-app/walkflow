@@ -69,8 +69,8 @@ export function setupStage(host: StageHost) {
    *  the map is on) or the speed chart. Display only, plus the read-only usage count of a run that has started
    *  (run-count.ts). */
   function render() {
-    // render() is also the runner's status hook; the runner first reports a run here at its first running step (not in
-    // the countdown), so that is when the run is counted, once.
+    // render() is also the runner's status hook. The counter accepts a run in the countdown or running, but the runner
+    // does not report during the countdown, so in practice the run is counted here at its first running step, once.
     // countRun never throws, never awaits and gets no handle to the belt.
     countRun(activeRun, runner.phase);
     const kind = effectiveActive();

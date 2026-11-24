@@ -14,8 +14,8 @@ export async function startFree(start: () => Promise<boolean>, count: Count): Pr
   if (await start()) safeCount(count, 'free');
 }
 
-/** A workout or route: counts once per run, the first time it is seen with its program in the countdown or running
- *  (the runner only reports to the screen again at its first step). */
+/** A workout or route: counts once per run, the first time it is seen with its program in the countdown or running.
+ *  The runner does not report during the countdown, so in practice that is its first running step (docs/USAGE.md). */
 export function createRunCounter(count: Count) {
   let counted: object | null = null;
   return (run: { kind: string } | null, phase: string) => {
