@@ -78,7 +78,8 @@ looks like an address or UUID, or is only digits. A part that is left out is wri
 `tm.unknown.<model>`), and `tm.unknown` is sent when both are left out or `unknown`, or the treadmill reported none. A string
 that passes the guard is sent as the treadmill reported it, also a short word of letters. The demo is `tm.demo`.
 Never used: the advertised name, the serial number, the Bluetooth address, the firmware. The values name the treadmill's
-Bluetooth module, which other treadmills may share. Nothing is sent when connecting fails.
+Bluetooth module, which other treadmills may share; they come from the module's Device Information, never from anything
+typed in the app. Nothing is sent when connecting fails.
 
 Level 3, `error.<kind>.v<x.y.z>`: this known error, in this app version, and nothing else (never a message, a stack or a file;
 the cause stays in the log, which the person may copy into an issue). The kinds are listed in `src/core/usage/errors.ts`. From the
