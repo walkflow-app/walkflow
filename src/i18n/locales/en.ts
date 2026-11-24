@@ -594,6 +594,7 @@ export const en = {
     hint: 'Set Speed (`02 …`) is blocked if it is above the limit, larger than the maximum change, or comes too soon after the last speed command. Start (`07`) only after confirmation, Set Target Heart Rate (`06`) not at all. Everything else is sent raw.',
     invalidHex: '❌ Invalid hex bytes',
     stopped: 'Stopped (console)',
+    badBytes: 'A command needs 1 to 512 bytes, each from 0 to 255, blocked',
     setSpeedLength: 'Set Speed needs exactly 3 bytes (02 LSB MSB), blocked',
     overLimit: (kmh: number, max: number) => `${n(kmh)} km/h is above the limit (${n(max)}), blocked`,
     jump: (from: number, to: number, maxStep: number) =>
@@ -804,6 +805,9 @@ export const en = {
     closeDetail: 'After closing, the app can no longer stop it. Better stop it first.',
     closeCancel: 'Cancel',
     closeAnyway: 'Close anyway',
+    rendererGoneTitle: 'Walkflow stopped working',
+    rendererGoneMessage: 'Stop the belt on the treadmill now.',
+    rendererGoneDetail: 'The window crashed and the app can no longer send Stop. Use the stop button or the safety key of the treadmill. Walkflow opens again after this message.',
   },
 };
 

@@ -7,6 +7,7 @@ import electron from 'electron';
 import { context } from 'esbuild';
 import { createServer } from 'vite';
 import { resolveStoreBase } from '../src/platform/store-url.ts';
+import { resolveUsageBase } from '../src/platform/usage-url.ts';
 
 process.env.VITE_TARGET = 'desktop';
 process.env.BASE_PATH = './';
@@ -47,7 +48,7 @@ const main = await context({
   format: 'cjs',
   target: 'node22',
   external: ['electron', 'electron-updater'],
-  define: { __GITHUB_REPO__: JSON.stringify(repo), __MAC_SIGNED__: JSON.stringify(!!process.env.CSC_LINK && !!process.env.APPLE_TEAM_ID), __MAP_STYLE_RAW__: JSON.stringify(process.env.WALKFLOW_MAP_STYLE ?? ''), __MAP_STYLE_DARK_RAW__: JSON.stringify(process.env.WALKFLOW_MAP_STYLE_DARK ?? ''), __COMMUNITY__: JSON.stringify(process.env.WALKFLOW_COMMUNITY === 'on'), __STORE_BASE__: JSON.stringify(resolveStoreBase(repo, process.env.WALKFLOW_STORE_BASE) ?? '') },
+  define: { __GITHUB_REPO__: JSON.stringify(repo), __MAC_SIGNED__: JSON.stringify(!!process.env.CSC_LINK && !!process.env.APPLE_TEAM_ID), __MAP_STYLE_RAW__: JSON.stringify(process.env.WALKFLOW_MAP_STYLE ?? ''), __MAP_STYLE_DARK_RAW__: JSON.stringify(process.env.WALKFLOW_MAP_STYLE_DARK ?? ''), __COMMUNITY__: JSON.stringify(process.env.WALKFLOW_COMMUNITY === 'on'), __STORE_BASE__: JSON.stringify(resolveStoreBase(repo, process.env.WALKFLOW_STORE_BASE) ?? ''), __USAGE_BASE__: JSON.stringify(resolveUsageBase(repo, process.env.WALKFLOW_USAGE) ?? '') },
   logLevel: 'warning',
   plugins: [{
     name: 'restart-electron',

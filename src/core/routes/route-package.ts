@@ -5,7 +5,7 @@
 // A package is data and never code. Reading one checks everything (readRoute) and makes a new route: an id or a date
 // inside the file is not used, so an import can never replace a route that is already there.
 
-import { isRevision, plainName, readLangMap, readRoute, ROUTE_NAME_MAX, type Route, type RouteMeta } from './routes';
+import { isRevision, plainName, readLangMap, readRoute, ROUTE_IMPORT_SPEED_MAX, ROUTE_NAME_MAX, type Route, type RouteMeta } from './routes';
 
 export const PACKAGE_FORMAT = 'walkflow-route';
 const PACKAGE_VERSION = 1;
@@ -115,7 +115,8 @@ export function readPackage(text: string, id: string, now: number): PackageResul
 
   const route = readRoute({
     id, name, names, updated: now, points, revision: v.revision,
-    country: v.country, defaultSpeed: v.defaultSpeed,
+    // A package comes from outside: a speed above a walking pace is dropped, a stranger does not choose how fast the belt runs
+    country: v.country, defaultSpeed: typeof v.defaultSpeed === 'number' && v.defaultSpeed <= ROUTE_IMPORT_SPEED_MAX ? v.defaultSpeed : undefined,
     description: own, texts, waypoints: readPackageWaypoints(v.waypoints),
     meta: { place: v.place, author: v.author, license: v.license, source: v.source, tags: v.tags },
   });

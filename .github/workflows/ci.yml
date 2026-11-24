@@ -24,7 +24,7 @@ jobs:
       - run: npm test
       - run: npm run build
 
-  # Safety code (src/core/safety/, src/ui/live/) changes only together with a test (scripts/safety-gate.mjs)
+  # Belt code (the list SAFETY in scripts/paths.mjs) changes only together with a test (scripts/safety-gate.mjs)
   safety-gate:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest

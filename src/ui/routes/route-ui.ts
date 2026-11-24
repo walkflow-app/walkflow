@@ -1,5 +1,6 @@
-// Routes view and the route card in the training view. A route only shows where on the track you are: it follows the
-// treadmill's own distance counter and never sends anything to the treadmill (no speed, no incline).
+// Routes view and the route card in the training view. The card shows where on the track you are: it follows the
+// treadmill's own distance counter. Walking a route starts a workout at the route's speed (capped by the person's limit;
+// one from outside is at most ROUTE_IMPORT_SPEED_MAX), which drives the belt like any workout; no incline.
 // Import reads the file on this device (src/core/routes/gpx.ts); what is saved has passed readRoute.
 
 import { countryName } from '../../core/routes/country';
@@ -32,6 +33,8 @@ import { COMMUNITY_ENABLED } from '../../platform/features';
 import { $, $button, download } from '../ui';
 import { el, iconButton } from '../components/elements';
 import { store } from '../store';
+import { featureName } from '../../core/usage/events';
+import { count } from '../usage';
 import { getWorkoutStore } from '../../data/workout-store';
 import { todayGoal, type DayGoal } from '../../core/training/workouts';
 
@@ -91,6 +94,7 @@ export function setupRoutes(host: RoutesHost) {
   function setMapOn(on: boolean) {
     mapOn = on;
     store.set(MAP_STORAGE_KEY, on ? '1' : '0');
+    if (on) count(featureName('route.map-on'));
     training.slot?.setEnabled(on);
     renderMaps();
     host.changed();
@@ -205,6 +209,7 @@ export function setupRoutes(host: RoutesHost) {
     const next = result.route;
     try { await (await ready).put(next); } catch (e) { editor.status.textContent = t.routes.failed(String(e)); return; }
     editor = null;
+    count(featureName('route.own'));
     await reload();
   }
 

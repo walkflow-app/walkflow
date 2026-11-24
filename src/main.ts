@@ -4,11 +4,15 @@ import { desktop, setupDesktop } from './ui/desktop';
 import type { TcxSport } from './core/history/export';
 import { setupExportControls } from './ui/history/export-controls';
 import { setupHistory } from './ui/history/history';
-import { onLanguageChange, retranslate, t, type Text } from './i18n/i18n';
+import { lang, onLanguageChange, retranslate, t, type Text } from './i18n/i18n';
+import { appStartName, langName } from './core/usage/events';
+import { count } from './ui/usage';
+import { APP_VERSION, BUILD_TARGET } from './platform/config';
 import { bindText, clearText, initLanguage } from './ui/i18n-dom';
 import { setupMenu, setupPrefs } from './ui/settings/menus';
 import { setupInterval } from './ui/workouts/interval-ui';
 import { ProgramRunner } from './core/training/program';
+import { settingsLocked } from './core/safety/settings-lock';
 import { setupPwa } from './ui/pwa';
 import { setupInstall } from './ui/install';
 import { COMMUNITY_ENABLED, STORE_BASE } from './platform/features';
@@ -26,6 +30,7 @@ import { loadChosen, setupStage } from './ui/live/stage';
 import { setupSpeedControls } from './ui/live/speed-controls';
 import { renderInfo } from './ui/settings/info';
 import { setupSettings } from './ui/settings/settings-ui';
+import { setDialogStop } from './ui/components/dialog-stop';
 import { setupTreadmillSettings } from './ui/settings/treadmill';
 import { initTheme, onThemeChange } from './ui/theme';
 import { BeltBanner } from './ui/live/belt-banner';
@@ -67,7 +72,8 @@ const history = setupHistory({
 });
 const recorder = history.recorder;
 const interval = setupInterval();
-const settings = setupSettings();
+// The lock closed the dialog: the limit and step fields show what is in force again, not a value typed into them
+const settings = setupSettings(() => speed.relabel());
 settings.onDevMode(on => desktop?.setDevMode(on));
 // The speed controls and the stored limits; the treadmill caps and ramps every speed
 const speed = setupSpeedControls({
@@ -177,8 +183,8 @@ const live = setupLiveData({
   redrawChart: readout.redrawChart,
 });
 
-// The settings are locked while the belt runs (the dialog itself checks this when it opens)
-const renderSettingsLock = () => settings.setLocked(tm.state.connected && tm.state.maybeRunning);
+// The settings are locked while the belt runs, and closed if open (the dialog itself checks this when it opens)
+const renderSettingsLock = () => settings.setLocked(settingsLocked(tm.state));
 
 const connection = setupConnection({
   tm, banner, runner, speed, incline, background, recorder, live, now,
@@ -196,6 +202,12 @@ const connMenu = setupMenu($button('statusBtn'), $('connMenu'), controls);
 setupPrefs($('langOptions'), $('themeOptions'), $('paletteOptions'), $('unitsOptions'));
 $button('openData').onclick = () => settings.open('data');
 setInterval(renderSettingsLock, 500);
+// Every dialog shows a Stop while the belt may run (dialog-stop.ts): a modal dialog makes the page's Stop buttons unreachable
+const renderRunning = () => { document.documentElement.dataset.running = tm.state.connected && tm.state.maybeRunning ? '1' : '0'; };
+setDialogStop(() => void belt.stop());
+for (const e of ['phase', 'disconnected', 'machineStatus', 'data'] as const) tm.on(e, renderRunning);
+setInterval(renderRunning, 250);
+renderRunning();
 onLanguageChange(() => { settings.relabel(); stage.render(); });
 onThemeChange(readout.redrawChart);
 
@@ -278,3 +290,9 @@ setupDesktop({
 });
 
 if (!disclaimerAccepted()) void ensureDisclaimer();
+
+// Anonymous usage counts (docs/USAGE.md): the app start and the language. Nothing is sent before the first-start popup is accepted.
+// Without a desktop bridge in the desktop build the platform is unknown and nothing is built. After the popup, so nothing here
+// can come before it.
+count(appStartName(BUILD_TARGET === 'web' ? undefined : (desktop?.platform ?? ''), APP_VERSION));
+count(langName(lang));

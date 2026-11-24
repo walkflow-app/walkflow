@@ -153,6 +153,11 @@ function readMeta(v: unknown): RouteMeta | undefined {
 export const ROUTE_SPEED_MIN = 0.5;
 export const ROUTE_SPEED_MAX = 20;
 export const DEFAULT_WALK_SPEED = 3;
+/**
+ * The highest speed a route from outside (a file, the store, a peer) may bring along: a walking pace, the library's default
+ * limit. A higher one is dropped on reading, so the route walks at DEFAULT_WALK_SPEED until the person sets their own.
+ */
+export const ROUTE_IMPORT_SPEED_MAX = 6;
 export const ROUTE_DESCRIPTION_MAX = 1000;
 
 /** The walking speed of a route in km/h */
@@ -369,8 +374,9 @@ export class DistanceTracker {
 const WALK_MAX_METERS = 100_000;
 
 /**
- * A route walk is a workout of one distance step over the whole route at the speed the person chose. The speed never
- * comes from the file. null = no usable speed or a route too long for a step.
+ * A route walk is a workout of one distance step over the whole route at the given speed: the route's speed (one from
+ * outside is at most ROUTE_IMPORT_SPEED_MAX, see readPackage), capped by the person's limit. null = no usable speed or a
+ * route too long for a step.
  */
 export function walkSteps(stats: RouteStats, kmh: number): ProgramStep[] | null {
   if (!Number.isFinite(kmh) || kmh <= 0) return null;

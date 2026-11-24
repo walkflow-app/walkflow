@@ -5,7 +5,8 @@
 # for safety code, Bluetooth, sharing, the library version (package.json), or more than 400 changed lines, else Sonnet.
 # Writes model=… and why=… to $GITHUB_OUTPUT. Used by agent-review.yml and, for "@claude review", by claude.yml.
 set -eo pipefail
-COMPLEX='^src/core/safety/|^src/ui/live/|^src/platform/bt-devices|^src/net/|^src/core/share/|^package\.json$'
+# Belt and trust-boundary code: the lists of scripts/paths.mjs, plus the library version
+COMPLEX="$(node scripts/paths.mjs careful)|^package\.json$"
 IGNORE='^package-lock\.json$'
 pr=$(gh pr view "$PR" --json headRefName,commits,files)
 writers=$( { jq -r '.commits[] | .messageHeadline + "\n" + .messageBody' <<<"$pr" |

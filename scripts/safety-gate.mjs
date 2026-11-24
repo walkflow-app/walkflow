@@ -5,15 +5,18 @@
 //   node scripts/safety-gate.mjs <base ref> "<pull request title>"
 import { execFileSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
+import { SAFETY } from './paths.mjs';
 
-// Code that can change what is sent to the belt or what the person is warned about
-const SAFETY = [/^src\/core\/safety\//, /^src\/ui\/live\//];
+// Code that can change what is sent to the belt or what the person is warned about: scripts/paths.mjs (one list for the gate,
+// the pipeline and the choice of the reviewing model)
 const TEST = /\.test\.ts$/;
+// A test counts for safety code only where safety code is tested: next to it, or under tests/
+const SAFETY_TEST = [/^src\/core\/safety\//, /^src\/ui\/live\//, /^src\/core\/training\//, /^src\/ui\/background/, /^src\/platform\/bt-devices/, /^electron\//, /^tests\//];
 
 export function checkSafetyGate({ files, title, libraryChanged = false }) {
   const errors = [], warnings = [];
   const safety = files.filter(f => SAFETY.some(p => p.test(f)) && !TEST.test(f));
-  const tests = files.filter(f => TEST.test(f));
+  const tests = files.filter(f => TEST.test(f) && SAFETY_TEST.some(p => p.test(f)));
   const isSafetyTitle = /^safety(\(.+\))?!?:/.test(title);
   if (safety.length && !tests.length)
     errors.push(`Safety code changed without a changed test: ${safety.join(', ')}. Write the test first (CONTRIBUTING.md → Pull requests).`);

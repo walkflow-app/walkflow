@@ -7,10 +7,11 @@ import {
 } from 'electron';
 import { detectLanguage, isLang, setLanguage, t } from '../src/i18n/i18n';
 import { buildCsp } from '../src/platform/csp';
-import { COMMUNITY_ENABLED, STORE_BASE } from '../src/platform/features';
+import { COMMUNITY_ENABLED, STORE_BASE, USAGE_BASE } from '../src/platform/features';
 import { sharingRelays } from '../src/platform/relays';
 import { isAllowedRequest } from '../src/platform/request-filter';
 import { devToolsAllowed } from '../src/core/safety/dev-mode';
+import { warnWhenRendererGone } from '../src/core/safety/renderer-gone';
 import { devOrigin } from '../src/platform/dev-url';
 import { mapOrigins, resolveMapStyles } from '../src/core/routes/map-config';
 import { mimeFor } from '../src/platform/mime';
@@ -44,7 +45,7 @@ const background = () => (nativeTheme.shouldUseDarkColors ? BACKGROUND.dark : BA
 const MAP_STYLES = resolveMapStyles(__MAP_STYLE_RAW__, __MAP_STYLE_DARK_RAW__);
 const MAP_ORIGINS = MAP_STYLES ? mapOrigins(MAP_STYLES) : [];
 const RELAYS = sharingRelays(COMMUNITY_ENABLED);
-const CSP = buildCsp({ mapOrigins: MAP_ORIGINS, relays: RELAYS, store: STORE_BASE, header: true });
+const CSP = buildCsp({ mapOrigins: MAP_ORIGINS, relays: RELAYS, store: STORE_BASE, usage: USAGE_BASE, header: true });
 
 /** Allowed permission requests. Everything else (camera, microphone, location, notifications …) is denied. */
 const ALLOWED_PERMISSIONS = new Set(['screen-wake-lock', 'fullscreen']);
@@ -225,6 +226,21 @@ function createWindow() {
     if (choice === 1) event.preventDefault();
   });
 
+  // The window crashed: the Bluetooth connection was in it, so the belt may run on and nothing here can stop it (#49 F)
+  wc.on('render-process-gone', (_e, details) => {
+    if (!warnWhenRendererGone(details.reason)) return;
+    // The page that comes back is not connected: no shortcut, no display-sleep blocker, updates allowed
+    setTreadmillConnected(false);
+    dialog.showMessageBoxSync({
+      type: 'error',
+      title: t.electron.rendererGoneTitle,
+      message: t.electron.rendererGoneMessage,
+      detail: t.electron.rendererGoneDetail,
+    });
+    // A page that cannot start at all would only crash again
+    if (details.reason !== 'launch-failed' && details.reason !== 'integrity-failure' && !wc.isDestroyed()) wc.reload();
+  });
+
   win.once('ready-to-show', () => win?.show());
   win.on('closed', () => { win = null; });
   void win.loadURL(DEV_ORIGIN ? `${DEV_ORIGIN}/` : `${ORIGIN}/index.html`);
@@ -249,10 +265,9 @@ ipcMain.on('bt:pairing-response', (e, r: unknown) => {
 /** Whether the page says it is connected to a treadmill: an update never restarts the app then (platform/update-controller.ts) */
 let treadmillConnected = false;
 
-ipcMain.on('app:connection', (e, connected: unknown) => {
-  if (!fromWindow(e)) return;
-  treadmillConnected = connected === true;
-  if (connected === true) {
+function setTreadmillConnected(connected: boolean) {
+  treadmillConnected = connected;
+  if (connected) {
     if (powerBlockerId === null) powerBlockerId = powerSaveBlocker.start('prevent-display-sleep');
     registerStopShortcut();
   } else {
@@ -260,6 +275,11 @@ ipcMain.on('app:connection', (e, connected: unknown) => {
     powerBlockerId = null;
     globalShortcut.unregister(STOP_ACCELERATOR);
   }
+}
+
+ipcMain.on('app:connection', (e, connected: unknown) => {
+  if (!fromWindow(e)) return;
+  setTreadmillConnected(connected === true);
 });
 
 ipcMain.on('app:language', (e, lang: unknown) => {
@@ -385,9 +405,9 @@ if (!app.requestSingleInstanceLock()) {
       // oxlint-disable-next-line promise/no-callback-in-promise -- Electron's permission callback, which has to be called here
       callback(ok);
     });
-    // No requests to remote hosts from the renderer, except the map servers of this build (only used once the map is on) and the relays for sharing
+    // No requests to remote hosts from the renderer, except the map servers of this build (only used once the map is on) the relays for sharing, the route store and the usage counter's /count
     session.defaultSession.webRequest.onBeforeRequest((details, callback) => {
-      const ok = isAllowedRequest(details.url, { origin: ORIGIN, devOrigin: DEV_ORIGIN, mapOrigins: MAP_ORIGINS, relays: RELAYS, store: STORE_BASE });
+      const ok = isAllowedRequest(details.url, { origin: ORIGIN, devOrigin: DEV_ORIGIN, mapOrigins: MAP_ORIGINS, relays: RELAYS, store: STORE_BASE, usage: USAGE_BASE });
       if (!ok) console.log(`Blocked: ${details.url}`);
       // oxlint-disable-next-line promise/no-callback-in-promise -- Electron's request callback, which has to be called here
       callback({ cancel: !ok });

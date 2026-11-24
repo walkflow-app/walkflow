@@ -58,6 +58,21 @@ describe('sharingRelays', () => {
   });
 });
 
+describe('the usage counter', () => {
+  const usage = 'https://walkflow.goatcounter.com';
+
+  it('lets the page connect to the one path /count of the counter, and nothing else', () => {
+    const d = directives(buildCsp({ mapOrigins: [], relays: [], usage, header: false }));
+    expect(d['connect-src']).toEqual(["'self'", `${usage}/count`]);
+    for (const name of ['default-src', 'script-src', 'img-src', 'style-src', 'font-src']) expect(d[name]!.join(' '), name).not.toContain('goatcounter');
+  });
+
+  it('has no counter address without one', () => {
+    expect(directives(buildCsp({ mapOrigins: [], relays: [], header: false }))['connect-src']).toEqual(["'self'"]);
+    expect(directives(buildCsp({ mapOrigins: [], relays: [], usage: null, header: false }))['connect-src']).toEqual(["'self'"]);
+  });
+});
+
 describe('the route store', () => {
   const store = 'https://raw.githubusercontent.com/walkflow-app/route-store/main';
 

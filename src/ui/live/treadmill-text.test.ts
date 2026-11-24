@@ -55,6 +55,20 @@ describe('noticeText', () => {
     expect(noticeText({ code: 'console-over-limit', kmh: 6.5, max: 6 })).toBe('6.5 km/h is above the limit (6), blocked');
   });
 
+  it('names a console command with bad bytes in every language (ftms-treadmill 0.3.0)', () => {
+    const n = { code: 'console-bad-bytes' } as const;
+    expect(noticeText(n)).toBe('A command needs 1 to 512 bytes, each from 0 to 255, blocked');
+    const texts = new Set([noticeText(n)]);
+    for (const lang of ['de', 'fr', 'uk'] as const) {
+      setLanguage(lang);
+      const text = noticeText(n);
+      expect(text).toEqual(expect.any(String));
+      expect(text.length).toBeGreaterThan(0);
+      texts.add(text);
+    }
+    expect(texts.size).toBe(4);
+  });
+
   it('follows the language of the app', () => {
     const n = { code: 'console-jump', from: 5.8, to: 6.4, maxStep: 0.5 } as const;
     const en = noticeText(n);

@@ -75,6 +75,7 @@ export function noticeText(n: Notice | LimitProblem | LimitNote): string {
     case 'limit-out-of-range': return t.limit.outOfRange(n.min, n.max);
     case 'limit-stored-unconfirmed': return t.limit.storedUnconfirmed(n.value, n.applied);
     case 'limit-legacy-not-adopted': return t.limit.legacyNotAdopted(n.value, n.above);
+    case 'console-bad-bytes': return t.console.badBytes;
     case 'console-set-speed-length': return t.console.setSpeedLength;
     case 'console-over-limit': return t.console.overLimit(n.kmh, n.max);
     case 'console-jump': return t.console.jump(n.from, n.to, n.maxStep);
