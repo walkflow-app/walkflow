@@ -11,9 +11,11 @@ import {
   filterRoutes, type LibraryMark, parseIndex, STORE_INDEX_MAX_CHARS, storeFacets, storeFileUrl, storeIndexUrl, storeState, verifyDownload, type StoreRoute,
 } from '../../core/store/route-index';
 import { fmtDistance } from '../../core/training/program';
+import { featureName, storeRouteName } from '../../core/usage/events';
 import { lang, onLanguageChange, t } from '../../i18n/i18n';
 import { button, el } from '../components/elements';
 import { $, $button, $input } from '../ui';
+import { count } from '../usage';
 import { flagUrl } from './flags';
 
 export interface RouteStoreHost {
@@ -21,8 +23,11 @@ export interface RouteStoreHost {
   base: string | null;
   /** What of the library came from the store: tells what is new there, what is there already and what can be updated */
   library(): LibraryMark[];
-  /** A route package that was downloaded and checked: the person is asked, then it is added, or `replace` (the id of a copy) is updated */
-  take(file: { name: string; text: string }, opts: { storeFile: string; replace?: string }): Promise<void>;
+  /**
+   * A route package that was downloaded and checked: the person is asked, then it is added, or `replace` (the id of a copy) is
+   * updated. Resolves true when a new route was added (not for an update, a refusal or a failure).
+   */
+  take(file: { name: string; text: string }, opts: { storeFile: string; replace?: string }): Promise<boolean>;
 }
 
 const TIMEOUT_MS = 20_000;
@@ -133,7 +138,12 @@ export function setupRouteStore(host: RouteStoreHost) {
         message = () => t.routeStore.fileMismatch;
         return;
       }
-      await host.take({ name: r.file, text }, { storeFile: r.file, ...(replace ? { replace } : {}) });
+      const added = await host.take({ name: r.file, text }, { storeFile: r.file, ...(replace ? { replace } : {}) });
+      if (added) {
+        count(featureName('store.add'));
+        // The name comes from the loaded index, never from a saved route
+        count(storeRouteName(r.file, (routes ?? []).map(e => e.file)));
+      }
     } finally {
       busy.delete(r.file);
       render();
@@ -142,6 +152,7 @@ export function setupRouteStore(host: RouteStoreHost) {
 
   toggle.onclick = () => {
     open = !open;
+    if (open) count(featureName('store.open'));
     // The list is read when it is opened for the first time, and again after a failure
     if (open && routes === null) void load(); else render();
   };

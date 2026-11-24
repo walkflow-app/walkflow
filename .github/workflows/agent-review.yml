@@ -82,11 +82,17 @@ jobs:
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ github.token }}
+          # The pull requests of the builder agent have github-actions as their author, and the app walkflow-writer starts the checks
+          # with an empty commit; the action runs only when the author of the pull request and the one who started the run have
+          # write access or are allowed bots. Exactly these two, never '*'.
+          allowed_bots: github-actions,walkflow-writer
           prompt: |
             Review pull request #${{ github.event.pull_request.number }} of ${{ github.repository }}, at commit
             ${{ github.event.pull_request.head.sha }}.
 
-            1. Read CLAUDE.md. Its section "How work is done here" says which reviewer agents apply to which changes.
+            1. Read CLAUDE.md. Its section "How work is done here" says which reviewer agents apply to which changes. The
+               safety reviewer always applies when a changed file matches a pattern of SAFETY or TRUST in scripts/paths.mjs
+               (read it) or the ftms-treadmill version changes; two models review such a change, one of them as that reviewer.
             2. List the changed files: gh pr diff ${{ github.event.pull_request.number }} --name-only
             3. For every reviewer that applies, read its role in .claude/agents/<name>.md and review the diff as that
                reviewer yourself, one after the other. Do not start subagents or background tasks: the run ends when you
@@ -99,7 +105,9 @@ jobs:
                - OK: nothing to change.
                - OK with remarks: mergeable; the remarks are improvements an agent may make or decline with a reason.
                - changes needed: something is wrong and must be fixed before a merge.
-               - blocking: the approach is wrong, or it weakens a limit, a delay, a stop or a warning; a person decides.
+               - blocking: a real defect: wrong behaviour, a weakened limit, delay, stop or warning, or a broken principle of
+                 CLAUDE.md. The PM looks at it. A missing test is "changes needed"; a preference or a nit is a remark and
+                 never blocks.
                Never write "@" before a name in it.
 
             You only read and write that one file. Never edit other files, commit, push, approve, request changes or merge.

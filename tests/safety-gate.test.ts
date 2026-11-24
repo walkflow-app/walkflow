@@ -34,8 +34,8 @@ describe('safety gate (a pull request that changes safety code)', () => {
     expect(r.warnings.some(w => w.includes('HARDWARE-TESTS.md'))).toBe(true);
   });
 
-  it('counts the program runner, the hidden-tab pause, the wiring and the desktop app as safety code (#49 B)', () => {
-    for (const f of ['src/core/training/program.ts', 'src/ui/background.ts', 'src/main.ts', 'electron/main.ts', 'electron/preload.ts']) {
+  it('counts the program runner, the hidden-tab pause, the wiring, the device chooser and the desktop app as safety code (#49 B, one list in scripts/paths.mjs)', () => {
+    for (const f of ['src/core/training/program.ts', 'src/ui/background.ts', 'src/main.ts', 'electron/main.ts', 'electron/preload.ts', 'src/platform/bt-devices.ts', 'src/core/training/ramp.ts']) {
       expect(gate([f]).errors).toHaveLength(1);
     }
   });
