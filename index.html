@@ -531,14 +531,38 @@
         <p class="hint" id="infoVersion"></p>
         <h3 data-i18n="info.safetyTitle">Safety and liability</h3>
         <ul id="infoDisclaimer"></ul>
+        <p id="infoDisclaimerUsage"></p>
         <h3 data-i18n="info.testedTitle">Tested with</h3>
         <p id="infoTested"></p>
         <p id="infoAffiliation"></p>
         <h3 data-i18n="info.privacyTitle">Privacy</h3>
-        <p data-i18n="info.privacy">No accounts, no server, no tracking, no external scripts or fonts. Only if you show the map of a route, it loads map data from a map server (by default OpenFreeMap, tiles.openfreemap.org), which sees your IP address and the part of the map you look at. Settings (limit, ramp, language, theme, accepted notice) are stored only locally in this browser. The saved runs stay on this device too.</p>
+        <p data-i18n="info.privacy">No accounts, no server, no tracking of people (anonymous counts of use only; your IP address reaches the counter, which does not store it; see “Usage data” below), no external scripts or fonts. Only if you show the map of a route, it loads map data from a map server (by default OpenFreeMap, tiles.openfreemap.org), which sees your IP address and the part of the map you look at. Settings (limit, ramp, language, theme, accepted notice) are stored only locally in this browser. The saved runs stay on this device too.</p>
         <div id="infoDesktopPrivacy" hidden>
           <p data-i18n="info.desktopPrivacy">On startup, the desktop app asks GitHub whether there is a newer version. You can turn this off here:</p>
           <label class="check"><input type="checkbox" id="updateCheck" checked> <span data-i18n="info.updateCheck">check for updates</span></label>
+        </div>
+        <!-- Anonymous usage counts (docs/USAGE.md; src/ui/settings/info.ts). Every part stays visible. -->
+        <div id="infoUsage">
+          <h3 data-i18n="info.usageTitle">Usage data</h3>
+          <p id="infoUsageNone" hidden data-i18n="info.usageNone">This build of Walkflow sends no usage data at all, so there is nothing to switch off.</p>
+          <div id="infoUsageBody">
+            <p data-i18n="info.usageIntro">Walkflow counts anonymously how the app is used, to improve it. Nothing identifies you.</p>
+            <p><strong data-i18n="info.usageAlwaysLabel">Always:</strong> <span data-i18n="info.usageAlways">that the app was started, with your platform (web, Windows, macOS, Linux) and the app version.</span></p>
+            <label class="switch">
+              <input type="checkbox" role="switch" id="usageImproveSwitch" checked>
+              <span class="sw-track" aria-hidden="true"></span>
+              <span class="sw-text"><strong data-i18n="settings.usageImproveLabel">Help to improve by sharing anonymously which features I use</strong><span class="hint" data-i18n="settings.usageImproveHint">The language, the views, kinds of runs, editors, exports and the route store you use, and the store routes you add.</span></span>
+            </label>
+            <label class="switch">
+              <input type="checkbox" role="switch" id="usageErrorsSwitch" checked>
+              <span class="sw-track" aria-hidden="true"></span>
+              <span class="sw-text"><strong data-i18n="settings.usageErrorsLabel">Share errors anonymously</strong><span class="hint" data-i18n="settings.usageErrorsHint">Which known type of error happened, with the app version. Never the error text.</span></span>
+            </label>
+            <p class="hint" data-i18n="settings.usageStartCounted">Even with both off, the app start is counted.</p>
+            <p><strong data-i18n="info.usageNeverLabel">Never sent:</strong> <span data-i18n="info.usageNever">speed, distances, times, places, your own routes and workouts, the name, serial number or Bluetooth address of your treadmill, error messages.</span></p>
+            <p><strong data-i18n="info.usageWhereLabel">Where it goes:</strong> <span id="infoUsageWhere"></span></p>
+            <p><strong data-i18n="info.usageInAppLabel">In Walkflow:</strong> <span data-i18n="info.usageInApp">no cookies, no ID, nothing stored on your device but these two switches.</span> <span id="infoUsageDocs"></span></p>
+          </div>
         </div>
         <!-- Web build only (src/ui/install.ts): install the web app as an app of its own -->
         <div id="infoInstall" hidden>
