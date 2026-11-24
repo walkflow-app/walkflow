@@ -66,11 +66,12 @@ the route store is opened. `store.add` when a route of the store is added (updat
 `store.route.lake-x`). It is built only from that list, never from a route you made or imported.
 
 Level 3, `error.<kind>.v<x.y.z>`: this known error, in this app version, and nothing else (never a message, a stack or a file;
-the cause stays in the log, which the person may copy into an issue). The kinds (`src/core/usage/errors.ts`). From the
+the cause stays in the log, which the person may copy into an issue). The kinds are listed in `src/core/usage/errors.ts`. From the
 treadmill library, mapped in `src/ui/live/error-kinds.ts`: the notices `features-unreadable`, `speed-range-unreadable`,
 `write-failed`, `start-speed-failed`, `speed-refused`, and the errors `no-gatt`, `not-connected`, `write-timeout`. The app's own:
 `connect-failed` (connecting failed without a library code; also when the person closes the device chooser),
-`connection-lost` (a connection that was up ended and the person did not press Disconnect), and `map-style`, `file-read`,
+`connection-lost` (a connection that was up ended and the person did not press Disconnect; so it also counts when something
+outside the app ends the connection, such as the system or the browser), and `map-style`, `file-read`,
 `store-add`, `update-failed`, which are listed already but only sent from a later version. And `unexpected`: an exception nobody caught
 (`error` and `unhandledrejection` of the window).
 
