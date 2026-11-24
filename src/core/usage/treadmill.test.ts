@@ -50,13 +50,20 @@ describe('treadmillName', () => {
     expect(treadmillName('ble', { manufacturer: '12345678', model: 'a/b' })).toBe('tm.unknown');
   });
 
+  it('is tm.unknown when the treadmill itself reports unknown', () => {
+    expect(treadmillName('ble', { manufacturer: 'Unknown' })).toBe('tm.unknown');
+    expect(treadmillName('ble', { manufacturer: 'UNKNOWN', model: 'unknown' })).toBe('tm.unknown');
+    expect(treadmillName('ble', { manufacturer: 'unknown', model: 'SN12345' })).toBe('tm.unknown');
+    expect(treadmillName('ble', { manufacturer: 'Unknown', model: 'X1' })).toBe('tm.unknown.x1');
+  });
+
   it('is tm.demo for the demo, whatever the simulator says, without the guard', () => {
     expect(treadmillName('demo', { manufacturer: 'Walkflow' })).toBe('tm.demo');
     expect(treadmillName('demo', {})).toBe('tm.demo');
   });
 
   it('builds names the sender accepts (level 2)', () => {
-    const names = [treadmillName('ble', { manufacturer: 'FITHOME', model: 'JJ-BT2-DL' }), treadmillName('ble', {}), treadmillName('demo', {}), treadmillName('ble', { manufacturer: 'x' })];
+    const names = [treadmillName('ble', { manufacturer: 'FITHOME', model: 'JJ-BT2-DL' }), treadmillName('ble', {}), treadmillName('demo', {}), treadmillName('ble', { manufacturer: 'x' }), treadmillName('ble', { manufacturer: 'Unknown' })];
     for (const n of names) expect(levelOf(n), n).toBe(2);
   });
 });

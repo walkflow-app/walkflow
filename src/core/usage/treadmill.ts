@@ -34,10 +34,11 @@ export function guardPart(raw: string | null | undefined): string | null {
 /** `tm.demo` for the demo (never through the guard), else the guarded maker and model; a part left out is `unknown` */
 export function treadmillName(kind: 'ble' | 'demo', info: DeviceInfo): UsageName {
   if (kind === 'demo') return 'tm.demo' as UsageName;
-  const maker = guardPart(info.manufacturer);
-  const model = guardPart(info.model);
-  if (maker === null && model === null) return 'tm.unknown' as UsageName;
-  return `tm.${maker ?? 'unknown'}.${model ?? 'unknown'}` as UsageName;
+  const maker = guardPart(info.manufacturer) ?? 'unknown';
+  const model = guardPart(info.model) ?? 'unknown';
+  // A treadmill that reports `Unknown` itself is the same as one that reports nothing
+  if (maker === 'unknown' && model === 'unknown') return 'tm.unknown' as UsageName;
+  return `tm.${maker}.${model}` as UsageName;
 }
 
 /** Is `rest` (what follows `tm.`) something treadmillName builds: `unknown`, `demo`, or two parts joined by a dot */
