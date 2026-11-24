@@ -1,6 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { UpdateState } from '../platform/update-controller';
-import { vi } from 'vitest';
 import { countUpdateState, updateView } from './update-view';
 
 const url = 'https://example.org/releases';
