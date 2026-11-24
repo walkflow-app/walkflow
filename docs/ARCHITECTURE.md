@@ -32,7 +32,9 @@ src/
     live/               the training view's live parts: what the treadmill reports as the app shows it (live-data), the
                         texts for its codes (treadmill-text), which of its codes are counted as error kinds (error-kinds), the figures and banner (readout, belt-banner), connecting and
                         disconnecting, the buttons and keys, the speed controls and the stored limits, incline card, stage
-                        (chosen workout or route, and starting it), experiment console. They only ask the Treadmill and draw.
+                        (chosen workout or route, and starting it), run-count (which kind of run started, for the usage
+                        counts; read-only, never in the way to the belt), experiment console. They only ask the Treadmill,
+                        draw and report usage counts.
     routes/ workouts/ history/ community/ settings/   one folder per feature view (history also has the export buttons)
     background.ts       wake lock, tab in the background, leaving the page
     desktop.ts pwa.ts theme.ts views.ts i18n-dom.ts   integration of the page

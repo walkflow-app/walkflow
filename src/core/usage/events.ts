@@ -21,6 +21,8 @@ const PLATFORMS = ['web', 'win', 'mac', 'linux'] as const;
 type UsagePlatform = (typeof PLATFORMS)[number];
 const LANGUAGES = ['en', 'de', 'fr', 'uk'] as const;
 
+const RUN_KINDS = ['free', 'workout', 'route'] as const;
+
 /** Level 2 names of the views, editors, imports, exports and the store that are written out in full */
 const FEATURE_NAMES = [
   'view.training', 'view.workouts', 'view.routes', 'view.history',
@@ -32,7 +34,12 @@ const FEATURE_NAMES = [
 export type FeatureName = (typeof FEATURE_NAMES)[number];
 
 /** Names that are written out in full */
-export const FIXED_NAMES: readonly string[] = [...LANGUAGES.map(l => `lang.${l}`), ...FEATURE_NAMES, 'tm.unknown', 'tm.demo'];
+export const FIXED_NAMES: readonly string[] = [
+  ...LANGUAGES.map(l => `lang.${l}`),
+  ...RUN_KINDS.map(k => `run.${k}`),
+  ...FEATURE_NAMES,
+  'tm.unknown', 'tm.demo',
+];
 
 /** Names with a part the code fills in, as they are written in docs/USAGE.md */
 export const PATTERNS: readonly string[] = [
@@ -46,6 +53,7 @@ export type UsageName = string & { readonly __usageName: true };
 const VERSION = /^\d+\.\d+\.\d+$/;
 const APP_NAME = new RegExp(`^app\\.(${PLATFORMS.join('|')})\\.v\\d+\\.\\d+\\.\\d+$`);
 const LANG_NAME = new RegExp(`^lang\\.(${LANGUAGES.join('|')})$`);
+const RUN_NAME = new RegExp(`^run\\.(${RUN_KINDS.join('|')})$`);
 
 const DESKTOP_PLATFORMS = new Map<string, UsagePlatform>([['win32', 'win'], ['darwin', 'mac'], ['linux', 'linux']]);
 
@@ -62,6 +70,11 @@ export function appStartName(desktopPlatform: string | undefined, version: strin
 /** Level 2: the language of the texts at start */
 export function langName(lang: string): UsageName | null {
   return (LANGUAGES as readonly string[]).includes(lang) ? (`lang.${lang}` as UsageName) : null;
+}
+
+/** Level 2: a run was started (docs/USAGE.md says when). Any other kind builds nothing. */
+export function runName(kind: string): UsageName | null {
+  return (RUN_KINDS as readonly string[]).includes(kind) ? (`run.${kind}` as UsageName) : null;
 }
 
 /** Level 2: a function was used. Only the names listed in FEATURE_NAMES can be built. */
@@ -91,7 +104,8 @@ export function storeRouteName(file: string, indexFiles: readonly string[]): Usa
 /** The level of a name, or null for anything that is not a name built here (the sender sends nothing for it) */
 export function levelOf(name: string): UsageLevel | null {
   if (APP_NAME.test(name)) return 1;
-  if (LANG_NAME.test(name) || (FEATURE_NAMES as readonly string[]).includes(name) || STORE_ROUTE_NAME.test(name)) return 2;
+  if (LANG_NAME.test(name) || RUN_NAME.test(name)) return 2;
+  if ((FEATURE_NAMES as readonly string[]).includes(name) || STORE_ROUTE_NAME.test(name)) return 2;
   if (name.startsWith('tm.') && isTreadmillRest(name.slice(3))) return 2;
   if (isErrorName(name)) return 3;
   return null;

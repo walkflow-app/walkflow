@@ -42,6 +42,9 @@ Level 2:
 - `lang.de`
 - `lang.fr`
 - `lang.uk`
+- `run.free`
+- `run.workout`
+- `run.route`
 - `view.training`
 - `view.workouts`
 - `view.routes`
@@ -71,6 +74,11 @@ imported. `route.own` when the walking speed or description of a route is saved,
 the route store is opened. `store.add` when a route of the store is added (updating one you have is not counted), and with it
 `store.route.<name>`: `<name>` is the route's file name in the store's list without `.walkflow` (`lake-x.walkflow` →
 `store.route.lake-x`). It is built only from that list, never from a route you made or imported.
+
+`run.*` is counted when a run has started: free training after the belt answered the start, a workout or a route the first
+time the screen is redrawn with its program in the countdown or running (in practice at the first step; a start that fails
+counts nothing). Like every name it is sent at most once per start of the app, so it says which kinds of run are used, not
+how many runs there were. A run in the demo counts too. Nothing about the run itself is sent.
 
 The treadmill: once after a treadmill is connected, `tm.<maker>.<model>` from the manufacturer and model number the treadmill
 reports about itself (Device Information), NULs and spaces at the ends stripped, lower case, other spaces as `-`. There is no fixed list; a guard keeps out a string
