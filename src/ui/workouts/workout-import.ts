@@ -10,7 +10,7 @@ import type { WorkoutStore } from '../../data/workout-store';
 import { lang, t } from '../../i18n/i18n';
 import { featureName } from '../../core/usage/events';
 import { confirmDialog } from '../components/dialogs';
-import { count } from '../usage';
+import { count, countError } from '../usage';
 
 export interface WorkoutImportHost {
   store(): Promise<WorkoutStore>;
@@ -29,7 +29,7 @@ export function setupWorkoutImport(host: WorkoutImportHost) {
 
   /** The text of a package of the right kind, or the message why not */
   function readText(file: { text?: string; error?: 'unreadable' | 'tooLarge' }): string | null {
-    if (file.text === undefined) { fail(file.error === 'tooLarge' ? 'packageTooLarge' : 'unreadable'); return null; }
+    if (file.text === undefined) { countError('file-read'); fail(file.error === 'tooLarge' ? 'packageTooLarge' : 'unreadable'); return null; }
     const kind = packageKind(file.text);
     if (kind === 'route') { fail('isRoutePackage'); return null; }
     if (kind !== 'workout') { fail('unreadable'); return null; }
@@ -37,9 +37,9 @@ export function setupWorkoutImport(host: WorkoutImportHost) {
   }
 
   async function importFile(file: File) {
-    if (file.size > WORKOUT_PACKAGE_MAX_CHARS) { fail('packageTooLarge'); return; }
+    if (file.size > WORKOUT_PACKAGE_MAX_CHARS) { countError('file-read'); fail('packageTooLarge'); return; }
     let text: string;
-    try { text = await file.text(); } catch { fail('unreadable'); return; }
+    try { text = await file.text(); } catch { countError('file-read'); fail('unreadable'); return; }
     const checked = readText({ text });
     if (checked !== null) await importPackage(checked);
   }

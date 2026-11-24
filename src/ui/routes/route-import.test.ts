@@ -5,6 +5,8 @@ import { packageFromRoute, serializePackage } from '../../core/routes/route-pack
 
 const confirmDialog = vi.hoisted(() => vi.fn());
 vi.mock('../components/dialogs', () => ({ confirmDialog }));
+const countError = vi.hoisted(() => vi.fn());
+vi.mock('../usage', () => ({ count: vi.fn(), countError }));
 vi.mock('../../core/routes/country', async importOriginal => ({ ...(await importOriginal<typeof Country>()), countryAt: () => Promise.resolve('DE') }));
 
 import { setupRouteImport } from './route-import';
@@ -25,7 +27,42 @@ function setup(over: { put?: () => Promise<void>; list?: Route[] } = {}) {
   return { ...setupRouteImport(host), put, host };
 }
 
-beforeEach(() => confirmDialog.mockReset());
+beforeEach(() => { confirmDialog.mockReset(); countError.mockClear(); vi.stubGlobal('location', { hash: '' }); });
+
+describe('usage counts of errors', () => {
+  it('store-add: a failing save and an unreadable package are counted, a success and a refusal are not', async () => {
+    confirmDialog.mockResolvedValue(true);
+    await setup({ put: () => Promise.reject(new Error('disk full')) }).takeFromStore(file, { storeFile: 'park.walkflow' });
+    expect(countError.mock.calls).toEqual([['store-add']]);
+    countError.mockClear();
+    await setup().takeFromStore({ name: 'x.walkflow', text: 'not a package' }, { storeFile: 'x.walkflow' });
+    expect(countError.mock.calls).toEqual([['store-add']]);
+    countError.mockClear();
+    await setup().takeFromStore({ name: 'n.walkflow', text: JSON.stringify({ ...JSON.parse(file.text), version: 999 }) }, { storeFile: 'n.walkflow' });
+    expect(countError).not.toHaveBeenCalled();
+    await setup().takeFromStore(file, { storeFile: 'park.walkflow' });
+    confirmDialog.mockResolvedValue(false);
+    await setup().takeFromStore(file, { storeFile: 'park.walkflow' });
+    expect(countError).not.toHaveBeenCalled();
+  });
+
+  it('file-read: an opened file that is unreadable or too large is counted, a readable one is not', async () => {
+    const s = setup();
+    await s.openPackage({ name: 'a.walkflow', error: 'unreadable' });
+    await s.openPackage({ name: 'b.walkflow', error: 'tooLarge' });
+    expect(countError.mock.calls).toEqual([['file-read'], ['file-read']]);
+    countError.mockClear();
+    confirmDialog.mockResolvedValue(false);
+    await s.openPackage(file);
+    expect(countError).not.toHaveBeenCalled();
+  });
+
+  it('file-read: a file that cannot be read is counted', async () => {
+    const bad = { size: 1, name: 'a.gpx', text: () => Promise.reject(new Error('x')) } as unknown as File;
+    await setup().importFile(bad);
+    expect(countError.mock.calls).toEqual([['file-read']]);
+  });
+});
 
 // The result says whether a NEW route was added: that is what the usage count `store.add` hangs on
 describe('takeFromStore: true only for a new route', () => {

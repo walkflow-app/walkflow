@@ -72,9 +72,12 @@ treadmill library, mapped in `src/ui/live/error-kinds.ts`: the notices `features
 `write-failed`, `start-speed-failed`, `speed-refused`, and the errors `no-gatt`, `not-connected`, `write-timeout`. The app's own:
 `connect-failed` (connecting failed without a library code; also when the person closes the device chooser),
 `connection-lost` (a connection that was up ended and the person did not press Disconnect; so it also counts when something
-outside the app ends the connection, such as the system or the browser), and `map-style`, `file-read`,
-`store-add`, `update-failed`, which are listed already but only sent from a later version. And `unexpected`: an exception nobody caught
-(`error` and `unhandledrejection` of the window).
+outside the app ends the connection, such as the system or the browser), `map-style` (the map reported an error, for example
+its style could not be loaded), `file-read` (a file you opened or chose could not be read: GPX, route or workout
+package, backup; or a GPX file or package was too large to be read; a failed backup read also counts as `unexpected`; a file that was read but has the wrong content does not
+count), `store-add` (a route from the route store could not be fetched, did not match the list, could not be read or saved;
+a package made for a later version of the app is a refusal and does not count) and `update-failed` (the desktop
+app's update ended in an error). And `unexpected`: an exception nobody caught (`error` and `unhandledrejection` of the window).
 
 - `error.features-unreadable.v<x.y.z>`
 - `error.speed-range-unreadable.v<x.y.z>`

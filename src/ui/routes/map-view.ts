@@ -9,6 +9,7 @@ import { applyTint, mapTint } from '../../core/routes/map-tint';
 import { placeWaypoints, waypointText } from '../../core/routes/route-waypoints';
 import { analyzeRoute, type Route } from '../../core/routes/routes';
 import { lang } from '../../i18n/i18n';
+import { countError } from '../usage';
 
 export interface RouteMap {
   /** Draw the route and fit it into the view */
@@ -52,7 +53,7 @@ export function createRouteMap(box: HTMLElement, opts: RouteMapOptions): RouteMa
   });
   map.touchZoomRotate.disableRotation();
   map.addControl(new NavigationControl({ showCompass: false, showZoom: true }), 'top-right');
-  map.on('error', () => opts.onError());
+  map.on('error', () => { countError('map-style'); opts.onError(); });
 
   let loaded = false;
   let pending: Route | null = null;
