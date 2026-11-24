@@ -6,7 +6,7 @@ import { setupExportControls } from './ui/history/export-controls';
 import { setupHistory } from './ui/history/history';
 import { lang, onLanguageChange, retranslate, t, type Text } from './i18n/i18n';
 import { appStartName, langName } from './core/usage/events';
-import { count } from './ui/usage';
+import { count, countUnexpected } from './ui/usage';
 import { APP_VERSION, BUILD_TARGET } from './platform/config';
 import { bindText, clearText, initLanguage } from './ui/i18n-dom';
 import { setupMenu, setupPrefs } from './ui/settings/menus';
@@ -296,3 +296,5 @@ if (!disclaimerAccepted()) void ensureDisclaimer();
 // can come before it.
 count(appStartName(BUILD_TARGET === 'web' ? undefined : (desktop?.platform ?? ''), APP_VERSION));
 count(langName(lang));
+// Level 3: an exception nobody caught, as error.unexpected and nothing of its text
+countUnexpected(window);

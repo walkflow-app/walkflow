@@ -14,8 +14,10 @@ import { desktop } from '../desktop';
 import { ensureDisclaimer } from '../disclaimer';
 import { bindText } from '../i18n-dom';
 import { $, $button, log } from '../ui';
+import { countError } from '../usage';
 import { stopPlacement, type View } from '../views';
 import type { BeltBanner } from './belt-banner';
+import { connectErrorKind, createLossTracker } from './error-kinds';
 import { errorText } from './treadmill-text';
 
 export interface ConnectionHost {
@@ -50,6 +52,8 @@ export function setupConnection(host: ConnectionHost) {
   const connected = () => tm.state.connected;
   const maybeRunning = () => tm.state.maybeRunning;
   let connecting = false;
+  // Counts a lost connection (docs/USAGE.md) but not the person's own Disconnect
+  const loss = createLossTracker();
 
   tm.on('disconnected', ({ wasRunning }) => onDisconnected(wasRunning));
 
@@ -67,6 +71,7 @@ export function setupConnection(host: ConnectionHost) {
       host.incline.reset();
       // Connects, reads the treadmill and asks for control
       const info = await tm.connect(adapter);
+      loss.connected();
 
       host.incline.onConnected(info, source === 'ble');
       host.renderStats();
@@ -87,6 +92,7 @@ export function setupConnection(host: ConnectionHost) {
     } catch (e) {
       log(`❌ ${errorText(e)}`);
       if (!connected()) {
+        countError(connectErrorKind(e));
         setStatus(() => t.connection.notConnected);
         setUi(false);
       } else {
@@ -103,6 +109,7 @@ export function setupConnection(host: ConnectionHost) {
   /** The treadmill has already forgotten the belt; the page follows */
   function onDisconnected(wasRunning: boolean) {
     log(t.disconnect.log);
+    const lost = loss.lost();
     host.runner.abort(() => t.disconnect.programEnded);
     host.background.releaseWakeLock();
     desktop?.connectionChanged(false);
@@ -118,6 +125,8 @@ export function setupConnection(host: ConnectionHost) {
       log(t.disconnect.lostWhileRunning);
     }
     host.recorder.finish();
+    // Last, so that nothing of the stop and the alarm above can wait for a count
+    if (lost) countError('connection-lost');
   }
 
   async function disconnectClicked() {
@@ -142,6 +151,7 @@ export function setupConnection(host: ConnectionHost) {
         }
       }
     }
+    loss.personDisconnects();
     tm.disconnect();
   }
 
