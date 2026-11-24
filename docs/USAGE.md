@@ -27,7 +27,7 @@ identifying is ever part of one. A test (`tests/usage-docs.test.ts`) keeps the l
 The two switches are the only thing stored for the counts: `walkflow.usageImprove` and `walkflow.usageErrors`, where
 absent means on and `0` means off. The switches are in the settings, Info tab, section "Usage data", which also says what is
 sent and where it goes (without a counter in the build it says that nothing is sent and shows no switches). The first-start
-popup carries a short notice that points there.
+popup and the Info tab carry a short notice that points there, only in a build that has a counter.
 
 ## Names
 

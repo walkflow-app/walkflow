@@ -16,7 +16,10 @@ export function renderInfo() {
     li.textContent = text;
     return li;
   }));
-  $('infoDisclaimerUsage').textContent = t.disclaimer.usage;
+  // Only in a build that sends counts; otherwise the section below says that nothing is sent
+  const usage = $('infoDisclaimerUsage');
+  usage.textContent = usageSection(USAGE_BASE) ? t.disclaimer.usage : '';
+  usage.hidden = !usage.textContent;
   renderUsage();
   $('infoTested').textContent = t.info.tested(t.info.testedDevice, t.info.testedFeatures, t.info.untestedFeatures);
   $('infoAffiliation').textContent = t.info.notAffiliated;

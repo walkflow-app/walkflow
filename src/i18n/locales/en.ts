@@ -541,7 +541,7 @@ export const en = {
     devLabel: 'Developer mode',
     devHint: 'Shows the experiment console (raw commands to the treadmill) and, in the desktop app, the developer tools. For tinkering and diagnosing, walking does not need it.',
     usageImproveLabel: 'Help to improve by sharing anonymously which features I use',
-    usageImproveHint: 'The language, the views, kinds of runs, editors, exports and the route store you use, and the store routes you add.',
+    usageImproveHint: 'The language, the views, kinds of runs, editors, imports, exports, the map and the route store you use, and the store routes you add.',
     usageErrorsLabel: 'Share errors anonymously',
     usageErrorsHint: 'Which known type of error happened, with the app version. Never the error text.',
     usageStartCounted: 'Even with both off, the app start is counted.',
