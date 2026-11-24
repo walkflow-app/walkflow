@@ -1,8 +1,9 @@
 # Anonymous usage counts
 
 Walkflow counts anonymously how often it is used, to improve it. This page lists every name the app can send and what is
-never sent. The names are built by the code from fixed parts (`src/core/usage/events.ts`); nothing typed, measured or
-identifying is ever part of one. A test (`tests/usage-docs.test.ts`) keeps the lists below equal to the code.
+never sent. The names are built by the code from fixed parts (`src/core/usage/events.ts`, `src/core/usage/treadmill.ts`); the only part
+that is not fixed is the treadmill's maker and model as it reports them, and only after a guard (see *Names*). Nothing
+typed, measured or identifying is ever part of one. A test (`tests/usage-docs.test.ts`) keeps the lists below equal to the code.
 
 ## How it is sent
 
@@ -56,6 +57,11 @@ Level 2:
 - `store.open`
 - `store.add`
 - `store.route.<name>`
+- `tm.<maker>.<model>`
+- `tm.<maker>.unknown`
+- `tm.unknown.<model>`
+- `tm.unknown`
+- `tm.demo`
 
 When they are sent: a view name when the view is opened (the Community view counts nothing; `view.training` comes at nearly every
 start, because Training is the view the app opens on). `workout.interval` when a new
@@ -65,6 +71,16 @@ imported. `route.own` when the walking speed or description of a route is saved,
 the route store is opened. `store.add` when a route of the store is added (updating one you have is not counted), and with it
 `store.route.<name>`: `<name>` is the route's file name in the store's list without `.walkflow` (`lake-x.walkflow` →
 `store.route.lake-x`). It is built only from that list, never from a route you made or imported.
+
+The treadmill: once after a treadmill is connected, `tm.<maker>.<model>` from the manufacturer and model number the treadmill
+reports about itself (Device Information), NULs and spaces at the ends stripped, lower case, other spaces as `-`. There is no fixed list; a guard keeps out a string
+that is not 1 to 32 characters from `a-z 0-9 . _ - +`, has 5 or more digits or 6 or more hex digits in a row (also when split by `.`, `_`, `-` or `+`),
+looks like an address or UUID, or is only digits. A part that is left out is written `unknown` (`tm.<maker>.unknown`,
+`tm.unknown.<model>`), and `tm.unknown` is sent when both are left out or `unknown`, or the treadmill reported none. A string
+that passes the guard is sent as the treadmill reported it, also a short word of letters. The demo is `tm.demo`.
+Never used: the advertised name, the serial number, the Bluetooth address, the firmware. The values name the treadmill's
+Bluetooth module, which other treadmills may share; they come from the module's Device Information, never from anything
+typed in the app. Nothing is sent when connecting fails.
 
 Level 3, `error.<kind>.v<x.y.z>`: this known error, in this app version, and nothing else (never a message, a stack or a file;
 the cause stays in the log, which the person may copy into an issue). The kinds are listed in `src/core/usage/errors.ts`. From the
