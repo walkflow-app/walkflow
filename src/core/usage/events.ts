@@ -4,9 +4,10 @@
 // listed in FIXED_NAMES and PATTERNS, and docs/USAGE.md lists the same (a test compares them).
 
 import { STORE_FILE_NAME } from '../routes/routes';
+import { ERROR_PATTERNS, isErrorName } from './errors';
 import { isTreadmillRest } from './treadmill';
 
-/** 1 Used (always, after the first-start popup), 2 Improve (switch), 3 Errors (switch; comes with the error codes) */
+/** 1 Used (always, after the first-start popup), 2 Improve (switch), 3 Errors (switch; errors.ts) */
 export type UsageLevel = 1 | 2 | 3;
 
 /** Settings keys of the two switches (through ui/store.ts): absent means on, "0" means off. The only thing stored for the counts. */
@@ -36,6 +37,7 @@ export const FIXED_NAMES: readonly string[] = [...LANGUAGES.map(l => `lang.${l}`
 /** Names with a part the code fills in, as they are written in docs/USAGE.md */
 export const PATTERNS: readonly string[] = [
   'app.<web|win|mac|linux>.v<x.y.z>', 'store.route.<name>', 'tm.<maker>.<model>', 'tm.<maker>.unknown', 'tm.unknown.<model>',
+  ...ERROR_PATTERNS,
 ];
 
 /** A name built here; the only thing the sender takes. The brand keeps an outside string from being passed by accident. */
@@ -91,5 +93,6 @@ export function levelOf(name: string): UsageLevel | null {
   if (APP_NAME.test(name)) return 1;
   if (LANG_NAME.test(name) || (FEATURE_NAMES as readonly string[]).includes(name) || STORE_ROUTE_NAME.test(name)) return 2;
   if (name.startsWith('tm.') && isTreadmillRest(name.slice(3))) return 2;
+  if (isErrorName(name)) return 3;
   return null;
 }

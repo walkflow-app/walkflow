@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { ERROR_KINDS, errorName } from '../core/usage/errors';
 import { appStartName, langName, type UsageName } from '../core/usage/events';
-import { createSender } from './usage';
+import { countUnexpected, createSender } from './usage';
 
 const BASE = 'https://walkflow.goatcounter.com';
 const APP = appStartName(undefined, '0.7.2')!;
@@ -115,5 +116,65 @@ describe('the sender of usage counts', () => {
     const dropped = setup({ 'walkflow.devMode': '1' });
     dropped.count(APP);
     expect(dropped.lines).toEqual([]);
+  });
+});
+
+describe('level 3: errors', () => {
+  const ERR = errorName('connect-failed', '0.7.2')!;
+
+  it('sends error.<kind>.v<version> with the Errors switch on', () => {
+    const { count, urls } = setup();
+    count(ERR);
+    expect(urls).toEqual([`${BASE}/count?p=error.connect-failed.v0.7.2&t=error.connect-failed.v0.7.2&e=true`]);
+  });
+
+  it('sends no error.* request with the Errors switch off, while the other levels still go', () => {
+    const { count, urls } = setup({ ...OK, 'walkflow.usageErrors': '0' });
+    for (const k of ERROR_KINDS) count(errorName(k, '0.7.2'));
+    count(APP);
+    count(LANG);
+    expect(urls.filter(u => u.includes('error.'))).toEqual([]);
+    expect(urls).toHaveLength(2);
+  });
+
+  it('the Improve switch does not stop errors, and the Errors switch does not stop level 2', () => {
+    const a = setup({ ...OK, 'walkflow.usageImprove': '0' });
+    a.count(ERR); a.count(LANG);
+    expect(a.urls).toHaveLength(1);
+    const b = setup({ ...OK, 'walkflow.usageErrors': '0' });
+    b.count(ERR); b.count(LANG);
+    expect(b.urls).toHaveLength(1);
+  });
+
+  it('sends nothing before the first-start popup was accepted', () => {
+    const { count, urls } = setup({});
+    count(ERR);
+    expect(urls).toEqual([]);
+  });
+});
+
+describe('countUnexpected', () => {
+  function rig() {
+    const target = new EventTarget();
+    const { count, urls } = setup();
+    countUnexpected(target, kind => count(errorName(kind, '0.7.2')));
+    return { target, urls };
+  }
+  const withText = (type: string, props: object) => Object.assign(new Event(type), props);
+
+  it('turns an error event and an unhandled rejection into error.unexpected, once per start', () => {
+    const { target, urls } = rig();
+    target.dispatchEvent(withText('error', { message: 'x' }));
+    target.dispatchEvent(withText('unhandledrejection', { reason: new Error('y') }));
+    expect(urls).toEqual([`${BASE}/count?p=error.unexpected.v0.7.2&t=error.unexpected.v0.7.2&e=true`]);
+  });
+
+  it('carries nothing of the exception: no message, stack, path or email', () => {
+    const { target, urls } = rig();
+    const err = new Error('cannot read file C:\\Users\\max\\route.gpx for max@example.com');
+    err.stack = 'Error: boom\n    at load (https://app.example/assets/index-abc.js:1:2)';
+    target.dispatchEvent(withText('error', { message: err.message, filename: 'https://app.example/assets/index-abc.js', error: err }));
+    target.dispatchEvent(withText('unhandledrejection', { reason: err }));
+    expect(urls).toEqual([`${BASE}/count?p=error.unexpected.v0.7.2&t=error.unexpected.v0.7.2&e=true`]);
   });
 });

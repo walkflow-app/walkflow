@@ -23,7 +23,7 @@ typed, measured or identifying is ever part of one. A test (`tests/usage-docs.te
 | --- | --- | --- |
 | 1 Used | The app was started: platform and version | none |
 | 2 Improve | Which functions are used | "Improve", on unless switched off |
-| 3 Errors | Which known error happened (comes with the error codes) | "Errors", on unless switched off |
+| 3 Errors | Which known error happened, in which version | "Errors", on unless switched off |
 
 The two switches are the only thing stored for the counts: `walkflow.usageImprove` and `walkflow.usageErrors`, where
 absent means on and `0` means off. The switches come to the settings with a later version; until then levels 2 and 3 count
@@ -79,6 +79,32 @@ looks like an address or UUID, or is only digits. A part that is left out is wri
 that passes the guard is sent as the treadmill reported it, also a short word of letters. The demo is `tm.demo`.
 Never used: the advertised name, the serial number, the Bluetooth address, the firmware. The values name the treadmill's
 Bluetooth module, which other treadmills may share. Nothing is sent when connecting fails.
+
+Level 3, `error.<kind>.v<x.y.z>`: this known error, in this app version, and nothing else (never a message, a stack or a file;
+the cause stays in the log, which the person may copy into an issue). The kinds are listed in `src/core/usage/errors.ts`. From the
+treadmill library, mapped in `src/ui/live/error-kinds.ts`: the notices `features-unreadable`, `speed-range-unreadable`,
+`write-failed`, `start-speed-failed`, `speed-refused`, and the errors `no-gatt`, `not-connected`, `write-timeout`. The app's own:
+`connect-failed` (connecting failed without a library code; also when the person closes the device chooser),
+`connection-lost` (a connection that was up ended and the person did not press Disconnect; so it also counts when something
+outside the app ends the connection, such as the system or the browser), and `map-style`, `file-read`,
+`store-add`, `update-failed`, which are listed already but only sent from a later version. And `unexpected`: an exception nobody caught
+(`error` and `unhandledrejection` of the window).
+
+- `error.features-unreadable.v<x.y.z>`
+- `error.speed-range-unreadable.v<x.y.z>`
+- `error.write-failed.v<x.y.z>`
+- `error.start-speed-failed.v<x.y.z>`
+- `error.speed-refused.v<x.y.z>`
+- `error.no-gatt.v<x.y.z>`
+- `error.not-connected.v<x.y.z>`
+- `error.write-timeout.v<x.y.z>`
+- `error.connect-failed.v<x.y.z>`
+- `error.connection-lost.v<x.y.z>`
+- `error.map-style.v<x.y.z>`
+- `error.file-read.v<x.y.z>`
+- `error.store-add.v<x.y.z>`
+- `error.update-failed.v<x.y.z>`
+- `error.unexpected.v<x.y.z>`
 
 The platform is `web` for the web build, otherwise the desktop app's system. The version is the app's version, and only a
 plain `x.y.z` (a pre-release sends nothing). The product page will be counted separately, by its own pixel (`site.en`, `site.de`); it is not part of the app.
