@@ -14,6 +14,8 @@ export interface DialogOptions<T extends string> {
   title: string;
   paragraphs?: string[];
   list?: string[];
+  /** Paragraphs set below the list */
+  footnotes?: string[];
   buttons: DialogButton<T>[];
   /** Result on Esc/close */
   cancelId: T;
@@ -84,6 +86,11 @@ function show<T extends string>(get: () => DialogOptions<T>): Promise<T> {
           ul.append(li);
         }
         nodes.push(ul);
+      }
+      for (const text of o.footnotes ?? []) {
+        const p = document.createElement('p');
+        p.textContent = text;
+        nodes.push(p);
       }
       let check: HTMLInputElement | null = null;
       if (o.requireCheckbox) {

@@ -21,12 +21,13 @@ identifying is ever part of one. A test (`tests/usage-docs.test.ts`) keeps the l
 | Level | What | Switch |
 | --- | --- | --- |
 | 1 Used | The app was started: platform and version | none |
-| 2 Improve | Which functions are used | "Improve", on unless switched off |
-| 3 Errors | Which known error happened, in which version | "Errors", on unless switched off |
+| 2 Improve | Which functions are used | "Help to improve by sharing anonymously which features I use" (internal name Improve), on unless switched off |
+| 3 Errors | Which known error happened, in which version (comes with the error codes) | "Share errors anonymously" (internal name Errors), on unless switched off |
 
 The two switches are the only thing stored for the counts: `walkflow.usageImprove` and `walkflow.usageErrors`, where
-absent means on and `0` means off. The switches come to the settings with a later version; until then levels 2 and 3 count
-as on.
+absent means on and `0` means off. The switches are in the settings, Info tab, section "Usage data", which also says what is
+sent and where it goes (without a counter in the build it says that nothing is sent and shows no switches). The first-start
+popup and the Info tab carry a short notice that points there, only in a build that has a counter.
 
 ## Names
 
