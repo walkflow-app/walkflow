@@ -49,8 +49,8 @@ Level 2:
 
 The treadmill: once after a treadmill is connected, `tm.<maker>.<model>` from the manufacturer and model number the treadmill
 reports about itself (Device Information), lower case, spaces as `-`. There is no fixed list; a guard keeps out a string
-that is not 1 to 32 characters from `a-z 0-9 . _ - +`, has 5 or more digits in a row, 6 or more hex digits in a row, looks
-like an address or UUID, or is only digits. A part that is left out is written `unknown` (`tm.<maker>.unknown`,
+that is not 1 to 32 characters from `a-z 0-9 . _ - +`, has 5 or more digits or 6 or more hex digits in a row (also when split by `.`, `_`, `-` or `+`),
+looks like an address or UUID, or is only digits. A part that is left out is written `unknown` (`tm.<maker>.unknown`,
 `tm.unknown.<model>`), and `tm.unknown` is sent when both are left out or the treadmill reported none. The demo is `tm.demo`.
 Never used: the advertised name, the serial number, the Bluetooth address, the firmware. The values name the treadmill's
 Bluetooth module, which other treadmills may share. Nothing is sent when connecting fails.
