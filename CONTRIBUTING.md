@@ -98,15 +98,17 @@ takes a pull request to `main` without a maintainer. The rules are in `scripts/a
   `stuck` (the pipeline gave up; **the PM**, the planning agent the maintainer works with, looks: it fixes the cause, hands it back by
   removing the label, or passes a decision of the maintainer on) or, only for the rules themselves (`PROTECTED`: `CLAUDE.md`, `.claude/`, `.github/`,
   `scripts/`, build and test configuration, dependencies, the legal pages, a hardware check removed or ticked off), the label
-  `needs-maintainer`. Removing the label hands it back. At most 4 reviewed commits per pull request; past 5 agent merges a day the rest waits for the next
+  `needs-maintainer`. Removing the label hands it back, and the 6 hours the pipeline waits for a review or a check start again
+  from that moment. At most 4 reviewed commits per pull request; past 5 agent merges a day the rest waits for the next
   day. A small fix of remarks (30 lines, no safety path, no deleted test) is merged without waiting for another review; every
   other fix is reviewed again. A pull request with changes requested by a person is left alone.
 - The fix agent works without a write token and hands over a patch; the app *walkflow-writer* pushes it after checking what it
   changes. A pull request `claude.yml` opened (with the workflow token, which starts no workflow) gets one empty commit by the
   app, which starts CI and the review; the agent in `claude.yml` never gets the app's token. The same goes for the release
   pull request and for one labelled `needs-maintainer` or `stuck` (nobody can merge without the checks), as long as `test`
-  and `safety-gate` do not exist for its head: other workflows such as CodeQL do not count. A head that already is that
-  empty commit is not kicked again; if the checks still do not come, a person looks.
+  and `safety-gate` do not exist for its head: other workflows such as CodeQL do not count. The same empty commit starts a
+  review whose run failed (not one that found something), once. A head that already is that empty commit is not kicked
+  again; if the checks or the review still do not come, a person looks.
 - **Belt code** (`SAFETY` in `scripts/paths.mjs`, and a new `ftms-treadmill` version) and **trust-boundary code** (`TRUST`:
   `src/net/`, `src/core/share/`) are reviewed by Opus and Sonnet, merged only when both say `OK` and on top of the current
   `main`. Belt code also gets the label `needs-hardware`: one check on a treadmill before the release, not before each merge.
