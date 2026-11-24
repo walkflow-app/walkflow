@@ -240,6 +240,19 @@ describe('agent pipeline: what happens next', () => {
     expect(state(s => { s.reviewFailed = true; }).action).toBe('merge');
   });
 
+  it('solves the conflict first: a pull request with a conflict starts no workflow, so a kick cannot help it', () => {
+    const conflicting = (change: (s: State) => void = () => {}) => state(s => {
+      s.pr.author = { login: 'github-actions[bot]', type: 'Bot' }; s.pr.headRef = 'claude/issue-12'; s.checks = {}; s.mergeable = 'CONFLICTING'; change(s);
+    });
+    expect(conflicting()).toMatchObject({ action: 'fix', mode: 'conflict', sha: HEAD });
+    // Also when the head already is a kick that started nothing (the conflict is why)
+    expect(conflicting(s => { s.headKicked = true; })).toMatchObject({ action: 'fix', mode: 'conflict' });
+    // One try only; after it a person looks
+    expect(conflicting(s => { s.headKicked = true; s.comments = [fixDone(HEAD, 'conflict')]; }).action).toBe('hold');
+    // Without the conflict the kick is as before
+    expect(conflicting(s => { s.mergeable = 'MERGEABLE'; }).action).toBe('kick');
+  });
+
   it('never kicks the same head twice: a kick that started nothing is left for a person', () => {
     const fromClaude = (change: (s: State) => void) => state(s => {
       s.pr.author = { login: 'github-actions[bot]', type: 'Bot' }; s.pr.headRef = 'claude/issue-12'; s.checks = {}; s.headKicked = true; change(s);

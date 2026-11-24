@@ -141,9 +141,11 @@ export function decide(s) {
   if (s.failedFixes > 1) return out('hold', 'two fix runs of the agent failed');
   if (s.running.fix) return out('wait', 'a fix is running');
   if (s.humanChangesRequested) return out('skip', 'a person requested changes');
-  // A pull request claude.yml opened with the workflow token started no workflow: one empty commit by the app starts them
-  if (needsChecks) return out('kick', 'no checks ran yet', { sha: pr.headSha });
-  if (pr.author.login === 'github-actions[bot]' && s.headKicked && !REQUIRED_CHECKS.some(n => n in s.checks))
+  // A pull request claude.yml opened with the workflow token started no workflow: one empty commit by the app starts them.
+  // Not with a conflict: GitHub starts no workflow on it, a kick cannot help, and the conflict is solved first (below)
+  const conflicting = s.mergeable === 'CONFLICTING';
+  if (needsChecks && !conflicting) return out('kick', 'no checks ran yet', { sha: pr.headSha });
+  if (pr.author.login === 'github-actions[bot]' && s.headKicked && !REQUIRED_CHECKS.some(n => n in s.checks) && !conflicting)
     return out('hold', 'the checks did not start after the kick');
 
   const reviews = s.reviews.filter(r => r.user === REVIEWER)
@@ -155,7 +157,7 @@ export function decide(s) {
     return m?.sha === sha && m.mode === mode;
   });
 
-  if (s.mergeable === 'CONFLICTING')
+  if (conflicting)
     return fixed(pr.headSha, 'conflict') ? out('hold', 'the conflict with main is still there after one try')
       : counted >= LIMITS.reviews ? out('hold', `${LIMITS.reviews} reviews and still not done`)
       : out('fix', 'conflict with main', { mode: 'conflict', sha: pr.headSha });
