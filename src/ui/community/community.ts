@@ -87,6 +87,7 @@ export function setupCommunity(host: CommunityHost) {
   function stop() {
     generation++;
     clearTimeout(offerTimer);
+    renderSoon.cancel();
     hub?.stop();
     hub = null;
     failed = null;

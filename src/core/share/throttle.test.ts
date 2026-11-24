@@ -36,4 +36,16 @@ describe('throttle (#49 G: a peer cannot keep the main thread busy with offer up
     t();
     expect(fn).toHaveBeenCalledTimes(2);
   });
+
+  it('cancel drops a pending call (the view was stopped)', () => {
+    const fn = vi.fn();
+    const t = throttle(fn, 500);
+    t();
+    t();
+    t.cancel();
+    vi.advanceTimersByTime(5000);
+    expect(fn).toHaveBeenCalledTimes(1);
+    t();
+    expect(fn).toHaveBeenCalledTimes(2);
+  });
 });
