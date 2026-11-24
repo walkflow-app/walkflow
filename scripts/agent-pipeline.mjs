@@ -164,6 +164,8 @@ export function decide(s) {
     return fixed(pr.headSha, 'conflict') ? out('hold', 'the conflict with main is still there after one try')
       : counted >= LIMITS.reviews ? out('hold', `${LIMITS.reviews} reviews and still not done`)
       : out('fix', 'conflict with main', { mode: 'conflict', sha: pr.headSha });
+  // No verdict on the reviews while GitHub does not know about a conflict: it may be there, and it is solved first
+  if (unknown && !stale) return out('wait', 'GitHub does not know yet whether there is a conflict');
 
   // The review of the head commit: for a safety change one by each model
   const onHead = reviews.filter(r => r.commitId === pr.headSha);

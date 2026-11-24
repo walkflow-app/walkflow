@@ -337,6 +337,13 @@ describe('agent pipeline: what happens next', () => {
     // Remarks the fix agent declined: the maintainer decides, a safety change is merged only on two OKs
     expect(safe(s => { s.reviews = [review('OK', 'opus'), review('OK with remarks', 'sonnet')]; s.comments = [fixDone(HEAD, 'remarks')]; }).action).toBe('hold');
     expect(safe(s => { s.reviews = [review('OK', 'opus', HEAD, 'other title'), review('OK', 'sonnet')]; }).action).toBe('hold');
+    // Right after main moved GitHub says UNKNOWN: the conflict that is solved first may be there, so no hold on the reviews yet
+    const declined = (change: (s: State) => void) => safe(s => {
+      s.reviews = [review('OK', 'opus'), review('OK with remarks', 'sonnet')]; s.comments = [fixDone(HEAD, 'remarks')]; change(s);
+    });
+    expect(declined(s => { s.mergeable = 'UNKNOWN'; }).action).toBe('wait');
+    expect(declined(s => { s.mergeable = 'CONFLICTING'; })).toMatchObject({ action: 'fix', mode: 'conflict' });
+    expect(declined(s => { s.mergeable = 'UNKNOWN'; s.headAgeHours = LIMITS.staleHours + 1; }).action).toBe('hold');
   });
 
   it('trust-boundary code is reviewed like a safety change, but needs no treadmill', () => {
