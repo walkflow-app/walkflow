@@ -22,7 +22,7 @@ identifying is ever part of one. A test (`tests/usage-docs.test.ts`) keeps the l
 | --- | --- | --- |
 | 1 Used | The app was started: platform and version | none |
 | 2 Improve | Which functions are used | "Help to improve by sharing anonymously which features I use" (internal name Improve), on unless switched off |
-| 3 Errors | Which known error happened (comes with the error codes) | "Share errors anonymously" (internal name Errors), on unless switched off |
+| 3 Errors | Which known error happened, in which version (comes with the error codes) | "Share errors anonymously" (internal name Errors), on unless switched off |
 
 The two switches are the only thing stored for the counts: `walkflow.usageImprove` and `walkflow.usageErrors`, where
 absent means on and `0` means off. The switches are in the settings, Info tab, section "Usage data", which also says what is
@@ -65,6 +65,32 @@ imported. `route.own` when the walking speed or description of a route is saved,
 the route store is opened. `store.add` when a route of the store is added (updating one you have is not counted), and with it
 `store.route.<name>`: `<name>` is the route's file name in the store's list without `.walkflow` (`lake-x.walkflow` →
 `store.route.lake-x`). It is built only from that list, never from a route you made or imported.
+
+Level 3, `error.<kind>.v<x.y.z>`: this known error, in this app version, and nothing else (never a message, a stack or a file;
+the cause stays in the log, which the person may copy into an issue). The kinds are listed in `src/core/usage/errors.ts`. From the
+treadmill library, mapped in `src/ui/live/error-kinds.ts`: the notices `features-unreadable`, `speed-range-unreadable`,
+`write-failed`, `start-speed-failed`, `speed-refused`, and the errors `no-gatt`, `not-connected`, `write-timeout`. The app's own:
+`connect-failed` (connecting failed without a library code; also when the person closes the device chooser),
+`connection-lost` (a connection that was up ended and the person did not press Disconnect; so it also counts when something
+outside the app ends the connection, such as the system or the browser), and `map-style`, `file-read`,
+`store-add`, `update-failed`, which are listed already but only sent from a later version. And `unexpected`: an exception nobody caught
+(`error` and `unhandledrejection` of the window).
+
+- `error.features-unreadable.v<x.y.z>`
+- `error.speed-range-unreadable.v<x.y.z>`
+- `error.write-failed.v<x.y.z>`
+- `error.start-speed-failed.v<x.y.z>`
+- `error.speed-refused.v<x.y.z>`
+- `error.no-gatt.v<x.y.z>`
+- `error.not-connected.v<x.y.z>`
+- `error.write-timeout.v<x.y.z>`
+- `error.connect-failed.v<x.y.z>`
+- `error.connection-lost.v<x.y.z>`
+- `error.map-style.v<x.y.z>`
+- `error.file-read.v<x.y.z>`
+- `error.store-add.v<x.y.z>`
+- `error.update-failed.v<x.y.z>`
+- `error.unexpected.v<x.y.z>`
 
 The platform is `web` for the web build, otherwise the desktop app's system. The version is the app's version, and only a
 plain `x.y.z` (a pre-release sends nothing). The product page will be counted separately, by its own pixel (`site.en`, `site.de`); it is not part of the app.
