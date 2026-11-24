@@ -8,6 +8,8 @@ import type { ProgramRunner } from '../../core/training/program';
 import type { EndReason, Treadmill } from 'ftms-treadmill';
 import { t, type Text } from '../../i18n/i18n';
 import type { BeltBanner } from './belt-banner';
+import { countError } from '../usage';
+import { noticeErrorKind } from './error-kinds';
 import { describeControlPointResponse, describeMachineStatus, noticeText } from './treadmill-text';
 
 /** Samples kept for the chart and the export (about 5½ hours at 1 Hz) */
@@ -101,7 +103,12 @@ export function setupLiveData(host: LiveDataHost) {
   });
   tm.on('trainingStatus', ({ hex, text }) => host.log(t.machine.training(hex, text)));
   tm.on('controlResponse', r => host.log(`← ${describeControlPointResponse(r)}`));
-  tm.on('notice', n => host.log(noticeText(n)));
+  tm.on('notice', n => {
+    host.log(noticeText(n));
+    // Counted after the log line, synchronous, never awaited (docs/USAGE.md); the notice itself is not changed
+    const kind = noticeErrorKind(n);
+    if (kind) countError(kind);
+  });
   tm.on('log', msg => host.log(msg));
 
   return {
