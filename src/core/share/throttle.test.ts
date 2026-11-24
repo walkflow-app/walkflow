@@ -26,4 +26,14 @@ describe('throttle (#49 G: a peer cannot keep the main thread busy with offer up
     t();
     expect(fn).toHaveBeenCalledTimes(2);
   });
+
+  it('a wall clock that moves back does not hold the next call', () => {
+    const fn = vi.fn();
+    const t = throttle(fn, 500);
+    t();
+    vi.advanceTimersByTime(1000);
+    vi.setSystemTime(Date.now() - 3_600_000);
+    t();
+    expect(fn).toHaveBeenCalledTimes(2);
+  });
 });
