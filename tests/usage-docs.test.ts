@@ -1,9 +1,10 @@
-// docs/USAGE.md lists exactly the fixed names and patterns that the code can build (src/core/usage/events.ts), nothing more and
-// nothing less. The error task extends this to src/core/usage/errors.ts.
+// docs/USAGE.md lists exactly the fixed names and patterns that the code can build (src/core/usage/events.ts, whose PATTERNS
+// include the error kinds of src/core/usage/errors.ts), nothing more and nothing less.
 
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { ERROR_KINDS, ERROR_PATTERNS } from '../src/core/usage/errors';
 import { FIXED_NAMES, PATTERNS } from '../src/core/usage/events';
 
 const doc = readFileSync(fileURLToPath(new URL('../docs/USAGE.md', import.meta.url)), 'utf8');
@@ -23,6 +24,11 @@ describe('docs/USAGE.md', () => {
   it('lists nothing that events.ts does not export', () => {
     const extra = listed.filter(n => !FIXED_NAMES.includes(n) && !PATTERNS.includes(n));
     expect(extra).toEqual([]);
+  });
+
+  it('lists the error kinds of errors.ts, one name each', () => {
+    expect(ERROR_PATTERNS).toHaveLength(ERROR_KINDS.length);
+    expect(listed.filter(n => n.startsWith('error.')).sort()).toEqual([...ERROR_PATTERNS].sort());
   });
 
   it('lists each name once', () => {

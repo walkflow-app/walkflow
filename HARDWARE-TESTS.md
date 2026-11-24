@@ -47,6 +47,7 @@ If the treadmill sends different status bytes or none at all, please note the he
 - [x] **Countdown.** *sPad 500: about 3 s.* How long does the treadmill count down after start? The program waits 4.5 s before setting the first speed.
 - [ ] **Program transitions.** Program `0.5 2` / `0.5 3` / `0.5 2`. Changes at the right time? Cancel a program with the stop button on the device: does it end (status under the speed or `Belt stopped, program ended`)?
 - [ ] **Reconnecting.** Disconnect, connect again: `← Request Control: OK` and live values again?
+- [ ] **Error counts (level 3, docs/USAGE.md).** Use a build with `WALKFLOW_USAGE` set and Settings → General → Developer mode on. Each name is sent at most once per start, so reload the app before each step. Reload, connect and press Disconnect: no `usage: error.connection-lost` line. Reload, connect, then switch the treadmill off (belt standing): the log shows the usual lost-connection lines, then `usage: error.connection-lost.v<version>`. Reload and cancel the device chooser: `usage: error.connect-failed.v<version>`, and no `error.connection-lost`. Set `walkflow.usageErrors` to `0` (devtools → Local Storage), reload, and repeat the last two steps (reloading between them): no `usage: error.` line at all. In every case the alarm, the log lines and the belt behave exactly as before.
 - [ ] **Connection loss** (the dangerous assumption). At 2 km/h, standing on the side rails, turn off Bluetooth on the computer. Does the belt keep running, does it stop, after how long? Record the result here and in the project description. The app shows the warning in any case.
 
 Result connection loss: *(still open)*
@@ -200,6 +201,15 @@ Covered by tests without hardware (`belt-commands.test.ts`, `reports.test.ts`, `
 - [ ] **Stop on a standing belt.** Connected, belt standing, press Stop. Which answer comes: `← Stop/Pause: OK` or `failed`? The warning “The treadmill did not take the stop” must *not* appear (it only appears while a speed above 0 is reported). Note the answer here.
 - [ ] **Pause while standing, Start while running:** note the `←` answers as well; a refused Set Speed (`← Set Speed: …` other than OK) now ends the ramp with `The treadmill refused the speed`.
 - [ ] **Stop that does not get through.** Hard to provoke on purpose; if `Write error` follows a `→ 08 01`, the log must show the stop up to three times, about 0.3 s apart, and then the red warning.
+
+## Usage count of the treadmill model (not yet checked on a treadmill)
+
+The treadmill model is counted once after connecting (#77, docs/USAGE.md). No change in what is read or sent to the treadmill; what only a treadmill can show is that connecting, start and stop are unchanged and the right strings are counted. **Precondition:** the app in English (the `Manufacturer:` and `Model:` log lines are translated, e.g. `Hersteller:` in German), a build with `WALKFLOW_USAGE=https://<test site>.goatcounter.com` (without it nothing is sent and no `usage:` line appears), Settings → General → Developer mode on, the first-start popup accepted, the Improve switch on (`walkflow.usageImprove` not set to `0`; `tm.*` is level 2). Belt standing, low speed, standing on the side rails.
+
+- [ ] **After connecting.** Expected in the log, in this order: `Device: …`, `Manufacturer: <v>`, `Model: <v>` (if the treadmill reports them), `Speed range: …`, `→ 00`, `← Request Control: OK`, and **once** `usage: tm.<maker>.<model>` (for the sPad 500: `usage: tm.fithome.jj-bt2-dl`; `tm.unknown` if nothing was reported). Suspicious: no `usage:` line although both lines were logged, the line twice, a `usage:` line before `← Request Control: OK`, `❌`. Paste the `Manufacturer` and `Model` lines of every treadmill; whether the Web Bluetooth blocklist hides either is to find out. The count must show up in the counter's list.
+- [ ] **Start and stop.** Press Start, confirm. Expected: `→ 00`, `→ 02 64 00`, `→ 07`, each answered with OK, then, once the run counts of #74 are built, one `usage: run.…` line (until then no `usage:` line); press Stop: `→ 08 01` at once. Bytes and order as before this change.
+- [ ] **The same with the counter blocked** (ad blocker or DevTools request blocking for the counter) **and slow** (DevTools throttling): connecting takes as long as without it, the bytes and their order are unchanged, no `❌`.
+- [ ] **Connect twice.** Disconnect and connect again in the same session: no second `usage: tm.…` line (a name is sent once per start of the app).
 
 ## ftms-treadmill 0.3.0 (checked on a treadmill, 4 of 6)
 

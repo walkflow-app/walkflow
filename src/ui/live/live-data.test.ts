@@ -127,6 +127,25 @@ describe('the log', () => {
   });
 });
 
+describe('the device information kept for the usage count', () => {
+  it('keeps manufacturer and model, ignores firmware and the advertised name', () => {
+    const r = rig();
+    r.tm.emit('notice', { code: 'device', name: 'JJ-BT2-4F2A' });
+    r.tm.emit('notice', { code: 'device-info', field: 'manufacturer', value: 'FITHOME' });
+    r.tm.emit('notice', { code: 'device-info', field: 'model', value: 'JJ-BT2-DL' });
+    r.tm.emit('notice', { code: 'device-info', field: 'firmware', value: '1.023' });
+    expect(r.live.deviceInfo()).toEqual({ manufacturer: 'FITHOME', model: 'JJ-BT2-DL' });
+  });
+
+  it('is empty when nothing came, and forgotten on every connect', () => {
+    const r = rig();
+    expect(r.live.deviceInfo()).toEqual({});
+    r.tm.emit('notice', { code: 'device-info', field: 'model', value: 'X1' });
+    r.live.resetDeviceInfo();
+    expect(r.live.deviceInfo()).toEqual({});
+  });
+});
+
 describe('live data', () => {
   afterEach(() => vi.useRealTimers());
 

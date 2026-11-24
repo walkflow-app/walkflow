@@ -1,7 +1,13 @@
 // What the update banner of the desktop app says and offers in each state of the update (platform/update-controller.ts).
 
 import type { UpdateState } from '../platform/update-controller';
+import type { ErrorKind } from '../core/usage/errors';
 import { t, type Text } from '../i18n/i18n';
+
+/** An update that ended in an error is a known error for the usage counts (only that stage; the sender drops repeats) */
+export function countUpdateState(s: UpdateState, report: (kind: ErrorKind) => void): void {
+  if (s.stage === 'error') report('update-failed');
+}
 
 /** `action`: what the button does ('download' = download and install, 'install' = restart, 'open' = the release page); null: no button */
 export interface UpdateView { text: Text; label: Text; action: 'download' | 'install' | 'open' | null }

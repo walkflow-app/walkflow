@@ -249,6 +249,9 @@ describe('agent pipeline: what happens next', () => {
     expect(conflicting(s => { s.headKicked = true; })).toMatchObject({ action: 'fix', mode: 'conflict' });
     // One try only; after it a person looks
     expect(conflicting(s => { s.headKicked = true; s.comments = [fixDone(HEAD, 'conflict')]; }).action).toBe('hold');
+    // GitHub says UNKNOWN for a while after main moved: the conflict is not known yet, so wait, never park for the checks
+    expect(conflicting(s => { s.headKicked = true; s.mergeable = 'UNKNOWN'; })).toMatchObject({ action: 'wait' });
+    expect(conflicting(s => { s.headKicked = true; s.mergeable = 'UNKNOWN'; s.headAgeHours = LIMITS.staleHours + 1; }).action).toBe('hold');
     // Without the conflict the kick is as before
     expect(conflicting(s => { s.mergeable = 'MERGEABLE'; }).action).toBe('kick');
   });
@@ -334,6 +337,13 @@ describe('agent pipeline: what happens next', () => {
     // Remarks the fix agent declined: the maintainer decides, a safety change is merged only on two OKs
     expect(safe(s => { s.reviews = [review('OK', 'opus'), review('OK with remarks', 'sonnet')]; s.comments = [fixDone(HEAD, 'remarks')]; }).action).toBe('hold');
     expect(safe(s => { s.reviews = [review('OK', 'opus', HEAD, 'other title'), review('OK', 'sonnet')]; }).action).toBe('hold');
+    // Right after main moved GitHub says UNKNOWN: the conflict that is solved first may be there, so no hold on the reviews yet
+    const declined = (change: (s: State) => void) => safe(s => {
+      s.reviews = [review('OK', 'opus'), review('OK with remarks', 'sonnet')]; s.comments = [fixDone(HEAD, 'remarks')]; change(s);
+    });
+    expect(declined(s => { s.mergeable = 'UNKNOWN'; }).action).toBe('wait');
+    expect(declined(s => { s.mergeable = 'CONFLICTING'; })).toMatchObject({ action: 'fix', mode: 'conflict' });
+    expect(declined(s => { s.mergeable = 'UNKNOWN'; s.headAgeHours = LIMITS.staleHours + 1; }).action).toBe('hold');
   });
 
   it('trust-boundary code is reviewed like a safety change, but needs no treadmill', () => {

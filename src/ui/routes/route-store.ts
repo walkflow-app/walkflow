@@ -15,7 +15,7 @@ import { featureName, storeRouteName } from '../../core/usage/events';
 import { lang, onLanguageChange, t } from '../../i18n/i18n';
 import { button, el } from '../components/elements';
 import { $, $button, $input } from '../ui';
-import { count } from '../usage';
+import { count, countError } from '../usage';
 import { flagUrl } from './flags';
 
 export interface RouteStoreHost {
@@ -131,9 +131,10 @@ export function setupRouteStore(host: RouteStoreHost) {
     render();
     try {
       const text = await fetchText(storeFileUrl(base!, r.file), PACKAGE_MAX_CHARS);
-      if (text === null) { message = () => t.routeStore.fileFailed; return; }
+      if (text === null) { countError('store-add'); message = () => t.routeStore.fileFailed; return; }
       if (!(await verifyDownload(r, text))) {
         // Most likely the list is older than the file (GitHub hands the two out from separate caches): read it again
+        countError('store-add');
         await load();
         message = () => t.routeStore.fileMismatch;
         return;
