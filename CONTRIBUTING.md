@@ -108,8 +108,9 @@ takes a pull request to `main` without a maintainer. The rules are in `scripts/a
   pull request and for one labelled `needs-maintainer` or `stuck` (nobody can merge without the checks), as long as `test`
   and `safety-gate` do not exist for its head: other workflows such as CodeQL do not count. The same empty commit starts a
   review whose run failed (not one that found something), once. A head that already is that empty commit is not kicked
-  again; if the checks or the review still do not come, a person looks. Not with a conflict with `main`: GitHub starts
-  no workflow on such a pull request, so the fix agent solves the conflict first (its push starts the checks).
+  again; if the checks or the review still do not come, a person looks. A pull request without a label that has a
+  conflict with `main` is not kicked: GitHub starts no workflow on it, so the fix agent solves the conflict first (its push
+  starts the checks).
 - **Belt code** (`SAFETY` in `scripts/paths.mjs`, and a new `ftms-treadmill` version) and **trust-boundary code** (`TRUST`:
   `src/net/`, `src/core/share/`) are reviewed by Opus and Sonnet, merged only when both say `OK` and on top of the current
   `main`. Belt code also gets the label `needs-hardware`: one check on a treadmill before the release, not before each merge.
