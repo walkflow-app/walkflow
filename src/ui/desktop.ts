@@ -8,8 +8,9 @@ import { lang, onLanguageChange, t } from '../i18n/i18n';
 import { bindText } from './i18n-dom';
 import { currentTheme, onThemeChange } from './theme';
 import { $, $button, $input } from './ui';
+import { countError } from './usage';
 import { store } from './store';
-import { updateView } from './update-view';
+import { countUpdateState, updateView } from './update-view';
 
 export interface OpenedFile { name: string; text?: string; error?: 'unreadable' | 'tooLarge' }
 
@@ -84,6 +85,8 @@ export function setupDesktop(opts: { onGlobalStop: () => void; onOpenPackage: (f
   let announced = '';
   const showUpdate = (s: UpdateState | null) => {
     if (!s) return;
+    // Counted once per start by the sender; the state is shown as before
+    countUpdateState(s, countError);
     const v = updateView(s);
     bindText($('updateText'), v.text);
     btn.hidden = v.action === null;
