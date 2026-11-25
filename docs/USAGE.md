@@ -17,8 +17,8 @@ typed, measured or identifying is ever part of one. A test (`tests/usage-docs.te
 - Your IP address reaches the counting service, as with every website. It is not stored or linked by the app, and the app
   links no two events of a person.
   What the service does with it is GoatCounter's own statement, not the app's: its [privacy page](https://www.goatcounter.com/privacy)
-  (read 8 June 2025, checked again at every release) says that it does not store IP addresses, and that is what the small print
-  on the product page repeats.
+  says that it does not store IP addresses, and that is what the small print on the product page repeats as GoatCounter's
+  statement.
 
 ## Levels
 

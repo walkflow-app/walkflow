@@ -92,10 +92,10 @@ describe('the product page', () => {
     const withUsage = filled(page);
     expect(withUsage.match(/<img\b[^>]*\/count\?[^>]*>/g)).toEqual([`<img src="${USAGE}/count?p=site.${lang}&t=site.${lang}&e=true" alt="" width="1" height="1">`]);
     expect(withUsage).toContain('class="fineprint"');
-    expect(withUsage).toMatch(/never who\.\*<\/p>|nie, wer du bist\.\*<\/p>/);
+    expect(withUsage).toMatch(/who you are\.\*<\/p>|wer du bist\.\*<\/p>/);
     const without: string = fillPage(read(page), { ...VALUES, usage: '' });
-    expect(without).not.toMatch(/\/count\?|fineprint|\{\{|usage -->|never who\.\*|nie, wer du bist\.\*/);
-    expect(without).toMatch(/never who\.<\/p>|nie, wer du bist\.<\/p>/);
+    expect(without).not.toMatch(/\/count\?|fineprint|\{\{|usage -->|who you are\.\*|wer du bist\.\*/);
+    expect(without).toMatch(/who you are\.<\/p>|wer du bist\.<\/p>/);
   });
 
   it.each(PAGES)('%s: the download links point straight at the files of the release, named like the installers', page => {
