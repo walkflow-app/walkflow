@@ -23,6 +23,9 @@ export interface RouteImportHost {
   added(route: Route): Promise<void>;
 }
 
+/** The speed a route from outside brings along is shown in the questions before it is saved (open from outside, store, community) and in the status after a package import (it is held to the person's limit when walked) */
+const speedNote = (route: Route) => (route.defaultSpeed === undefined ? [] : [t.routes.speedNote(route.defaultSpeed)]);
+
 type Failure = 'unreadable' | 'packageTooLarge' | 'packageNewer' | 'packageInvalid';
 
 export function setupRouteImport(host: RouteImportHost) {
@@ -67,7 +70,7 @@ export function setupRouteImport(host: RouteImportHost) {
     const read = readPackage(file.text, newRouteId(Date.now()), Date.now());
     if (!read.ok) { setStatus(() => t.routes[packageFailure(read.reason)]); return; }
     const total = analyzeRoute(read.route).total;
-    if (!(await confirmDialog(t.routes.openPackageTitle, [t.routes.openPackageText(routeName(read.route, lang), fmtDistance(total))], t.routes.openPackageConfirm))) return;
+    if (!(await confirmDialog(t.routes.openPackageTitle, [t.routes.openPackageText(routeName(read.route, lang), fmtDistance(total)), ...speedNote(read.route)], t.routes.openPackageConfirm))) return;
     await importPackage(file.text, key => setStatus(() => t.routes[key]));
   }
 
@@ -83,7 +86,7 @@ export function setupRouteImport(host: RouteImportHost) {
     }
     try { await (await host.store()).put(route); } catch (e) { setStatus(() => t.routes.failed(String(e))); return; }
     await host.added(route);
-    setStatus(() => t.routes.imported(routeName(route, lang), analyzeRoute(route).total));
+    setStatus(() => [t.routes.imported(routeName(route, lang), analyzeRoute(route).total), ...speedNote(route)].join(' '));
   }
 
   /**
@@ -98,8 +101,8 @@ export function setupRouteImport(host: RouteImportHost) {
     const revision = read.route.revision ?? 1;
     const existing = opts.replace ? (await (await host.store()).list()).find(r => r.id === opts.replace) : undefined;
     const ok = existing
-      ? await confirmDialog(t.routeStore.updateTitle, [t.routeStore.updateText(routeName(existing, lang), existing.revision ?? 1, revision)], t.routeStore.updateConfirm)
-      : await confirmDialog(t.routeStore.addTitle, [t.routeStore.addText(name, fmtDistance(analyzeRoute(read.route).total))], t.routeStore.addConfirm);
+      ? await confirmDialog(t.routeStore.updateTitle, [t.routeStore.updateText(routeName(existing, lang), existing.revision ?? 1, revision), ...speedNote(read.route)], t.routeStore.updateConfirm)
+      : await confirmDialog(t.routeStore.addTitle, [t.routeStore.addText(name, fmtDistance(analyzeRoute(read.route).total)), ...speedNote(read.route)], t.routeStore.addConfirm);
     if (!ok) return false;
     let route: Route = { ...read.route, storeFile: opts.storeFile, ...(existing ? { id: existing.id, ...(existing.shared ? { shared: true as const } : {}) } : {}) };
     if (route.country === undefined) {

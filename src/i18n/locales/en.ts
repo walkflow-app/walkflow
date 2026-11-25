@@ -367,6 +367,7 @@ export const en = {
     openPackageTitle: 'Import this route?',
     openPackageText: (name: string, length: string) => `“${name}” (${length}) was opened from a file. Add it to your routes?`,
     openPackageConfirm: 'Import',
+    speedNote: (kmh: number) => `This route brings its own speed: ${u.speed(kmh, 1)}. It is held to your speed limit when you walk it.`,
     packageTooLarge: 'This package is too large (up to 2 MB).',
     packageNewer: 'This package was made by a newer version of Walkflow. Update the app to read it.',
     packageInvalid: 'This package is damaged or has no usable route (at least two points, together at least 10 m long).',
