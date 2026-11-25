@@ -278,10 +278,12 @@ describe('readPackage cleans what it keeps', () => {
       return res.ok ? res.route.defaultSpeed : 'refused';
     };
     expect(speed(20)).toBeUndefined();
-    expect(speed(6.1)).toBeUndefined();
+    expect(speed(8.1)).toBeUndefined();
     expect(speed(ROUTE_IMPORT_SPEED_MAX)).toBe(ROUTE_IMPORT_SPEED_MAX);
+    expect(speed(7)).toBe(7);
     expect(speed(4)).toBe(4);
-    expect(ROUTE_IMPORT_SPEED_MAX).toBeLessThanOrEqual(6);
+    // One cap of 8 km/h from a file (maintainer's decision, #111); a higher one needs a decision of its own
+    expect(ROUTE_IMPORT_SPEED_MAX).toBe(8);
   });
 
   it('cuts a name that is too long, and puts it on one line', () => {

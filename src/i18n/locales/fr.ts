@@ -369,6 +369,7 @@ export const fr: Messages = {
     openPackageTitle: 'Importer ce parcours ?',
     openPackageText: (name: string, length: string) => `« ${name} » (${length}) a été ouvert depuis un fichier. L’ajouter à vos parcours ?`,
     openPackageConfirm: 'Importer',
+    speedNote: (kmh: number) => `Ce parcours apporte sa propre vitesse : ${u.speed(kmh, 1)}. Elle est limitée à ta vitesse maximale pendant la marche.`,
     packageTooLarge: 'Ce paquet est trop volumineux (jusqu’à 2 Mo).',
     packageNewer: 'Ce paquet a été créé par une version plus récente de Walkflow. Mettez l’application à jour pour le lire.',
     packageInvalid: 'Ce paquet est endommagé ou ne contient pas de parcours utilisable (au moins deux points, longs d’au moins 10 m au total).',

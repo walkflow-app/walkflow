@@ -366,6 +366,7 @@ export const de: Messages = {
     openPackageTitle: 'Diese Strecke importieren?',
     openPackageText: (name: string, length: string) => `„${name}“ (${length}) wurde aus einer Datei geöffnet. Zu deinen Strecken hinzufügen?`,
     openPackageConfirm: 'Importieren',
+    speedNote: (kmh: number) => `Diese Strecke bringt eine eigene Geschwindigkeit mit: ${u.speed(kmh, 1)}. Sie wird beim Gehen auf dein Tempolimit begrenzt.`,
     packageTooLarge: 'Dieses Paket ist zu groß (bis 2 MB).',
     packageNewer: 'Dieses Paket stammt aus einer neueren Walkflow-Version. Aktualisiere die App, um es zu lesen.',
     packageInvalid: 'Dieses Paket ist beschädigt oder enthält keine brauchbare Strecke (mindestens zwei Punkte, zusammen mindestens 10 m lang).',

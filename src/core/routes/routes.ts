@@ -154,10 +154,11 @@ export const ROUTE_SPEED_MIN = 0.5;
 export const ROUTE_SPEED_MAX = 20;
 export const DEFAULT_WALK_SPEED = 3;
 /**
- * The highest speed a route from outside (a file, the store, a peer) may bring along: a walking pace, the library's default
- * limit. A higher one is dropped on reading, so the route walks at DEFAULT_WALK_SPEED until the person sets their own.
+ * The highest speed a route from outside (a file, the store, a peer) may bring along: one cap of 8 km/h (the maintainer's
+ * decision, #111; it was 6). The person's limit still applies on top.
+ * A higher one is dropped on reading, so the route walks at DEFAULT_WALK_SPEED until the person sets their own.
  */
-export const ROUTE_IMPORT_SPEED_MAX = 6;
+export const ROUTE_IMPORT_SPEED_MAX = 8;
 export const ROUTE_DESCRIPTION_MAX = 1000;
 
 /** The walking speed of a route in km/h */

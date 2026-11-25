@@ -115,7 +115,7 @@ export function readPackage(text: string, id: string, now: number): PackageResul
 
   const route = readRoute({
     id, name, names, updated: now, points, revision: v.revision,
-    // A package comes from outside: a speed above a walking pace is dropped, a stranger does not choose how fast the belt runs
+    // A package comes from outside: a speed above ROUTE_IMPORT_SPEED_MAX is dropped, a stranger does not choose how fast the belt runs
     country: v.country, defaultSpeed: typeof v.defaultSpeed === 'number' && v.defaultSpeed <= ROUTE_IMPORT_SPEED_MAX ? v.defaultSpeed : undefined,
     description: own, texts, waypoints: readPackageWaypoints(v.waypoints),
     meta: { place: v.place, author: v.author, license: v.license, source: v.source, tags: v.tags },

@@ -131,7 +131,7 @@ export function setupCommunity(host: CommunityHost) {
   function confirm(read: Extract<CommunityItem, { ok: true }>): Promise<boolean> {
     if (read.kind === 'route') {
       const summary = fmtDistance(analyzeRoute(read.route).total);
-      return confirmDialog(t.community.takeRouteTitle, [t.community.takeText(read.route.names?.[lang] ?? read.route.name, summary)], t.community.takeConfirm);
+      return confirmDialog(t.community.takeRouteTitle, [t.community.takeText(read.route.names?.[lang] ?? read.route.name, summary), ...(read.route.defaultSpeed === undefined ? [] : [t.routes.speedNote(read.route.defaultSpeed)])], t.community.takeConfirm);
     }
     const summary = t.program.summary(read.workout.steps.length, fmtLength(programLength(read.workout.steps)));
     return confirmDialog(t.community.takeWorkoutTitle, [t.community.takeText(read.workout.names?.[lang] ?? read.workout.name, summary)], t.community.takeConfirm);
