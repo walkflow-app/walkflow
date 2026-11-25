@@ -203,8 +203,10 @@ export class ProgramRunner {
       this.cur = st;
       this.host.status(() => t.program.starting);
       // The first step's speed goes in before start(): the library's start() takes the speed last asked for, which
-      // would otherwise be the previous run's. While the belt stands it is only held; start() resets the governor and sends the
-      // device minimum first, so nothing above the first step's speed can go out.
+      // would otherwise be the previous run's. While the governor knows the belt stands (moving === false) it is only held.
+      // Right after connecting (no report yet, moving === null) or while the belt still coasts after a Stop, one Set Speed
+      // (a ramp step) can go out before start(). That is harmless: start() resets the governor and sends the device minimum
+      // before Start, so nothing above the first step's speed can go out.
       // (the first step that will actually run: a 0 min or 0 m step is skipped and its speed is never wanted)
       const first = steps.find(s => (s.sec !== undefined ? s.sec > 0 : s.meters > 0));
       if (first) this.host.setTarget(first.speed);
