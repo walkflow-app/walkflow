@@ -85,11 +85,18 @@ export function setupSpeedControls(host: SpeedControlsHost) {
     host.limitsChanged();
   }
 
+  /** Only the Target figure, never the slider: the end of a drag redraws this before the slider's own change */
+  function renderTargetFigure() {
+    $('target').textContent = targetFigureText(
+      shownTarget(tm.state.target, lastTarget, { min: tm.state.deviceRange.min, max: effectiveMax() }), t.control.speed,
+    );
+  }
+
   function renderSpeed() {
     const sl = $input('slider');
     const { target, lastCommand: lc, ramping } = tm.state;
     if (target !== null && !sliderDragging) sl.value = String(target);
-    $('target').textContent = targetFigureText(shownTarget(target, lastTarget, { min: tm.state.deviceRange.min, max: effectiveMax() }), t.control.speed);
+    renderTargetFigure();
     $('rampInfo').textContent = ramping && target !== null && lc && lc.kmh !== target
       ? t.control.ramping(lc.kmh, target)
       : ' ';
@@ -172,11 +179,12 @@ export function setupSpeedControls(host: SpeedControlsHost) {
 
   const slider = $input('slider');
   slider.addEventListener('pointerdown', () => { sliderDragging = true; });
-  // A drag that ends on its starting value fires no change: the figure goes back from the slider's preview to the target
+  // A drag that ends on its starting value fires no change: the figure goes back from the slider's preview to the target.
+  // Only the figure: pointerup comes before the slider's change, and writing the slider here would undo the drag.
   window.addEventListener('pointerup', () => {
     if (!sliderDragging) return;
     sliderDragging = false;
-    renderSpeed();
+    renderTargetFigure();
   });
   slider.oninput = () => { $('target').textContent = t.control.speed(parseFloat(slider.value)); };
   slider.onchange = () => { sliderDragging = false; requestSpeed(parseFloat(slider.value)); };
