@@ -82,7 +82,7 @@ const speed = setupSpeedControls({
   limitSet: () => { readout.redrawChart(); treadmill.render(); },
 });
 // Settings → treadmill: the speeds of the slow/mid/run buttons
-const treadmill = setupTreadmillSettings({ limit: speed.limit, presets: speed.presets, save: p => speed.setPresets(p) });
+const treadmill = setupTreadmillSettings({ limit: speed.limit, presets: speed.presets, locked: () => settingsLocked(tm.state), save: p => speed.setPresets(p) });
 const effectiveMax = () => tm.state.effectiveMax;
 
 /** What the training view is about; the workouts and routes views ask for it while they are set up */

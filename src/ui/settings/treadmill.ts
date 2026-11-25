@@ -1,6 +1,6 @@
 // Settings → treadmill: the speeds of the slow/mid/run buttons in the training view. Each field shows its preset in the
 // units of the settings with the decimal separator of the language; a value is only stored when checkPresetChange
-// accepts it (2.0 km/h up to the personal limit, slow < mid < run). The checks and the guard against the limit live in
+// accepts it (not while the belt runs; 2.0 km/h up to the personal limit, slow < mid < run). The checks and the guard against the limit live in
 // core/safety/speed-presets.ts. The incline levels slider in the same tab belongs to incline-card.ts.
 
 import { checkPresetChange, PRESET_KEYS, PRESET_MIN, presetCommand, type PresetKey, type SpeedPresets } from '../../core/safety/speed-presets';
@@ -12,6 +12,8 @@ export interface TreadmillSettingsHost {
   /** The personal speed limit, km/h */
   limit(): number;
   presets(): SpeedPresets;
+  /** The belt runs (or may run): settings are locked, a change is not taken */
+  locked(): boolean;
   /** Stores checked presets and redraws the buttons */
   save(p: SpeedPresets): void;
 }
@@ -51,8 +53,10 @@ export function setupTreadmillSettings(host: TreadmillSettingsHost) {
 
   function changed(key: PresetKey) {
     const shown = parseDecimal(field(key).value);
-    const d = checkPresetChange(host.presets(), key, Number.isFinite(shown) ? fromSpeed(shown) : NaN, host.limit());
+    const d = checkPresetChange(host.presets(), key, Number.isFinite(shown) ? fromSpeed(shown) : NaN, host.limit(), host.locked());
     if (!d.ok) {
+      // The belt runs (a field fires its change as the locked dialog closes): the field goes back to the stored value
+      if (d.error === 'locked') { render(); return; }
       // Not stored: the typed value stays in the field with the reason, so it can be corrected
       setError(key, d.error === 'notANumber' ? t.presets.notANumber
         : d.error === 'range' ? t.presets.rangeError(PRESET_MIN, host.limit())

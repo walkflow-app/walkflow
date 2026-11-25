@@ -50,14 +50,16 @@ export function loadSpeedPresets(stored: string | null): SpeedPresets {
 
 export type PresetCheck =
   | { ok: true; presets: SpeedPresets }
-  | { ok: false; error: 'notANumber' | 'range' | 'notAbovePrevious' | 'notBelowNext' };
+  | { ok: false; error: 'locked' | 'notANumber' | 'range' | 'notAbovePrevious' | 'notBelowNext' };
 
 /**
  * One preset typed in settings (km/h). Rounded to 0.1 km/h; it must lie within [PRESET_MIN, limit] and strictly
  * between its stored neighbours. Returns the new presets to store, or why it is refused (nothing is stored then):
- * not above the previous preset, or not below the next one.
+ * not above the previous preset, or not below the next one. While `locked` (settingsLocked: the belt may run) nothing is
+ * taken, whatever the value: presets are settings like the limit and the step.
  */
-export function checkPresetChange(stored: SpeedPresets, key: PresetKey, kmh: number, limit: number): PresetCheck {
+export function checkPresetChange(stored: SpeedPresets, key: PresetKey, kmh: number, limit: number, locked: boolean): PresetCheck {
+  if (locked) return { ok: false, error: 'locked' };
   if (!Number.isFinite(kmh)) return { ok: false, error: 'notANumber' };
   const value = round01(kmh);
   if (value < PRESET_MIN - EPS || value > limit + EPS) return { ok: false, error: 'range' };
