@@ -26,6 +26,61 @@ export interface ControlsHost {
   count: Count;
 }
 
+/** What a key press says about where it happened; plain values, so a test needs no DOM */
+export interface KeyTarget { tag: string; type: string; editable: boolean; onMap: boolean }
+export interface KeyEventLike {
+  key: string;
+  code: string;
+  repeat: boolean;
+  /** Read only after the Esc check: nothing may throw before that stop */
+  target(): KeyTarget;
+  preventDefault(): void;
+}
+/** What the page says: not the focus, the page (after a stop the focus may have left the dialog that is still open) */
+export interface KeyPage {
+  dialogOpen(): boolean;
+  view(): string;
+  blurFocus(): void;
+}
+
+/** The handlers of the buttons; the same functions the bound buttons call (ui/live/belt.test.ts calls them too) */
+export function controlHandlers(host: Pick<ControlsHost, 'belt'>) {
+  return {
+    pause: () => void host.belt.pause(),
+    stop: () => void host.belt.stop(),
+    sbStop: () => void host.belt.stop(),
+  };
+}
+
+/** The keydown handler: Esc and Space stop, the arrows change the speed (the decision is src/core/safety/stop-keys.ts) */
+export function keydownHandler(host: Pick<ControlsHost, 'connected' | 'belt' | 'speed'>, page: KeyPage): (e: KeyEventLike) => void {
+  return e => {
+    if (!host.connected()) return;
+    // Esc stops before anything else is looked at: nothing may throw before this stop
+    if (e.key === 'Escape') {
+      // In a dialog Esc also cancels it as usual (preventing it would keep the dialog open)
+      if (!page.dialogOpen()) e.preventDefault();
+      void host.belt.stop();
+      return;
+    }
+    const action = keyAction({
+      key: e.key, code: e.code, tag: e.target().tag, type: e.target().type, repeat: e.repeat,
+      view: page.view(),
+      inDialog: page.dialogOpen(),
+      onMap: e.target().onMap,
+      editable: e.target().editable,
+    });
+    if (action === 'stop') {
+      e.preventDefault();
+      void host.belt.stop();
+      page.blurFocus();
+    } else if (action !== null) {
+      e.preventDefault();
+      host.speed.step(action === 'faster' ? 1 : -1);
+    }
+  };
+}
+
 export function setupControls(host: ControlsHost) {
   $button('start').onclick = async () => {
     // A program that is running is not started again; stop it first
@@ -37,36 +92,27 @@ export function setupControls(host: ControlsHost) {
     if (host.connected()) await startFree(() => host.belt.start(), host.count);
   };
   $button('shClear').onclick = () => host.stage.setActive(null);
-  $button('pause').onclick = () => void host.belt.pause();
-  $button('stop').onclick = () => void host.belt.stop();
-  $button('sbStop').onclick = () => void host.belt.stop();
+  const h = controlHandlers(host);
+  $button('pause').onclick = h.pause;
+  $button('stop').onclick = h.stop;
+  $button('sbStop').onclick = h.sbStop;
 
+  const onKey = keydownHandler(host, {
+    dialogOpen: () => document.querySelector('dialog[open]') !== null,
+    view: () => document.documentElement.dataset.view ?? 'training',
+    // oxlint-disable-next-line typescript/no-unnecessary-condition -- the focus may be on an element without blur()
+    blurFocus: () => (document.activeElement as HTMLElement | null)?.blur?.(),
+  });
   document.addEventListener('keydown', e => {
-    if (!host.connected()) return;
-    // Esc stops before anything else is looked at: nothing may throw before this stop
-    if (e.key === 'Escape') {
-      // In a dialog Esc also cancels it as usual (preventing it would keep the dialog open)
-      if (document.querySelector('dialog[open]') === null) e.preventDefault();
-      void host.belt.stop();
-      return;
-    }
-    const el = e.target instanceof HTMLElement ? e.target : document.body;
-    const action = keyAction({
-      key: e.key, code: e.code, tag: el.tagName, type: el instanceof HTMLInputElement ? el.type : '', repeat: e.repeat,
-      view: document.documentElement.dataset.view ?? 'training',
-      // The page, not the focus: after a stop the focus may have left the dialog that is still open
-      inDialog: document.querySelector('dialog[open]') !== null,
-      onMap: el.closest('.route-map, .maplibregl-map') !== null,
-      editable: el.isContentEditable,
+    onKey({
+      key: e.key, code: e.code, repeat: e.repeat, preventDefault: () => e.preventDefault(),
+      target: () => {
+        const el = e.target instanceof HTMLElement ? e.target : document.body;
+        return {
+          tag: el.tagName, type: el instanceof HTMLInputElement ? el.type : '',
+          editable: el.isContentEditable, onMap: el.closest('.route-map, .maplibregl-map') !== null,
+        };
+      },
     });
-    if (action === 'stop') {
-      e.preventDefault();
-      void host.belt.stop();
-      // oxlint-disable-next-line typescript/no-unnecessary-condition -- the focus may be on an element without blur()
-      (document.activeElement as HTMLElement | null)?.blur?.();
-    } else if (action !== null) {
-      e.preventDefault();
-      host.speed.step(action === 'faster' ? 1 : -1);
-    }
   });
 }

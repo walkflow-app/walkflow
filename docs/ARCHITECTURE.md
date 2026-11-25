@@ -31,12 +31,14 @@ src/
     settings/           settings dialog, header menus
     live/               the training view's live parts: what the treadmill reports as the app shows it (live-data), the
                         texts for its codes (treadmill-text), which of its codes are counted as error kinds (error-kinds), the figures and banner (readout, belt-banner), connecting and
-                        disconnecting, the buttons and keys, the speed controls and the stored limits, incline card, stage
+                        disconnecting, the buttons and keys, start/pause/stop for the rest of the page (belt), the speed
+                        controls and the stored limits, incline card, stage
                         (chosen workout or route, and starting it), run-count (which kind of run started, for the usage
                         counts; read-only, never in the way to the belt), experiment console. They only ask the Treadmill,
                         draw and report usage counts.
     routes/ workouts/ history/ community/ settings/   one folder per feature view (history also has the export buttons)
-    background.ts       wake lock, tab in the background, leaving the page
+    background.ts       wake lock, tab in the background, leaving the page (the handlers take plain objects, so ui/live/belt.test.ts
+                        can call them with the simulated treadmill)
     desktop.ts pwa.ts theme.ts views.ts i18n-dom.ts   integration of the page
     views-count.ts      the usage count of an opened view (view.<name>; Community counts nothing)
     ui.ts store.ts      DOM lookups, log and download; the storage wrapper that never throws

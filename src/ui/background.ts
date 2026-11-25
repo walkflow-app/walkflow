@@ -21,12 +21,61 @@ export interface BackgroundHost {
   tick(): void;
   /** Save the run now */
   flush(): void;
+  /** The browser releases the wake lock when the tab is hidden; take it again when the tab is back and connected */
+  acquireWakeLock(): void | Promise<void>;
 }
 
-export function setupBackground(host: BackgroundHost) {
-  let wakeLock: WakeLockSentinel | null = null;
+/** What the page says and shows; plain values, so a test needs no DOM */
+export interface VisibilityPage {
+  hidden(): boolean;
+  /** The person's choice for a hidden tab */
+  mode(): string;
+  setTitle(title: string): void;
+  /** Show the banner that tells what happened while the tab was hidden */
+  showHiddenBanner(text: Text): void;
+  now(): number;
+}
+
+/** The visibilitychange handler: warn or pause when the tab is hidden while the belt may run, save the run, tell on return */
+export function visibilityHandler(host: BackgroundHost, page: VisibilityPage) {
   let hiddenSince: number | null = null;
   let hiddenWhileRunning: 'warned' | 'paused' | null = null;
+
+  const onChange = () => {
+    if (page.hidden()) {
+      if (host.connected() && host.maybeRunning()) {
+        hiddenSince = page.now();
+        page.setTitle(t.hidden.title);
+        if (page.mode() === 'pause') {
+          hiddenWhileRunning = 'paused';
+          log(t.hidden.pausingLog);
+          void host.pause(() => t.hidden.pausedReason);
+        } else {
+          hiddenWhileRunning = 'warned';
+          log(t.hidden.warnLog);
+        }
+      }
+      // After the pause command has been queued, not before
+      host.flush();
+      return;
+    }
+    page.setTitle(APP_NAME);
+    host.tick();
+    if (host.connected()) void host.acquireWakeLock();
+    if (hiddenSince !== null && hiddenWhileRunning) {
+      const s = Math.round((page.now() - hiddenSince) / 1000);
+      const how = hiddenWhileRunning;
+      page.showHiddenBanner(() => how === 'paused' ? t.hidden.paused(s) : t.hidden.warned(s));
+    }
+    hiddenSince = null;
+    hiddenWhileRunning = null;
+  };
+  onChange.relabel = () => { if (page.hidden() && hiddenSince !== null) page.setTitle(t.hidden.title); };
+  return onChange;
+}
+
+export function setupBackground(host: Omit<BackgroundHost, 'acquireWakeLock'>) {
+  let wakeLock: WakeLockSentinel | null = null;
 
   const mode = $<HTMLSelectElement>('hiddenMode');
   const saved = store.get(HIDDEN_MODE_KEY);
@@ -52,36 +101,14 @@ export function setupBackground(host: BackgroundHost) {
     wakeLock = null;
   }
 
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) {
-      if (host.connected() && host.maybeRunning()) {
-        hiddenSince = Date.now();
-        document.title = t.hidden.title;
-        if (mode.value === 'pause') {
-          hiddenWhileRunning = 'paused';
-          log(t.hidden.pausingLog);
-          void host.pause(() => t.hidden.pausedReason);
-        } else {
-          hiddenWhileRunning = 'warned';
-          log(t.hidden.warnLog);
-        }
-      }
-      // After the pause command has been queued, not before
-      host.flush();
-      return;
-    }
-    document.title = APP_NAME;
-    host.tick();
-    if (host.connected()) void acquireWakeLock(); // the browser releases the wake lock when the tab is hidden
-    if (hiddenSince !== null && hiddenWhileRunning) {
-      const s = Math.round((Date.now() - hiddenSince) / 1000);
-      const how = hiddenWhileRunning;
-      bindText($('hiddenText'), () => how === 'paused' ? t.hidden.paused(s) : t.hidden.warned(s));
-      $('hiddenBanner').hidden = false;
-    }
-    hiddenSince = null;
-    hiddenWhileRunning = null;
+  const onVisibility = visibilityHandler({ ...host, acquireWakeLock }, {
+    hidden: () => document.hidden,
+    mode: () => mode.value,
+    setTitle: title => { document.title = title; },
+    showHiddenBanner: text => { bindText($('hiddenText'), text); $('hiddenBanner').hidden = false; },
+    now: () => Date.now(),
   });
+  document.addEventListener('visibilitychange', onVisibility);
 
   window.addEventListener('pagehide', () => host.flush());
   window.addEventListener('beforeunload', e => {
@@ -92,8 +119,6 @@ export function setupBackground(host: BackgroundHost) {
     acquireWakeLock,
     releaseWakeLock,
     /** After a language change: the tab title while hidden */
-    relabel() {
-      if (document.hidden && hiddenSince !== null) document.title = t.hidden.title;
-    },
+    relabel: onVisibility.relabel,
   };
 }
