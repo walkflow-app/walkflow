@@ -228,3 +228,17 @@ Library changes [#31](https://github.com/walkflow-app/ftms-treadmill/pull/31) (`
 - [ ] **Steps are spaced from the end of the write** (#32). Only on a weak connection (move the computer or the treadmill apart until `← Set Speed: OK` comes late): set a target 1.0 km/h above the current speed. Expected: consecutive `→ 02 …` lines at least 1.5 s apart (the time of the previous answer counts, not the time it was sent), and after a `Write error` followed by a new target no two `→ 02` lines closer than 1.5 s. Hard to provoke; leave open when the connection never lagged.
 
 Not checkable in the app, covered by tests only: a lowered limit goes out in one command (the settings are locked while the belt runs, see *Settings and training view*), and `setIncline` with `Infinity` or 5000 (the app only offers levels). A `NaN` limit keeps the limit in force; there is no input for it in the app.
+
+## Belt wiring as plain handlers (#49, not yet checked on a treadmill)
+
+The handlers of Stop, Pause, the keys, the hidden tab and the global shortcut moved out of `main.ts` into
+`src/ui/live/belt.ts`, `controls.ts` and `background.ts`; no behaviour changed. Covered by `src/ui/live/belt.test.ts`
+against the simulated treadmill (the bytes below); what only the real app can show is that the bindings to the page still
+call them. Belt running at a low speed, the log open (Settings → General → Developer mode), standing on the side rails.
+
+- [ ] **Stop button and stop bar.** Click **Stop** in the training view: `→ 08 01` once per click. The same with the stop bar in another view (Routes, Workouts).
+- [ ] **Pause button.** Click **Pause**: `→ 08 02`.
+- [ ] **Esc.** Esc with the focus nowhere in particular, then with the cursor in a text field: `→ 08 01` each time. With a dialog open: `→ 08 01` and the dialog closes.
+- [ ] **Space.** Space outside a text field: `→ 08 01`. In a text field it types a space and nothing is sent.
+- [ ] **Hidden tab.** With the belt standing (the settings are locked while it runs) set Settings → “When the tab goes to the background while the belt is running” to “pause the belt”; start the belt and switch to another tab: `Tab in background: pausing the belt`, `→ 08 02`; back in the tab the banner says `The tab was in the background for N s, so the belt was paused.` With “only warn”: `⚠ Tab in background, the belt keeps running` and no `→ 08 …`.
+- [ ] **Global shortcut (desktop app).** A program running, another app in the foreground, Cmd/Ctrl+Shift+Space: `Global stop shortcut`, `→ 08 01`, and the program ends (nothing restarts the belt).
