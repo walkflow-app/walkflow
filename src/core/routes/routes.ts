@@ -376,7 +376,7 @@ const WALK_MAX_METERS = 100_000;
 
 /**
  * A route walk is a workout of one distance step over the whole route at the given speed: the route's speed (one from
- * outside is at most ROUTE_IMPORT_SPEED_MAX, see readPackage), capped by the person's limit. null = no usable speed or a
+ * outside is at most ROUTE_IMPORT_SPEED_MAX, see readPackage and parseBackup), capped by the person's limit. null = no usable speed or a
  * route too long for a step.
  */
 export function walkSteps(stats: RouteStats, kmh: number): ProgramStep[] | null {
