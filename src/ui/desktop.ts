@@ -1,6 +1,6 @@
 // Integration with the Electron app (only if window.walkflowDesktop exists, i.e. provided by the preload).
 
-import { focusInitial, lastingDialogStopButton } from './components/dialog-stop';
+import { lastingDialogStopButton } from './components/dialog-stop';
 import { type BtDevice, chooserList } from '../platform/bt-devices';
 import type { UpdateState } from '../platform/update-controller';
 import { choose } from './components/dialogs';
@@ -186,7 +186,8 @@ function setupChooser(d: WalkflowDesktop, log: (m: string) => void) {
       document.body.append(dlg);
       dlg.showModal();
       render();
-      focusInitial(dlg);
+      // The focus on Cancel, never on the Stop (Enter or Space on opening would stop the belt) nor on a device (it would pick one)
+      cancel.focus();
     } else {
       render();
     }

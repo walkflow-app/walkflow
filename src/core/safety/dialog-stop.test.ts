@@ -19,6 +19,10 @@ describe('initialFocusIndex', () => {
   it('skips disabled controls', () => {
     expect(initialFocusIndex([{ stop: true }, { stop: false, disabled: true }, { stop: false }])).toBe(2);
   });
+  it('skips hidden controls: focus() on them does nothing and would leave the focus on the Stop', () => {
+    expect(initialFocusIndex([{ stop: true }, { stop: false, hidden: true }, { stop: false }])).toBe(2);
+    expect(initialFocusIndex([{ stop: false, hidden: true }, { stop: true }])).toBe(1);
+  });
   it('falls back to the Stop when it is the only control', () => {
     expect(initialFocusIndex([{ stop: true }])).toBe(0);
   });

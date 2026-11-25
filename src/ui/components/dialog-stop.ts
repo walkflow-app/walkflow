@@ -42,6 +42,11 @@ const FOCUSABLE = 'button, input, select, textarea, a[href], [tabindex]:not([tab
  *  cannot stop the belt by surprise. Esc and a click on the Stop still work. */
 export function focusInitial(dlg: HTMLDialogElement) {
   const els = [...dlg.querySelectorAll<HTMLElement>(FOCUSABLE)];
-  const i = initialFocusIndex(els.map(e => ({ stop: e.classList.contains('dlg-stop'), disabled: (e as HTMLButtonElement).disabled })));
+  // Hidden: the hidden attribute, or display:none (also of a parent, e.g. an inactive tab), which leaves no client rects
+  const i = initialFocusIndex(els.map(e => ({
+    stop: e.classList.contains('dlg-stop'),
+    disabled: (e as HTMLButtonElement).disabled,
+    hidden: e.hidden !== false || e.getClientRects().length === 0,
+  })));
   els[i]?.focus();
 }
