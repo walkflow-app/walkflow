@@ -228,3 +228,65 @@ Library changes [#31](https://github.com/walkflow-app/ftms-treadmill/pull/31) (`
 - [ ] **Steps are spaced from the end of the write** (#32). Only on a weak connection (move the computer or the treadmill apart until `← Set Speed: OK` comes late): set a target 1.0 km/h above the current speed. Expected: consecutive `→ 02 …` lines at least 1.5 s apart (the time of the previous answer counts, not the time it was sent), and after a `Write error` followed by a new target no two `→ 02` lines closer than 1.5 s. Hard to provoke; leave open when the connection never lagged.
 
 Not checkable in the app, covered by tests only: a lowered limit goes out in one command (the settings are locked while the belt runs, see *Settings and training view*), and `setIncline` with `Infinity` or 5000 (the app only offers levels). A `NaN` limit keeps the limit in force; there is no input for it in the app.
+
+## Belt bugs (#111, ftms-treadmill 0.4.0, not yet checked on a treadmill)
+
+The library changes of [the feature #111](https://github.com/walkflow-app/walkflow/issues/111): [#43](https://github.com/walkflow-app/ftms-treadmill/pull/43) (start), [#44](https://github.com/walkflow-app/ftms-treadmill/pull/44) (ramp base), [#52](https://github.com/walkflow-app/ftms-treadmill/pull/52) (stop), [#54](https://github.com/walkflow-app/ftms-treadmill/pull/54) (step in the queue), [#56](https://github.com/walkflow-app/ftms-treadmill/pull/56) (coast-down), [#60](https://github.com/walkflow-app/ftms-treadmill/pull/60) (stop at the treadmill) and [#63](https://github.com/walkflow-app/ftms-treadmill/pull/63) (start countdown), all `safety`, all covered by the library's tests. What only a treadmill can show: that nothing on the belt got worse, and the questions the tests cannot answer. The library's release (0.4.0) waits for this session, and for `/hardware-ok` on its release pull request.
+
+**Build:** walkflow `main` with the library from `ftms-treadmill` `main` (`npm run build` there, `npm link ../ftms-treadmill` here); `npm ls ftms-treadmill` shows which one the app has. If the app does not build against it because of a new notice or error code of the library (`start-belt-moving`, `superseded`), the session waits for the version bump of the app (task #114, which adds the texts). **Precondition:** the app in English, Settings → General → Developer mode on (the log), limit 6, belt standing, low speed, standing on the side rails, **the treadmill's own Stop in reach in every step**. Log lines are quoted as in the sections above. Speeds as bytes: 1.5 `02 96 00`, 2.0 `02 c8 00`, 3.0 `02 2c 01`, 3.5 `02 5e 01`, 4.0 `02 90 01`, 5.0 `02 f4 01`, 5.5 `02 26 02`.
+
+**Start** (#43; promise 3)
+
+- [ ] **A workout started on a belt that runs already stops the belt** (#43, #26 with `ProgramRunner`). Start the belt at the treadmill's own console (2 km/h), wait until the app shows it moving, then start a workout in the app and confirm the start question. Expected: **no `→ 02 64 00` and no `→ 07`**, the belt is stopped by `→ 08 01` (the program stops the belt when `start()` returns `false`), and the app says why (notice `start-belt-moving`). Suspicious: any `→ 02 64 00` (the belt would drop to 1.0 and climb again), a belt that keeps running. Write down which text the app shows.
+- [ ] **Start works 10 s after a stop** (#43). Run at 2 km/h, Stop, wait 10 s, Start: `→ 00`, `→ 02 64 00`, `→ 07`, each answered with OK, then the ramp. Suspicious: no `→ 07`, `start-belt-moving` although the belt stands (old readings must not lock Start).
+- [ ] **No start speed, no Start** (#43). Only if the settings let the limit go below the treadmill's smallest speed (sPad 500: 1.0 km/h), otherwise leave open: Start then sends no `→ 07` and the app says it did not start. Library tests cover it.
+
+**Ramp base** (#44; promise 2)
+
+- [ ] **A speed raised at the treadmill is followed, not jumped past** (#44, #23). Belt at 3.0 in the app (ramp done), raise it on the treadmill's console to about 5, wait 2 s, then choose 5.5 (limit 6). Expected: one command `→ 02 26 02` (5.5), no earlier step. Suspicious: a step above the last command by more than 0.5 km/h before it.
+- [ ] **The same inside one second** (#44). As above, but choose 5.5 within 1 s of the press on the console. Expected: the next command at most 0.5 km/h above the last one (`→ 02 5e 01`), never 5.5 at once.
+- [ ] **Readings at a steady speed** (#44, to decide `CONFIRM_MS` and the tolerance). Hold 3.0 for 30 s and copy the speed readings from the log with their times. Note any change of more than 0.1 between two readings and any interval shorter than 1000 ms.
+- Not checkable in the app: a limit lowered below a belt that runs faster (the settings are locked while the belt runs), a treadmill that reports `ff ff`. Covered by tests. A target held while the belt stands is checked above (*Speed chosen while standing*).
+
+**Stop** (#52; promises 4 and 5)
+
+- [ ] **Stop, then Start within 300 ms** (#52, #27). Belt running, press Stop (Space) and Start as fast as the button allows. Expected: `→ 08 01`, **no `→ 07`**; once the belt stands, a later Start gives `→ 00`, `→ 02 64 00`, `→ 07`. Suspicious: `→ 07` right after `→ 08 01`.
+- [ ] **A typed Stop ends a Start on its way** (#52). Press Start, confirm, and type `08 01` in the experiment console at once. Expected: `→ 00`, `→ 08 01`, nothing after it (no `→ 02 …`, no `→ 07`), the belt does not start. Typed `08 02`: `→ 08 02`.
+- [ ] **Connect twice quickly** (#52). Press Connect twice on the same treadmill: does it end connected, one `← Request Control: OK` per request, no doubled lines? Write down what you see.
+- [ ] **Control taken by another app, then Stop** (#52). Only if a second app can be connected: Stop gives `← 80 08 05`, the warning on a moving belt, and `→ 00` before the next `→ 08 01`. Otherwise leave open.
+- [ ] **Power off during a Stop** (#52, hard to provoke; low speed, only if you want to). Pull the treadmill's power while a Stop goes out: the warning at the first failed `→ 08 01`, then the connection loss with the belt marked running. Leave open if not tried.
+
+**A step waiting in the queue** (#54; promise 2)
+
+- Not checkable in the app: it needs a limit lowered while a ramp step waits, and the settings are locked while the belt runs. Covered by the test in `safety.test.ts` and, for what the belt does, nothing to check. An ordinary ramp 2.0 → 3.0 still shows `→ 02 fa 00`, `→ 02 2c 01` at least 1.5 s apart and no `write-dropped` (checked with every item above).
+
+**Coast-down after a stop** (#56 and #25; promises 2 and 7)
+
+- [ ] **A speed chosen right after a stop is held** (#56). Walk at 4, press Stop, tap the preset 5 at once. Expected: `→ 08 01`, then **no `→ 02 …` until the belt has been read at 0.0 twice**, the notice `speed-held-until-moving` with 5. After Start: `→ 02 64 00`, `→ 07`, then steps of at most 0.5 km/h, at least 1.5 s apart, up to 5. Suspicious: any `→ 02 …` between the Stop and the standing belt.
+- [ ] **The same after a stop at the treadmill** (#56). Stop with the treadmill's own button during the coast-down of the preset: `ℹ Status 02 01` 4 to 8 s later and no `→ 02 …` before the belt stands (the sPad 500 has no safety key, so no `03`).
+- [ ] **A belt restarted at the console after a stop** (#56). After a stop, restart the belt at the console. Does a reading below 0.1 or `ℹ Status 04` come first, and do the readings rise by at least 0.5 km/h over at least 3 s, so that the wait ends then? Tap a preset afterwards: it must ramp. Write down the readings with their times.
+- [ ] **The open question of #25: a Set Speed while the belt coasts** (#56). Belt at 2 km/h, press Stop, and **at once** type `02 c8 00` in the experiment console (the console is not held). Write down the answer (`← 80 02 xx`) and whether the belt speeds up again. Be ready to press the treadmill's Stop. This is the question the hold exists for; the answer decides whether it may ever be relaxed.
+- [ ] **A lowered limit during the coast-down** (#56). Only if the settings accept a change while the belt coasts: lower the limit below the coasting speed right after a Stop. Expected: no `→ 02 …` until the belt stands. Otherwise leave open (tests cover it).
+- [ ] **A Stop that fails, a late `stopped`, a late stop echo at Start** (#56). Hard to provoke, leave open if it does not happen by itself: after a failed `→ 08 01` or a `ℹ Status 02 01` while the belt keeps running, a lowered limit is not sent until the next start (documented in promise 7); a Start with a late stop echo logs `→ 07`, `← 80 07 01` and then `ℹ Status 02 01`, and the wait stays.
+
+**A stop at the treadmill, learned late** (#60 and #39; promise 7)
+
+- [ ] **The treadmill's Stop during a ramp.** A target of 4.0 set while the belt stands, Start, and press the treadmill's own Stop during the ramp of at least six steps. Expected: `ℹ Training 01 0f` about 1 s after the press, **no `→ 02 …` after it**, `ℹ Status 02 01` 4 to 8 s later. **Write down the time between `0f` and `Status 02 01`: it must stay below 10 s** (the window of the hint). Then Start in the app: `→ 02 64 00`, `→ 07`, ramp steps once the belt moves.
+- [ ] **The app's Stop and Pause during a ramp** (#60). Stop (`→ 08 01`): `ℹ Training 01 0f`, then `ℹ Status 02 01`, no `→ 02 …` in between. Pause (`→ 08 02`): does `0f` come at all? Write down the bytes.
+- [ ] **Stop, then Start as soon as it is offered** (#60). The order of `→ 07` and `ℹ Training 01 0f` in the log; `start()` must succeed and the ramp must go on. Which training status comes after Start (`0d` or `0e`), and is `0f` repeated while the belt stands? (If a repeated `0f` fails a Start, write it down: [ftms-treadmill#62](https://github.com/walkflow-app/ftms-treadmill/issues/62).)
+- [ ] **Does `0f` come without a stop?** For example at the end of a program of the console with the belt still running. If it does: with the belt running and a lowered limit, `→ 02 <limit>` follows about 10 s after `ℹ Training 01 0f` (for 3.0: `→ 02 2c 01`), and a lower speed asked meanwhile shows `speed-held-until-moving`. This answers the open question of #39 and decides whether the window of 10 s stays.
+- [ ] **A speed asked inside the window, during a stop at the console** (#60). Press the treadmill's Stop and choose a lower speed within the window: no `→ 02 …` before `ℹ Status 02 01`.
+
+**The start countdown** (#63 and #38; promise 3)
+
+- [ ] **Nothing is sent during the countdown.** Target 2.0 set while the belt stands, then Start. Expected: `→ 00`, `→ 02 64 00`, `→ 07`, `ℹ Status 04`, `ℹ Training 01 0e`, and **no `→ 02 …` before `ℹ Training 01 0d`**; after `0d` the first step `→ 02 96 00` within about 1.5 s, then a step at least every 1.5 s; the belt reaches 2.0. Suspicious: a `→ 02 …` while the training status is `0e` (the belt stays at 1.0 as on 2026-11-22).
+- [ ] **Stop during the countdown, then Start.** Press Stop while `0e` is shown, then `08 01`: no `→ 02 …` until the next Start.
+- [ ] **A belt started at the console** (#63). Start the belt on the treadmill's console and choose a target in the app while it runs up. Does `ℹ Training 01 0e` show, and when `0d`? The first step must not wait much longer than the countdown ([ftms-treadmill#65](https://github.com/walkflow-app/ftms-treadmill/issues/65) is about a belt that runs up while it still reports `0e`). Write down the times of `0e`, `0d`, the readings and the first `→ 02 …`.
+- [ ] **Does the sPad 500 send `0e` in the middle of a run?** After a pause and resume at the console. Write down the log.
+- [ ] **A treadmill that never reports `0d`.** Not on the sPad 500; if one turns up: the first step comes about 8 s after `0e`. Write the sequence of training statuses and readings with their times.
+
+**Training view in the Demo** (#97, no belt: the Demo connection will do; after its pull request [#112](https://github.com/walkflow-app/walkflow/pull/112) is merged)
+
+- [ ] **The figure and the slider agree after a reconnect.** In the Demo connect, choose a speed, disconnect, connect again. Expected: the target figure shows a dash (no target set), the slider does not show the old value as a target, and Start does what the figure says (the start speed, no ramp to the old value).
+
+**Open follow-ups this session informs** (decide after it): [ftms-treadmill#62](https://github.com/walkflow-app/ftms-treadmill/issues/62) (a repeated `0f` on a standing belt, the end of the 10 s window) and [ftms-treadmill#65](https://github.com/walkflow-app/ftms-treadmill/issues/65) (the countdown hold on a belt that runs up while it still reports `0e`).
