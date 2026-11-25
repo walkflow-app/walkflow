@@ -149,7 +149,7 @@ describe('the tab goes to the background', () => {
     };
     const order: string[] = [];
     const flush = vi.fn(() => { order.push('flush'); });
-    const onChange = visibilityHandler({
+    const { onChange } = visibilityHandler({
       connected: () => r.tm.state.connected,
       maybeRunning: () => r.tm.state.maybeRunning,
       pause: reason => { order.push('pause'); return r.belt.pause(reason); },

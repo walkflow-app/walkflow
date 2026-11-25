@@ -70,8 +70,9 @@ export function visibilityHandler(host: BackgroundHost, page: VisibilityPage) {
     hiddenSince = null;
     hiddenWhileRunning = null;
   };
-  onChange.relabel = () => { if (page.hidden() && hiddenSince !== null) page.setTitle(t.hidden.title); };
-  return onChange;
+  /** After a language change: the tab title while hidden */
+  const relabel = () => { if (page.hidden() && hiddenSince !== null) page.setTitle(t.hidden.title); };
+  return { onChange, relabel };
 }
 
 export function setupBackground(host: Omit<BackgroundHost, 'acquireWakeLock'>) {
@@ -101,7 +102,7 @@ export function setupBackground(host: Omit<BackgroundHost, 'acquireWakeLock'>) {
     wakeLock = null;
   }
 
-  const onVisibility = visibilityHandler({
+  const visibility = visibilityHandler({
     // Each method named, not spread: a spread would drop the methods of a class instance
     connected: () => host.connected(),
     maybeRunning: () => host.maybeRunning(),
@@ -116,7 +117,7 @@ export function setupBackground(host: Omit<BackgroundHost, 'acquireWakeLock'>) {
     showHiddenBanner: text => { bindText($('hiddenText'), text); $('hiddenBanner').hidden = false; },
     now: () => Date.now(),
   });
-  document.addEventListener('visibilitychange', onVisibility);
+  document.addEventListener('visibilitychange', visibility.onChange);
 
   window.addEventListener('pagehide', () => host.flush());
   window.addEventListener('beforeunload', e => {
@@ -127,6 +128,6 @@ export function setupBackground(host: Omit<BackgroundHost, 'acquireWakeLock'>) {
     acquireWakeLock,
     releaseWakeLock,
     /** After a language change: the tab title while hidden */
-    relabel: onVisibility.relabel,
+    relabel: visibility.relabel,
   };
 }
