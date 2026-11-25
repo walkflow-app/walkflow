@@ -4,7 +4,7 @@
 // Locked while the belt runs: the limit, the ramp and the other safety values are not changed in the middle of a run.
 
 import { confirmDialog } from '../components/dialogs';
-import { lastingDialogStopButton } from '../components/dialog-stop';
+import { focusInitial, lastingDialogStopButton } from '../components/dialog-stop';
 import { t } from '../../i18n/i18n';
 import { DEV_MODE_STORAGE_KEY, readDevMode } from '../../core/safety/dev-mode';
 import { QUIET_STORAGE_KEY, readQuiet } from '../../core/safety/quiet';
@@ -59,6 +59,7 @@ export function setupSettings(onLockClose: () => void = () => {}) {
     if (locked || dlg.open) return;
     showTab(tab);
     dlg.showModal();
+    focusInitial(dlg);
   }
 
   for (const [name, b] of tabs) {

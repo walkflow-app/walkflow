@@ -1,8 +1,9 @@
-// A Stop button in every dialog while the belt may run. A modal dialog makes the rest of the page inert for mouse and touch,
+// A Stop button in every dialog while the treadmill is connected. A modal dialog makes the rest of the page inert for mouse and touch,
 // so the Stop buttons of the page cannot be reached while one is open (#46). It is drawn into each dialog and shown by
-// style.css while <html data-running="1"> (main.ts sets it, from settingsLocked: connected and the belt may run).
+// style.css while <html data-running="1"> (main.ts sets it, from dialogStopShown: connected).
 // A press stops the belt first, then cancels the dialog the way Esc would.
 
+import { initialFocusIndex } from '../../core/safety/dialog-stop';
 import { onLanguageChange, t } from '../../i18n/i18n';
 
 let stop: () => void = () => {};
@@ -10,10 +11,13 @@ let stop: () => void = () => {};
 /** The stop of the belt (main.ts), never held back */
 export function setDialogStop(fn: () => void) { stop = fn; }
 
-/** A Stop that follows the language, for a dialog that lives as long as the page (the settings) */
+/** A Stop that follows the language, for a dialog that is built once and stays open across a language change (the settings,
+ *  the device chooser, the PIN) */
 export function lastingDialogStopButton(dlg: HTMLDialogElement): HTMLButtonElement {
   const b = dialogStopButton(dlg);
-  onLanguageChange(() => { b.textContent = t.control.stop; });
+  const off = onLanguageChange(() => { b.textContent = t.control.stop; });
+  // A dialog that is removed after it closes (the chooser, the PIN) lets go of the listener; the settings stay in the page
+  dlg.addEventListener('close', () => { if (!dlg.isConnected) off(); });
   return b;
 }
 
@@ -30,4 +34,14 @@ export function dialogStopButton(dlg: HTMLDialogElement): HTMLButtonElement {
     if (dlg.dispatchEvent(cancel) && dlg.open) dlg.close();
   };
   return b;
+}
+
+const FOCUSABLE = 'button, input, select, textarea, a[href], [tabindex]:not([tabindex="-1"])';
+
+/** The focus of a freshly opened dialog: never on the Stop (it comes first in the tab order), so Enter or Space on opening
+ *  cannot stop the belt by surprise. Esc and a click on the Stop still work. */
+export function focusInitial(dlg: HTMLDialogElement) {
+  const els = [...dlg.querySelectorAll<HTMLElement>(FOCUSABLE)];
+  const i = initialFocusIndex(els.map(e => ({ stop: e.classList.contains('dlg-stop'), disabled: (e as HTMLButtonElement).disabled })));
+  els[i]?.focus();
 }

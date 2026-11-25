@@ -431,7 +431,7 @@ html[data-incline="no"] .incl-only, html[data-incline="no"] .wk-incl { display:n
 /* Dialogs */
 .dlg { background:var(--card); color:var(--fg); border:1px solid var(--card-border); border-radius:18px; padding:22px; max-width:min(520px, calc(100vw - 32px)); box-shadow:0 20px 50px rgba(0, 0, 0, .3); }
 .dlg::backdrop { background:var(--backdrop); }
-/* Stop inside every dialog while the belt may run: the page behind a modal dialog cannot be touched (dialog-stop.ts) */
+/* Stop inside every dialog while connected: the page behind a modal dialog cannot be touched (dialog-stop.ts) */
 .dlg-stop { display:none; width:100%; min-height:48px; margin:0 0 14px; }
 :root[data-running="1"] .dlg-stop { display:block; }
 .dlg h2 { color:var(--fg); font-size:1.15rem; text-transform:none; letter-spacing:0; }
