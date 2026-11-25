@@ -1,12 +1,12 @@
 // Settings → treadmill: the speeds of the slow/mid/run buttons in the training view. Each field shows its preset in the
 // units of the settings with the decimal separator of the language; a value is only stored when checkPresetChange
-// accepts it (not while the belt runs; 2.0 km/h up to the personal limit, slow < mid < run). The checks and the guard against the limit live in
-// core/safety/speed-presets.ts. The incline levels slider in the same tab belongs to incline-card.ts.
+// accepts it (not while the belt runs; 2.0 km/h up to the personal limit, slow < mid < run). The checks and the guard
+// against the limit live in core/safety/speed-presets.ts. The incline levels slider in the same tab belongs to incline-card.ts.
 
 import { checkPresetChange, PRESET_KEYS, PRESET_MIN, presetCommand, type PresetKey, type SpeedPresets } from '../../core/safety/speed-presets';
 import { t } from '../../i18n/i18n';
 import { fromSpeed, speedUnit } from '../../i18n/units';
-import { $, $input } from '../ui';
+import { $, $input, log } from '../ui';
 
 export interface TreadmillSettingsHost {
   /** The personal speed limit, km/h */
@@ -55,8 +55,9 @@ export function setupTreadmillSettings(host: TreadmillSettingsHost) {
     const shown = parseDecimal(field(key).value);
     const d = checkPresetChange(host.presets(), key, Number.isFinite(shown) ? fromSpeed(shown) : NaN, host.limit(), host.locked());
     if (!d.ok) {
-      // The belt runs (a field fires its change as the locked dialog closes): the field goes back to the stored value
-      if (d.error === 'locked') { render(); return; }
+      // The belt runs (a field fires its change as the locked dialog closes): logged like the limit field, and the
+      // field goes back to the stored value
+      if (d.error === 'locked') { log(t.settings.lockedHint); render(); return; }
       // Not stored: the typed value stays in the field with the reason, so it can be corrected
       setError(key, d.error === 'notANumber' ? t.presets.notANumber
         : d.error === 'range' ? t.presets.rangeError(PRESET_MIN, host.limit())
