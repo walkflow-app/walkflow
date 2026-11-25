@@ -169,7 +169,12 @@ export function setupSpeedControls(host: SpeedControlsHost) {
 
   const slider = $input('slider');
   slider.addEventListener('pointerdown', () => { sliderDragging = true; });
-  window.addEventListener('pointerup', () => { sliderDragging = false; });
+  // A drag that ends on its starting value fires no change: the figure goes back from the slider's preview to the target
+  window.addEventListener('pointerup', () => {
+    if (!sliderDragging) return;
+    sliderDragging = false;
+    renderSpeed();
+  });
   slider.oninput = () => { $('target').textContent = t.control.speed(parseFloat(slider.value)); };
   slider.onchange = () => { sliderDragging = false; requestSpeed(parseFloat(slider.value)); };
   $button('minus').onclick = () => stepSpeed(-speedStep());

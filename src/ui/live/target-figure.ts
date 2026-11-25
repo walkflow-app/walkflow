@@ -11,7 +11,7 @@ export type TargetMemory = number | null;
 /**
  * The speed Start will ramp to (what the figure shows), or null for none. A target the governor holds is already within
  * the range; the remembered one may be above a limit lowered since (allowed while the belt stands), and the library clamps
- * it at Start, so it is shown clamped (null if the range is empty: Start ramps to nothing then).
+ * it at Start (`governor.request` → `clampSpeed`, pinned in tests/target-figure-library.test.ts), so it is shown clamped (null if the range is empty: Start ramps to nothing then).
  */
 export function shownTarget(target: number | null, last: TargetMemory, range: { min: number; max: number }): number | null {
   if (target !== null) return target;
