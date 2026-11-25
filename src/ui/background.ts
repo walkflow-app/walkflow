@@ -101,7 +101,15 @@ export function setupBackground(host: Omit<BackgroundHost, 'acquireWakeLock'>) {
     wakeLock = null;
   }
 
-  const onVisibility = visibilityHandler({ ...host, acquireWakeLock }, {
+  const onVisibility = visibilityHandler({
+    // Each method named, not spread: a spread would drop the methods of a class instance
+    connected: () => host.connected(),
+    maybeRunning: () => host.maybeRunning(),
+    pause: reason => host.pause(reason),
+    tick: () => host.tick(),
+    flush: () => host.flush(),
+    acquireWakeLock,
+  }, {
     hidden: () => document.hidden,
     mode: () => mode.value,
     setTitle: title => { document.title = title; },

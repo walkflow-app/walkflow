@@ -60,7 +60,7 @@ describe('the buttons', () => {
     expect(sent(r.writes, STOP)).toBe(1);
     h.sbStop();
     await settle();
-    expect(sent(r.writes, STOP)).toBeGreaterThanOrEqual(2);
+    expect(sent(r.writes, STOP)).toBe(2);
   });
 
   it('Pause sends 08 02', async () => {

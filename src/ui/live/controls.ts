@@ -63,12 +63,13 @@ export function keydownHandler(host: Pick<ControlsHost, 'connected' | 'belt' | '
       void host.belt.stop();
       return;
     }
+    const target = e.target();
     const action = keyAction({
-      key: e.key, code: e.code, tag: e.target().tag, type: e.target().type, repeat: e.repeat,
+      key: e.key, code: e.code, tag: target.tag, type: target.type, repeat: e.repeat,
       view: page.view(),
       inDialog: page.dialogOpen(),
-      onMap: e.target().onMap,
-      editable: e.target().editable,
+      onMap: target.onMap,
+      editable: target.editable,
     });
     if (action === 'stop') {
       e.preventDefault();
