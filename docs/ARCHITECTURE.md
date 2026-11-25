@@ -23,7 +23,7 @@ src/
     history/            runs, statistics, CSV/TCX export
     usage/              the names of the anonymous usage counts (docs/USAGE.md): built from fixed parts and the guarded maker and model the treadmill reports (treadmill.ts), with their levels; errors.ts has the error kinds
     id.ts               ids of things the person creates
-  platform/           pure helpers around the shell: build settings (the addresses of the route store and of the usage counter, usage-url.ts: none without a build setting, so nothing is sent), features that are on or off, version, the logic of the desktop update (two yeses, never while connected), CSP, MIME types, dev server address, opened files
+  platform/           pure helpers around the shell: build settings (the addresses of the route store and of the usage counter, usage-url.ts: none without a build setting, except the official repository `walkflow-app/walkflow`, which counts to its own GoatCounter site; a fork or a build from source sends nothing), features that are on or off, version, the logic of the desktop update (two yeses, never while connected), CSP, MIME types, dev server address, opened files
   net/                the connection to other people's devices for sharing (built, off in the first release: platform/features.ts, docs/P2P.md); never the treadmill
   data/               IndexedDB storage (workouts, routes, runs)
   ui/                 everything that draws or listens

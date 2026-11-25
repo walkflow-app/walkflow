@@ -8,10 +8,19 @@ describe('resolveUsageBase', () => {
     expect(resolveUsageBase('', 'https://my-site2.goatcounter.com')).toBe('https://my-site2.goatcounter.com');
   });
 
-  it('has no default for any repository: nothing set, nothing sent', () => {
-    expect(resolveUsageBase('walkflow-app/walkflow')).toBeNull();
-    expect(resolveUsageBase('walkflow-app/walkflow', '')).toBeNull();
-    expect(resolveUsageBase('', '')).toBeNull();
+  it('defaults to the official site for the official repository only', () => {
+    expect(resolveUsageBase('walkflow-app/walkflow')).toBe('https://walkflow.goatcounter.com');
+    expect(resolveUsageBase('walkflow-app/walkflow', '')).toBe('https://walkflow.goatcounter.com');
+  });
+
+  it('has no default for a fork, another repository or none: nothing set, nothing sent', () => {
+    for (const repo of ['', 'someone/walkflow', 'walkflow-app/other', 'walkflow-app/walkflow-fork', 'walkflow-app/walkflow/x'])
+      expect(resolveUsageBase(repo), repo).toBeNull();
+    expect(resolveUsageBase('someone/walkflow', '')).toBeNull();
+  });
+
+  it('an invalid setting is not replaced by the default', () => {
+    expect(resolveUsageBase('walkflow-app/walkflow', 'https://example.org')).toBeNull();
   });
 
   it('accepts nothing but https://<code>.goatcounter.com', () => {

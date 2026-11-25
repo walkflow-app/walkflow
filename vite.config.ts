@@ -25,7 +25,7 @@ const community = process.env.WALKFLOW_COMMUNITY === 'on';
 // The route store: the route-store repository next to the repository this build is made for (none without one); WALKFLOW_STORE_BASE is for trying it out
 const storeBase = resolveStoreBase(githubRepo, process.env.WALKFLOW_STORE_BASE) ?? '';
 
-// The anonymous usage counts: only with WALKFLOW_USAGE (https://<code>.goatcounter.com); empty: nothing is ever sent
+// The anonymous usage counts: WALKFLOW_USAGE (https://<code>.goatcounter.com), else the official default for walkflow-app/walkflow only (platform/usage-url.ts); empty: nothing is ever sent
 const usageBase = resolveUsageBase(githubRepo, process.env.WALKFLOW_USAGE) ?? '';
 
 const CSP = buildCsp({ mapOrigins: mapStyles ? mapOrigins(mapStyles) : [], relays: sharingRelays(community), store: storeBase || null, usage: usageBase || null, header: false });

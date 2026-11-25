@@ -10,7 +10,8 @@ typed, measured or identifying is ever part of one. A test (`tests/usage-docs.te
 - Each event is one request to the counting service, with the name as the "page":
   `GET https://<code>.goatcounter.com/count?p=<name>&t=<name>&e=true`. No token, no cookie, nothing written to the device.
 - **The address is a build setting** (`WALKFLOW_USAGE`, see the README). A build without it, such as a fork or a build from
-  source, sends nothing. An official build sends nothing until the maintainer sets it.
+  source, sends nothing, unless it sets one. The official repository (`walkflow-app/walkflow`) has
+  `https://walkflow.goatcounter.com` as its default.
 - Each name is sent at most once per start of the app (kept in memory only).
 - Nothing is sent before the first-start popup (the safety notice) is accepted; what comes before is dropped, not queued.
 - A request that fails, is blocked or never answers changes nothing.
@@ -33,8 +34,9 @@ absent means on and `0` means off. The switches are in the settings, Info tab, s
 sent and where it goes (without a counter in the build it says that nothing is sent and shows no switches). The first-start
 popup and the Info tab carry a short notice that points there, only in a build that has a counter.
 
-The small print on the product page says that the switches exist. It is built in only with `WALKFLOW_USAGE`, so the official
-build is switched on (walkflow#85) only after the switches are in the settings (walkflow#76); nothing before that says it.
+The small print on the product page says that the switches exist. It is built in only when the build has an address
+(`WALKFLOW_USAGE` or the official default). Every build made for the official repository has the default, also those made in CI;
+only an invalid `WALKFLOW_USAGE` turns it off there.
 
 ## Names
 
@@ -127,8 +129,8 @@ app's update ended in an error). And `unexpected`: an exception nobody caught (`
 
 The platform is `web` for the web build, otherwise the desktop app's system. The version is the app's version, and only a
 plain `x.y.z` (a pre-release sends nothing). The product page is counted separately, by its own pixel (`site.en`, `site.de`: an image without a script or a cookie);
-it is not part of the app. `scripts/build-pages.mjs` fills the pixel's address from `WALKFLOW_USAGE` like the app build
-does; without it the pages carry no pixel and no small print about counting.
+it is not part of the app. `scripts/build-pages.mjs` fills the pixel's address like the app build does (`WALKFLOW_USAGE`,
+else the official default); without it the pages carry no pixel and no small print about counting.
 
 ## Never sent
 

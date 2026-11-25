@@ -20,8 +20,6 @@ a Sportstech sPad 500.
   goes live: one room for everyone instead of one per language, a message when a room is full, the number of connections
   measured, a test with several real devices and from the desktop app. `spec`
 - **Share and receive with a code** (sending to one person), the other half of the screens in [docs/P2P.md](docs/P2P.md).
-- **Anonymous usage counts** to see which functions, treadmill models and store routes are used, with two switches in the
-  settings (*Improve*, *Errors*), no cookies and no ID ([#74](https://github.com/walkflow-app/walkflow/issues/74)). `spec`
 
 ## Later, maybe
 
@@ -36,6 +34,9 @@ a Sportstech sPad 500.
 
 ## Done recently
 
+- 2026-11-25: anonymous usage counts, with two switches in the settings (*Improve*, *Errors*), switched on for the official
+  builds with the next release ([#74](https://github.com/walkflow-app/walkflow/issues/74),
+  [#85](https://github.com/walkflow-app/walkflow/issues/85)).
 - 2026-11-16: 0.7.2, exported files are named after the local time
   ([#61](https://github.com/walkflow-app/walkflow/pull/61), [#62](https://github.com/walkflow-app/walkflow/pull/62)).
 - 2026-11-14: docs out of date fixed ([#41](https://github.com/walkflow-app/walkflow/issues/41)): `src/net/` and the
