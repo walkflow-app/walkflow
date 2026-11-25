@@ -68,7 +68,8 @@ The check does not (yet) test that a changed file has a higher revision; a revie
   `WALKFLOW_STORE_BASE` (https, or a local server) replaces the address, for trying it out.
 - **When.** Never on its own. The list is read when the person opens the store for the first time, a route when they press *Add*.
   GitHub sees the IP address of the device; no cookie, no referrer is sent, and nothing else. The info section says so (the store
-  itself shows no notice).
+  itself shows no notice). Opening the store and adding a store route are also counted anonymously, if the counts are on: see
+  `docs/USAGE.md`.
 - **What is checked.** The index is read strictly (`parseIndex`): the version, the size (2 MB, 2000 routes), every file name
   (no path), hash, length, name, country and tags; texts are cut and stripped of control characters. A downloaded file is compared
   with the length and SHA-256 of its entry (`verifyDownload`), then read as a route package (every point and text checked, an

@@ -18,6 +18,11 @@ change, with file and line and the proposed new text.
    and `site/de/`. Comments and test names in English?
 5. **Never invented:** legal texts, addresses, names, donation links. Flag any that appear.
 6. **Commit type:** a change to `site/` only is `docs(site)` or `chore(site)`, never `feat(site)`.
+7. **Privacy.** We collect no data about individual users; anonymous statistics to improve the app are fine. Does the change collect, store or send anything about a person or a device, or add a third party? Say so; it is a decision of the maintainer.
 
-Report: one line verdict (**OK** / **changes needed**), then the findings as a checklist. Mention fr and uk need a native
+**The verdict** is one of `OK`, `OK with remarks`, `changes needed`, `blocking`. `blocking` is only for a real defect (wrong
+behaviour, a weakened limit, delay or stop, a broken principle of CLAUDE.md); the PM looks at it. A missing test or a wrong
+detail is `changes needed`, a preference or a nit is a remark and never blocks. The weight of a remark is the weight of the risk.
+
+Report: that verdict as one line, then the findings as a checklist. Mention fr and uk need a native
 speaker if new texts were added.

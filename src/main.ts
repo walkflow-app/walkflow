@@ -6,7 +6,7 @@ import { setupExportControls } from './ui/history/export-controls';
 import { setupHistory } from './ui/history/history';
 import { lang, onLanguageChange, retranslate, t, type Text } from './i18n/i18n';
 import { appStartName, langName } from './core/usage/events';
-import { count } from './ui/usage';
+import { count, countUnexpected } from './ui/usage';
 import { APP_VERSION, BUILD_TARGET } from './platform/config';
 import { bindText, clearText, initLanguage } from './ui/i18n-dom';
 import { setupMenu, setupPrefs } from './ui/settings/menus';
@@ -140,7 +140,7 @@ const confirmStart = makeConfirmStart(() => settings.quiet);
 // What the training view shows and starts: the chosen workout or route
 const stage = setupStage({
   chosen, workouts, routes, interval, runner, recorder, tm,
-  connected: () => tm.state.connected, effectiveMax, confirmStart, redrawChart: () => readout.redrawChart(),
+  connected: () => tm.state.connected, effectiveMax, confirmStart, redrawChart: () => readout.redrawChart(), count,
 });
 
 const incline = setupInclineCard({
@@ -187,7 +187,7 @@ const live = setupLiveData({
 const renderSettingsLock = () => settings.setLocked(settingsLocked(tm.state));
 
 const connection = setupConnection({
-  tm, banner, runner, speed, incline, background, recorder, live, now,
+  tm, banner, runner, speed, incline, background, recorder, live, now, count,
   stop: reason => belt.stop(reason),
   renderStats: readout.renderStats,
   renderBanner: readout.renderBanner,
@@ -221,7 +221,7 @@ $button('hiddenAck').onclick = () => { $('hiddenBanner').hidden = true; };
 $button('simLoss').onclick = () => connection.simulator()?.simulateConnectionLoss();
 $button('simKey').onclick = () => connection.simulator()?.pullSafetyKey();
 
-setupControls({ connected: () => tm.state.connected, runner, stage, belt, speed, confirmStart });
+setupControls({ connected: () => tm.state.connected, runner, stage, belt, speed, confirmStart, count });
 
 setupExportControls(figures.samples, readout.redrawChart);
 
@@ -291,8 +291,10 @@ setupDesktop({
 
 if (!disclaimerAccepted()) void ensureDisclaimer();
 
-// Anonymous usage counts (docs/USAGE.md): the app start and the language. Nothing is sent before the first-start popup is accepted.
+// Anonymous usage counts (docs/USAGE.md): the app start and the language here, run starts in ui/live/. Nothing is sent before the first-start popup is accepted.
 // Without a desktop bridge in the desktop build the platform is unknown and nothing is built. After the popup, so nothing here
 // can come before it.
 count(appStartName(BUILD_TARGET === 'web' ? undefined : (desktop?.platform ?? ''), APP_VERSION));
 count(langName(lang));
+// Level 3: an exception nobody caught, as error.unexpected and nothing of its text
+countUnexpected(window);

@@ -7,6 +7,8 @@ import { SimulatorAdapter } from 'ftms-treadmill/sim';
 import { WebBluetoothAdapter } from 'ftms-treadmill/web-bluetooth';
 import type { RunSource } from '../../core/history/runs';
 import type { ProgramRunner } from '../../core/training/program';
+import type { UsageName } from '../../core/usage/events';
+import { treadmillName, type DeviceInfo } from '../../core/usage/treadmill';
 import { t, type Text } from '../../i18n/i18n';
 import { APP_VERSION } from '../../platform/config';
 import { choose, confirmDialog } from '../components/dialogs';
@@ -14,8 +16,10 @@ import { desktop } from '../desktop';
 import { ensureDisclaimer } from '../disclaimer';
 import { bindText } from '../i18n-dom';
 import { $, $button, log } from '../ui';
+import { countError } from '../usage';
 import { stopPlacement, type View } from '../views';
 import type { BeltBanner } from './belt-banner';
+import { connectErrorKind, createLossTracker } from './error-kinds';
 import { errorText } from './treadmill-text';
 
 export interface ConnectionHost {
@@ -29,7 +33,9 @@ export interface ConnectionHost {
   };
   background: { acquireWakeLock(): Promise<void>; releaseWakeLock(): void };
   recorder: { finish(): void };
-  live: { setSource(s: RunSource): void };
+  live: { setSource(s: RunSource): void; resetDeviceInfo(): void; deviceInfo(): DeviceInfo };
+  /** The anonymous usage count (ui/usage.ts): synchronous, never throws, never awaited */
+  count(name: UsageName | null): void;
   /** Stops the belt; the reason is shown as the end of a program */
   stop(reason: Text): Promise<boolean>;
   now(): number;
@@ -50,6 +56,8 @@ export function setupConnection(host: ConnectionHost) {
   const connected = () => tm.state.connected;
   const maybeRunning = () => tm.state.maybeRunning;
   let connecting = false;
+  // Counts a lost connection (docs/USAGE.md) but not the person's own Disconnect
+  const loss = createLossTracker();
 
   tm.on('disconnected', ({ wasRunning }) => onDisconnected(wasRunning));
 
@@ -64,9 +72,14 @@ export function setupConnection(host: ConnectionHost) {
       if (kind === 'demo') adapter = sim ??= new SimulatorAdapter({ version: APP_VERSION });
       const source: RunSource = kind === 'demo' ? 'demo' : 'ble';
       host.live.setSource(source);
+      host.live.resetDeviceInfo();
       host.incline.reset();
       // Connects, reads the treadmill and asks for control
       const info = await tm.connect(adapter);
+      loss.connected();
+      // Counted after every connect that resolved, the name built inside a try so nothing about a count can skip the steps
+      // below (the sender sends a name once per start of the app; a failed connect counts nothing)
+      try { host.count(treadmillName(kind === 'demo' ? 'demo' : 'ble', host.live.deviceInfo())); } catch { /* a count never breaks anything */ }
 
       host.incline.onConnected(info, source === 'ble');
       host.renderStats();
@@ -87,6 +100,7 @@ export function setupConnection(host: ConnectionHost) {
     } catch (e) {
       log(`❌ ${errorText(e)}`);
       if (!connected()) {
+        countError(connectErrorKind(e));
         setStatus(() => t.connection.notConnected);
         setUi(false);
       } else {
@@ -103,6 +117,7 @@ export function setupConnection(host: ConnectionHost) {
   /** The treadmill has already forgotten the belt; the page follows */
   function onDisconnected(wasRunning: boolean) {
     log(t.disconnect.log);
+    const lost = loss.lost();
     host.runner.abort(() => t.disconnect.programEnded);
     host.background.releaseWakeLock();
     desktop?.connectionChanged(false);
@@ -118,6 +133,8 @@ export function setupConnection(host: ConnectionHost) {
       log(t.disconnect.lostWhileRunning);
     }
     host.recorder.finish();
+    // Last, so that nothing of the stop and the alarm above can wait for a count
+    if (lost) countError('connection-lost');
   }
 
   async function disconnectClicked() {
@@ -142,6 +159,7 @@ export function setupConnection(host: ConnectionHost) {
         }
       }
     }
+    loss.personDisconnects();
     tm.disconnect();
   }
 

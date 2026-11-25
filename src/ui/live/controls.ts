@@ -6,6 +6,7 @@ import type { Active } from '../../core/training/selection';
 import type { ProgramRunner } from '../../core/training/program';
 import { keyAction } from '../../core/safety/stop-keys';
 import { $button } from '../ui';
+import { startFree, type Count } from './run-count';
 
 export interface ControlsHost {
   connected(): boolean;
@@ -21,6 +22,8 @@ export interface ControlsHost {
   speed: { step(direction: 1 | -1): void };
   /** The question before a start */
   confirmStart(): Promise<boolean>;
+  /** The usage count (a run started); read-only */
+  count: Count;
 }
 
 export function setupControls(host: ControlsHost) {
@@ -31,7 +34,7 @@ export function setupControls(host: ControlsHost) {
     if (kind === 'workout') { await host.stage.runProgram(); return; }
     if (kind === 'route') { await host.stage.runRoute(); return; }
     if (!(await host.confirmStart())) return;
-    if (host.connected()) await host.belt.start();
+    if (host.connected()) await startFree(() => host.belt.start(), host.count);
   };
   $button('shClear').onclick = () => host.stage.setActive(null);
   $button('pause').onclick = () => void host.belt.pause();

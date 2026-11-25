@@ -11,6 +11,8 @@ import {
 } from '../../core/training/workouts';
 import { el } from '../components/elements';
 import { $, $button } from '../ui';
+import { featureName } from '../../core/usage/events';
+import { count } from '../usage';
 
 export interface WeekPlanHost {
   plan(): WeekPlan;
@@ -103,6 +105,7 @@ export function setupWeekPlan(host: WeekPlanHost) {
       [...$('planList').querySelectorAll<HTMLSelectElement>('select.plan-suggest')].map(s => decodeSuggestion(s.value)),
     );
     try { await host.savePlan(plan); } catch (e) { $('planSummary').textContent = t.workouts.failed(String(e)); return; }
+    count(featureName('workout.weekplan'));
     render();
   }
 

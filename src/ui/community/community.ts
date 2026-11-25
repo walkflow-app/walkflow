@@ -3,6 +3,7 @@
 // reader of its kind, the person confirms before anything is saved, and the texts of other devices are only ever shown as text.
 // None of this can reach the treadmill. Display only, so a failure here shows a message and never gets in the way of a stop.
 
+import { throttle } from '../../core/share/throttle';
 import { countryName } from '../../core/routes/country';
 import { analyzeRoute } from '../../core/routes/routes';
 import { localHashes, offeredItems, readCommunityItem, type CommunityItem } from '../../core/share/community';
@@ -39,6 +40,8 @@ function readHidden(): string[] {
 }
 
 export function setupCommunity(host: CommunityHost) {
+  // Offer updates from peers redraw at most twice a second (#49 G)
+  const renderSoon = throttle(() => render(), 500);
   const storedLang = store.get(ROOM_LANG_KEY);
   let enabled = store.get(ENABLED_KEY) === '1';
   let roomLang: Lang = isLang(storedLang) ? storedLang : lang;
@@ -70,7 +73,7 @@ export function setupCommunity(host: CommunityHost) {
       // Loaded now and not before: a person who never takes part does not load the connection
       const [{ ShareHub }, { trysteroTransport }] = await Promise.all([import('../../net/share-hub'), import('../../net/trystero-transport')]);
       if (mine !== generation) return;
-      const h = new ShareHub({ transport: trysteroTransport(), room: communityRoom(roomLang), maxPeers: COMMUNITY_MAX_PEERS, items: [], hidden, onChange: render });
+      const h = new ShareHub({ transport: trysteroTransport(), room: communityRoom(roomLang), maxPeers: COMMUNITY_MAX_PEERS, items: [], hidden, onChange: renderSoon });
       await h.start();
       if (mine !== generation) { h.stop(); return; }
       hub = h;
@@ -84,6 +87,7 @@ export function setupCommunity(host: CommunityHost) {
   function stop() {
     generation++;
     clearTimeout(offerTimer);
+    renderSoon.cancel();
     hub?.stop();
     hub = null;
     failed = null;

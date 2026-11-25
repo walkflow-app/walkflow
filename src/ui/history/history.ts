@@ -15,6 +15,7 @@ import { decodeTrack, parseBackup, RunRecorder, serializeBackup, type RunSummary
 import { countable, overview, records, streaks, dailyDistance, type DayTotal } from '../../core/history/stats';
 import { onThemeChange } from '../theme';
 import { $, $button, $input, download } from '../ui';
+import { countError } from '../usage';
 import { store } from '../store';
 
 const SAVE_RUNS_KEY = 'walkflow.saveRuns';
@@ -292,7 +293,10 @@ export function setupHistory(host: HistoryHost) {
   }
 
   async function restore(file: File) {
-    const result = parseBackup(await file.text());
+    let text: string;
+    // Only counted: the error goes on as before
+    try { text = await file.text(); } catch (e) { countError('file-read'); throw e; }
+    const result = parseBackup(text);
     if (!result.ok) {
       const reason = result.reason;
       bindText($('histStatus'), () => (reason === 'newer' ? t.history.newer : t.history.unreadable));

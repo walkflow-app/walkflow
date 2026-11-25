@@ -233,7 +233,8 @@ The rules:
 | One item | 2,000,000 characters |
 | Everything one side sends to the other | 10,000,000 characters |
 
-Anything above ends the exchange with an error (`tooLarge`, `invalid`, `unexpected`, `version`).
+Anything above ends the exchange with an error (`tooLarge`, `invalid`, `unexpected`, `version`). Offer updates from peers
+redraw the Community view at most twice a second.
 
 ## Safety
 

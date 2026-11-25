@@ -17,6 +17,8 @@ import { setupWorkoutImport } from './workout-import';
 import { stepRow } from './step-row';
 import { setupWeekPlan } from './week-plan';
 import { store } from '../store';
+import { featureName } from '../../core/usage/events';
+import { count } from '../usage';
 import { getWorkoutStore, type WorkoutStore } from '../../data/workout-store';
 import { COMMUNITY_ENABLED } from '../../platform/features';
 import {
@@ -215,7 +217,7 @@ export function setupWorkouts(host: WorkoutsHost) {
     await reload();
     setStatus(() => t.workouts.saved(workoutName(w, lang)));
     // A new workout becomes the selection, so "save, then start" is one step less
-    if (!d.id) select(w.id);
+    if (!d.id) { select(w.id); count(featureName('workout.interval')); }
   }
 
   const weekPlan = setupWeekPlan({

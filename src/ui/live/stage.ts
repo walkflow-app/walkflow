@@ -12,6 +12,7 @@ import { bindText } from '../i18n-dom';
 import type { setupRoutes } from '../routes/route-ui';
 import { $, $button } from '../ui';
 import { store } from '../store';
+import { createRunCounter, type Count } from './run-count';
 import type { setupInterval } from '../workouts/interval-ui';
 import type { setupWorkouts } from '../workouts/workout-ui';
 
@@ -40,12 +41,15 @@ export interface StageHost {
   confirmStart(intro?: string): Promise<boolean>;
   /** The speed chart is drawn again (it is not drawn while hidden) */
   redrawChart(): void;
+  /** The usage count (a run started); read-only */
+  count: Count;
 }
 
 export function setupStage(host: StageHost) {
   const { workouts, routes, interval, runner, recorder } = host;
   const { chosen } = host;
   let activeRun: { kind: RunTag['kind']; name: string } | null = null;
+  const countRun = createRunCounter(host.count);
 
   /** What the Start button starts, if what was chosen still exists */
   function effectiveActive(): Active {
@@ -62,8 +66,13 @@ export function setupStage(host: StageHost) {
   }
 
   /** The chosen workout or route with its details, and as the main element the steps of a workout, the map of a route (if
-   *  the map is on) or the speed chart. Display only. */
+   *  the map is on) or the speed chart. Display only, plus the read-only usage count of a run that has started
+   *  (run-count.ts). */
   function render() {
+    // render() is also the runner's status hook. The counter accepts a run in the countdown or running, but the runner
+    // does not report during the countdown, so in practice the run is counted here at its first running step, once.
+    // countRun never throws, never awaits and gets no handle to the belt.
+    countRun(activeRun, runner.phase);
     const kind = effectiveActive();
     const p = runner.progress();
     const runningSteps = p !== null && activeRun?.kind === 'workout';

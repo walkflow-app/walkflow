@@ -1,8 +1,22 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { UpdateState } from '../platform/update-controller';
-import { updateView } from './update-view';
+import { countUpdateState, updateView } from './update-view';
 
 const url = 'https://example.org/releases';
+
+describe('usage count of a failed update', () => {
+  it('counts update-failed for the error stage and for no other', () => {
+    const report = vi.fn();
+    const others: UpdateState[] = [
+      { stage: 'available', version: '1.0.0', self: true, url }, { stage: 'downloading', version: '1.0.0', percent: 5 },
+      { stage: 'ready', version: '1.0.0' }, { stage: 'blocked', version: '1.0.0' },
+    ];
+    others.forEach(s => countUpdateState(s, report));
+    expect(report).not.toHaveBeenCalled();
+    countUpdateState({ stage: 'error', version: '1.0.0', url }, report);
+    expect(report.mock.calls).toEqual([['update-failed']]);
+  });
+});
 
 describe('the update banner', () => {
   it('offers the download when the app can install the update itself, and only the release page when it cannot', () => {

@@ -11,7 +11,9 @@ import { analyzeRoute, newRouteId, readRoute, type Route } from '../../core/rout
 import { fmtDistance } from '../../core/training/program';
 import type { RouteStore } from '../../data/route-store';
 import { lang, t } from '../../i18n/i18n';
+import { featureName } from '../../core/usage/events';
 import { confirmDialog } from '../components/dialogs';
+import { count, countError } from '../usage';
 
 export interface RouteImportHost {
   store(): Promise<RouteStore>;
@@ -27,9 +29,9 @@ export function setupRouteImport(host: RouteImportHost) {
   const setStatus: RouteImportHost['setStatus'] = text => host.setStatus(text);
   async function importFile(file: File) {
     const fail = (key: 'unreadable' | 'tooLarge' | 'unsafe' | 'noPoints' | 'packageTooLarge' | 'packageNewer' | 'packageInvalid' | 'isWorkoutPackage') => setStatus(() => t.routes[key]);
-    if (file.size > GPX_MAX_CHARS) { fail('tooLarge'); return; }
+    if (file.size > GPX_MAX_CHARS) { countError('file-read'); fail('tooLarge'); return; }
     let text: string;
-    try { text = await file.text(); } catch { fail('unreadable'); return; }
+    try { text = await file.text(); } catch { countError('file-read'); fail('unreadable'); return; }
     // A route package is JSON, a GPX file is XML; a workout package belongs in the workouts view
     if (packageKind(text) === 'workout') { fail('isWorkoutPackage'); return; }
     if (text.trimStart().startsWith('{')) { await importPackage(text, fail); return; }
@@ -42,6 +44,7 @@ export function setupRouteImport(host: RouteImportHost) {
     if (!route) { fail('noPoints'); return; }
     try { await (await host.store()).put(route); } catch (e) { setStatus(() => t.routes.failed(String(e))); return; }
     await host.added(route);
+    count(featureName('route.gpx'));
     const stats = analyzeRoute(route);
     setStatus(() => [
       t.routes.imported(routeName(route, lang), stats.total),
@@ -59,7 +62,7 @@ export function setupRouteImport(host: RouteImportHost) {
    */
   async function openPackage(file: { name: string; text?: string; error?: 'unreadable' | 'tooLarge' }) {
     location.hash = '#routes';
-    if (file.text === undefined) { setStatus(() => (file.error === 'tooLarge' ? t.routes.packageTooLarge : t.routes.unreadable)); return; }
+    if (file.text === undefined) { countError('file-read'); setStatus(() => (file.error === 'tooLarge' ? t.routes.packageTooLarge : t.routes.unreadable)); return; }
     if (packageKind(file.text) === 'workout') { setStatus(() => t.routes.isWorkoutPackage); return; }
     const read = readPackage(file.text, newRouteId(Date.now()), Date.now());
     if (!read.ok) { setStatus(() => t.routes[packageFailure(read.reason)]); return; }
@@ -88,24 +91,26 @@ export function setupRouteImport(host: RouteImportHost) {
    * `replace` is the id of the copy in the library that is updated: it keeps its id (and stays chosen and shared), everything
    * else is the new version. Without it the package becomes a new route.
    */
-  async function takeFromStore(file: { name: string; text: string }, opts: { storeFile: string; replace?: string }) {
+  async function takeFromStore(file: { name: string; text: string }, opts: { storeFile: string; replace?: string }): Promise<boolean> {
     const read = readPackage(file.text, newRouteId(Date.now()), Date.now());
-    if (!read.ok) { setStatus(() => t.routes[packageFailure(read.reason)]); return; }
+    if (!read.ok) { if (read.reason !== 'newer') countError('store-add'); setStatus(() => t.routes[packageFailure(read.reason)]); return false; }
     const name = routeName(read.route, lang);
     const revision = read.route.revision ?? 1;
     const existing = opts.replace ? (await (await host.store()).list()).find(r => r.id === opts.replace) : undefined;
     const ok = existing
       ? await confirmDialog(t.routeStore.updateTitle, [t.routeStore.updateText(routeName(existing, lang), existing.revision ?? 1, revision)], t.routeStore.updateConfirm)
       : await confirmDialog(t.routeStore.addTitle, [t.routeStore.addText(name, fmtDistance(analyzeRoute(read.route).total))], t.routeStore.addConfirm);
-    if (!ok) return;
+    if (!ok) return false;
     let route: Route = { ...read.route, storeFile: opts.storeFile, ...(existing ? { id: existing.id, ...(existing.shared ? { shared: true as const } : {}) } : {}) };
     if (route.country === undefined) {
       const country = await countryAt(route.points[0]!.lat, route.points[0]!.lon).catch(() => undefined);
       route = readRoute({ ...route, country }) ?? route;
     }
-    try { await (await host.store()).put(route); } catch (e) { setStatus(() => t.routes.failed(String(e))); return; }
+    try { await (await host.store()).put(route); } catch (e) { countError('store-add'); setStatus(() => t.routes.failed(String(e))); return false; }
     await host.added(route);
     setStatus(() => (existing ? t.routeStore.updated(name, revision) : t.routes.imported(name, analyzeRoute(route).total)));
+    // true: a new route was added; an update of one that is there already is not counted
+    return !existing;
   }
 
   return { importFile, openPackage, takeFromStore };
