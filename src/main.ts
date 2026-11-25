@@ -12,6 +12,7 @@ import { bindText, clearText, initLanguage } from './ui/i18n-dom';
 import { setupMenu, setupPrefs } from './ui/settings/menus';
 import { setupInterval } from './ui/workouts/interval-ui';
 import { ProgramRunner } from './core/training/program';
+import { dialogStopShown } from './core/safety/dialog-stop';
 import { settingsLocked } from './core/safety/settings-lock';
 import { setupPwa } from './ui/pwa';
 import { setupInstall } from './ui/install';
@@ -202,8 +203,8 @@ const connMenu = setupMenu($button('statusBtn'), $('connMenu'), controls);
 setupPrefs($('langOptions'), $('themeOptions'), $('paletteOptions'), $('unitsOptions'));
 $button('openData').onclick = () => settings.open('data');
 setInterval(renderSettingsLock, 500);
-// Every dialog shows a Stop while the belt may run (dialog-stop.ts): a modal dialog makes the page's Stop buttons unreachable
-const renderRunning = () => { document.documentElement.dataset.running = tm.state.connected && tm.state.maybeRunning ? '1' : '0'; };
+// Every dialog shows a Stop while connected (dialog-stop.ts): a modal dialog makes the page's Stop buttons unreachable
+const renderRunning = () => { document.documentElement.dataset.running = dialogStopShown(tm.state) ? '1' : '0'; };
 setDialogStop(() => void belt.stop());
 for (const e of ['phase', 'disconnected', 'machineStatus', 'data'] as const) tm.on(e, renderRunning);
 setInterval(renderRunning, 250);
