@@ -12,6 +12,8 @@ import { createBelt, globalStop } from './belt';
 // The glue between buttons, keys, the hidden tab and the belt (#49). The real library (createTreadmill) with the simulated
 // treadmill; every Control Point write is recorded, so the assertions are on the bytes the belt gets. No DOM: the handlers take
 // plain objects (controls.ts, belt.ts, ../background.ts); setupControls and setupBackground only bind them.
+// This file is also the test of ../background.ts (visibilityHandler, "the tab goes to the background" below): the hidden tab
+// pauses through the same belt and simulated treadmill as the buttons, so it shares rig() here instead of a copy.
 
 const STOP = [0x08, 0x01];
 const PAUSE = [0x08, 0x02];
