@@ -9,6 +9,7 @@ import {
 } from '../../core/safety/limit-settings';
 import { t } from '../../i18n/i18n';
 import { noticeText } from './treadmill-text';
+import { afterTarget, shownTarget, type TargetMemory, targetFigureText } from './target-figure';
 import {
   loadSpeedPresets, PRESET_KEYS, presetCommand, type PresetKey, serializeSpeedPresets, SPEED_PRESETS_STORAGE_KEY,
   type SpeedPresets,
@@ -35,7 +36,14 @@ export function setupSpeedControls(host: SpeedControlsHost) {
   let sliderDragging = false;
   let presets: SpeedPresets = loadSpeedPresets(null);
 
-  tm.on('target', () => renderSpeed());
+  /**
+   * The last target of this connection: after a Stop the library still ramps to it at the next Start (see target-figure.ts).
+   * Taken only on a 'target' event, where the library takes its `wanted`: a limit lowered while the belt stands clamps the
+   * governor's target without that event, and `wanted` keeps the speed asked for (Start ramps to it if the limit goes up).
+   */
+  let lastTarget: TargetMemory = null;
+  tm.on('target', () => { lastTarget = afterTarget(lastTarget, tm.state.target); renderSpeed(); });
+  tm.on('disconnected', () => { lastTarget = afterTarget(lastTarget, null, true); renderSpeed(); });
 
   function effectiveMax() { return tm.state.effectiveMax; }
 
@@ -77,11 +85,18 @@ export function setupSpeedControls(host: SpeedControlsHost) {
     host.limitsChanged();
   }
 
+  /** Only the Target figure, never the slider: the end of a drag redraws this before the slider's own change */
+  function renderTargetFigure() {
+    $('target').textContent = targetFigureText(
+      shownTarget(tm.state.target, lastTarget, { min: tm.state.deviceRange.min, max: effectiveMax() }), t.control.speed,
+    );
+  }
+
   function renderSpeed() {
     const sl = $input('slider');
     const { target, lastCommand: lc, ramping } = tm.state;
     if (target !== null && !sliderDragging) sl.value = String(target);
-    $('target').textContent = t.control.speed(target ?? parseFloat(sl.value));
+    renderTargetFigure();
     $('rampInfo').textContent = ramping && target !== null && lc && lc.kmh !== target
       ? t.control.ramping(lc.kmh, target)
       : ' ';
@@ -164,7 +179,13 @@ export function setupSpeedControls(host: SpeedControlsHost) {
 
   const slider = $input('slider');
   slider.addEventListener('pointerdown', () => { sliderDragging = true; });
-  window.addEventListener('pointerup', () => { sliderDragging = false; });
+  // A drag that ends on its starting value fires no change: the figure goes back from the slider's preview to the target.
+  // Only the figure: pointerup comes before the slider's change, and writing the slider here would undo the drag.
+  window.addEventListener('pointerup', () => {
+    if (!sliderDragging) return;
+    sliderDragging = false;
+    renderTargetFigure();
+  });
   slider.oninput = () => { $('target').textContent = t.control.speed(parseFloat(slider.value)); };
   slider.onchange = () => { sliderDragging = false; requestSpeed(parseFloat(slider.value)); };
   $button('minus').onclick = () => stepSpeed(-speedStep());
