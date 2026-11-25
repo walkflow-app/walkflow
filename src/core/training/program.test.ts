@@ -1,4 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { createTreadmill, START_MS } from 'ftms-treadmill';
+import { SimulatorAdapter } from 'ftms-treadmill/sim';
 import { setLanguage, type Text } from '../../i18n/i18n';
 import { setUnits } from '../../i18n/units';
 import { fmtLength, fmtTime, formatProgram, parseProgram, programLength, ProgramRunner, totalSeconds, type ProgramHost } from './program';
@@ -164,15 +166,15 @@ describe('ProgramRunner', () => {
     const done = runner.run([{ sec: 2, speed: 2 }, { sec: 1, speed: 4 }]);
 
     await advance(0);
-    expect(calls).toEqual(['start']);
+    expect(calls).toEqual(['speed 2', 'start']);
     await advance(4499);
-    expect(calls).toEqual(['start']);
+    expect(calls).toEqual(['speed 2', 'start']);
     await advance(1);
-    expect(calls).toEqual(['start', 'speed 2']);
+    expect(calls).toEqual(['speed 2', 'start', 'speed 2']);
     await advance(2000);
-    expect(calls).toEqual(['start', 'speed 2', 'speed 4']);
+    expect(calls).toEqual(['speed 2', 'start', 'speed 2', 'speed 4']);
     await advance(1000);
-    expect(calls).toEqual(['start', 'speed 2', 'speed 4', 'stop']);
+    expect(calls).toEqual(['speed 2', 'start', 'speed 2', 'speed 4', 'stop']);
     await expect(done).resolves.toBe('finished');
     expect(runner.active).toBe(false);
   });
@@ -205,15 +207,33 @@ describe('ProgramRunner', () => {
     setLanguage('en');
   });
 
-  it('abort during the countdown: no speed command, no extra stop', async () => {
+  it('abort during the countdown: no step command after the early target, no extra stop', async () => {
     const { runner, calls, lastStatus, advance } = setup();
     const done = runner.run([{ sec: 60, speed: 3 }]);
     await advance(1000);
     runner.abort(() => 'Stopped');
     expect(lastStatus()).toBe('Stopped');
     await advance(10_000);
-    expect(calls).toEqual(['start']);
+    expect(calls).toEqual(['speed 3', 'start']);
     await expect(done).resolves.toBe('aborted');
+  });
+
+  it('the first step\'s speed is asked for before host.start(), so start() cannot ramp to an older speed (#47)', async () => {
+    const { runner, calls, advance } = setup();
+    void runner.run([{ sec: 60, speed: 2 }]);
+    await advance(0);
+    expect(calls[0]).toBe('speed 2');
+    expect(calls.indexOf('start')).toBe(1);
+    expect(calls.slice(0, calls.indexOf('start')).every(c => c === 'speed 2')).toBe(true);
+  });
+
+  it('uses the library\'s START_MS as the countdown: one number for one fact', async () => {
+    const { runner, calls, advance } = setup();
+    void runner.run([{ sec: 60, speed: 2 }]);
+    await advance(START_MS - 1);
+    expect(calls).toEqual(['speed 2', 'start']);
+    await advance(1);
+    expect(calls).toEqual(['speed 2', 'start', 'speed 2']);
   });
 
   it('abort in the middle of a step: no further commands, not even from external ticks', async () => {
@@ -224,7 +244,7 @@ describe('ProgramRunner', () => {
     expect(lastStatus()).toBe('Program cancelled');
     await advance(60_000);
     runner.tick();
-    expect(calls).toEqual(['start', 'speed 3']);
+    expect(calls).toEqual(['speed 3', 'start', 'speed 3']);
     await expect(done).resolves.toBe('aborted');
   });
 
@@ -236,7 +256,7 @@ describe('ProgramRunner', () => {
     runner.abort();
     release();
     await advance(20_000);
-    expect(calls).toEqual([]);
+    expect(calls).toEqual(['speed 3']);
     await expect(done).resolves.toBe('aborted');
   });
 
@@ -244,7 +264,7 @@ describe('ProgramRunner', () => {
     const { runner, calls, lastStatus, lastNeedsAttention, advance } = setup({ startOk: false });
     const done = runner.run([{ sec: 10, speed: 3 }]);
     await advance(20_000);
-    expect(calls).toEqual(['start', 'stop']);
+    expect(calls).toEqual(['speed 3', 'start', 'stop']);
     expect(lastStatus()).toBe('Start failed, program ended');
     expect(lastNeedsAttention()).toBe(true);
     await expect(done).resolves.toBe('aborted');
@@ -255,7 +275,7 @@ describe('ProgramRunner', () => {
     host.start = vi.fn(async () => { calls.push('start'); throw new Error('gatt'); });
     const done = runner.run([{ sec: 10, speed: 3 }]);
     await advance(20_000);
-    expect(calls).toEqual(['start', 'stop']);
+    expect(calls).toEqual(['speed 3', 'start', 'stop']);
     expect(lastStatus()).toBe('Start failed, program ended');
     await expect(done).resolves.toBe('aborted');
   });
@@ -277,7 +297,7 @@ describe('ProgramRunner', () => {
     runner.abort();
     release(false);
     await advance(20_000);
-    expect(calls).toEqual([]);
+    expect(calls).toEqual(['speed 3']);
     await expect(done).resolves.toBe('aborted');
   });
 
@@ -287,7 +307,7 @@ describe('ProgramRunner', () => {
     await advance(5000);
     const second = runner.run([{ sec: 1, speed: 2 }]);
     await advance(20_000);
-    expect(calls).toEqual(['start', 'speed 3', 'start', 'speed 2', 'stop']);
+    expect(calls).toEqual(['speed 3', 'start', 'speed 3', 'speed 2', 'start', 'speed 2', 'stop']);
     await expect(first).resolves.toBe('aborted');
     await expect(second).resolves.toBe('finished');
   });
@@ -302,10 +322,10 @@ describe('ProgramRunner', () => {
     const { runner, calls, logs, advance, jump } = setup();
     void runner.run([{ sec: 10, speed: 2 }, { sec: 10, speed: 3 }, { sec: 10, speed: 4 }, { sec: 10, speed: 5 }]);
     await advance(4500);
-    expect(calls).toEqual(['start', 'speed 2']);
+    expect(calls).toEqual(['speed 2', 'start', 'speed 2']);
     jump(25_000); // 25 s without timers, e.g. background tab
     runner.tick(); // e.g. from a BLE notification
-    expect(calls).toEqual(['start', 'speed 2', 'speed 4']);
+    expect(calls).toEqual(['speed 2', 'start', 'speed 2', 'speed 4']);
     expect(logs.join('\n')).toMatch(/Step 2 skipped/);
   });
 
@@ -316,7 +336,7 @@ describe('ProgramRunner', () => {
     jump(60_000);
     runner.tick();
     await advance(0);
-    expect(calls).toEqual(['start', 'speed 2', 'stop']);
+    expect(calls).toEqual(['speed 2', 'start', 'speed 2', 'stop']);
     await expect(done).resolves.toBe('finished');
   });
 
@@ -326,7 +346,7 @@ describe('ProgramRunner', () => {
     await advance(0);
     jump(4600);
     runner.tick();
-    expect(calls).toEqual(['start', 'speed 2']);
+    expect(calls).toEqual(['speed 2', 'start', 'speed 2']);
   });
 
   it('external ticks do not send duplicate commands', async () => {
@@ -336,14 +356,14 @@ describe('ProgramRunner', () => {
     runner.tick(); runner.tick();
     await advance(500);
     runner.tick();
-    expect(calls).toEqual(['start', 'speed 2']);
+    expect(calls).toEqual(['speed 2', 'start', 'speed 2']);
   });
 
   it('steps with 0 minutes are skipped silently', async () => {
     const { runner, calls, logs, advance } = setup();
     void runner.run([{ sec: 0, speed: 5 }, { sec: 2, speed: 2 }]);
     await advance(4500);
-    expect(calls).toEqual(['start', 'speed 2']);
+    expect(calls).toEqual(['speed 2', 'start', 'speed 2']);
     expect(logs).toEqual([]);
   });
 
@@ -374,13 +394,13 @@ describe('ProgramRunner: distance steps', () => {
 
   it('a distance step ends when the belt has covered the distance, then the next step starts', async () => {
     const { runner, calls, setDist, advance } = await started([{ meters: 100, speed: 3 }, { sec: 5, speed: 2 }]);
-    expect(calls).toEqual(['start', 'speed 3']);
+    expect(calls).toEqual(['speed 3', 'start', 'speed 3']);
     setDist(5060); runner.tick();
-    expect(calls).toEqual(['start', 'speed 3']);
+    expect(calls).toEqual(['speed 3', 'start', 'speed 3']);
     setDist(5100); runner.tick();
-    expect(calls).toEqual(['start', 'speed 3', 'speed 2']);
+    expect(calls).toEqual(['speed 3', 'start', 'speed 3', 'speed 2']);
     await advance(5000);
-    expect(calls).toEqual(['start', 'speed 3', 'speed 2', 'stop']);
+    expect(calls).toEqual(['speed 3', 'start', 'speed 3', 'speed 2', 'stop']);
   });
 
   it('the time of a following step counts from the end of the distance step, not from the program start', async () => {
@@ -398,7 +418,7 @@ describe('ProgramRunner: distance steps', () => {
     const { calls, setDist, advance } = await started([{ meters: 100, speed: 3 }, { sec: 5, speed: 2 }]);
     setDist(5100);
     await advance(1000);
-    expect(calls).toEqual(['start', 'speed 3', 'speed 2']);
+    expect(calls).toEqual(['speed 3', 'start', 'speed 3', 'speed 2']);
   });
 
   it('tracks the remaining distance', async () => {
@@ -414,18 +434,18 @@ describe('ProgramRunner: distance steps', () => {
   it('counts from the reading at the start of the step (the belt counter does not start at 0)', async () => {
     const { runner, calls, setDist } = await started([{ meters: 100, speed: 3 }, { meters: 100, speed: 4 }], 12_345);
     setDist(12_445); runner.tick();
-    expect(calls).toEqual(['start', 'speed 3', 'speed 4']);
+    expect(calls).toEqual(['speed 3', 'start', 'speed 3', 'speed 4']);
     setDist(12_500); runner.tick(); // only 55 m in the second step
-    expect(calls).toEqual(['start', 'speed 3', 'speed 4']);
+    expect(calls).toEqual(['speed 3', 'start', 'speed 3', 'speed 4']);
   });
 
   it('a counter reset in the middle of a step neither ends the step early nor makes progress negative', async () => {
     const { runner, calls, setDist } = await started([{ meters: 100, speed: 3 }, { sec: 5, speed: 2 }]);
     setDist(5060); runner.tick();
     setDist(10); runner.tick(); // reset
-    expect(calls).toEqual(['start', 'speed 3']);
+    expect(calls).toEqual(['speed 3', 'start', 'speed 3']);
     setDist(50); runner.tick(); // 60 + 40 = 100
-    expect(calls).toEqual(['start', 'speed 3', 'speed 2']);
+    expect(calls).toEqual(['speed 3', 'start', 'speed 3', 'speed 2']);
   });
 
   it('waits for the first reading when none has arrived yet and counts from there', async () => {
@@ -433,18 +453,18 @@ describe('ProgramRunner: distance steps', () => {
     expect(runner.progress()).toMatchObject({ index: 0, left: { meters: 100 } });
     setDist(700); runner.tick();
     setDist(790); runner.tick();
-    expect(calls).toEqual(['start', 'speed 3']);
+    expect(calls).toEqual(['speed 3', 'start', 'speed 3']);
     setDist(800); runner.tick();
-    expect(calls).toEqual(['start', 'speed 3', 'speed 2']);
+    expect(calls).toEqual(['speed 3', 'start', 'speed 3', 'speed 2']);
   });
 
   it('distance never advances: ends the program after twice the expected time plus 30 s, without touching the belt', async () => {
     const { calls, logs, lastStatus, lastNeedsAttention, advance, done } = await started([{ meters: 100, speed: 3 }, { sec: 5, speed: 2 }]);
     // 100 m at 3 km/h = 120 s → limit 270 s
     await advance(269_000);
-    expect(calls).toEqual(['start', 'speed 3']);
+    expect(calls).toEqual(['speed 3', 'start', 'speed 3']);
     await advance(2000);
-    expect(calls).toEqual(['start', 'speed 3']);
+    expect(calls).toEqual(['speed 3', 'start', 'speed 3']);
     expect(lastStatus()).toBe('Distance not advancing, program ended');
     expect(lastNeedsAttention()).toBe(true);
     expect(logs.join('\n')).toMatch(/Step 1/);
@@ -470,23 +490,23 @@ describe('ProgramRunner: distance steps', () => {
     runner.abort();
     setDist(9999); runner.tick();
     await advance(600_000);
-    expect(calls).toEqual(['start', 'speed 3']);
+    expect(calls).toEqual(['speed 3', 'start', 'speed 3']);
     await expect(done).resolves.toBe('aborted');
   });
 
   it('a distance step with 0 m is skipped silently', async () => {
     const { calls, logs } = await started([{ meters: 0, speed: 5 }, { sec: 2, speed: 2 }]);
-    expect(calls).toEqual(['start', 'speed 2']);
+    expect(calls).toEqual(['speed 2', 'start', 'speed 2']);
     expect(logs).toEqual([]);
   });
 
   it('the last step being a distance step: stops the belt when it is done', async () => {
     const { runner, calls, setDist, advance, done } = await started([{ sec: 2, speed: 2 }, { meters: 50, speed: 3 }]);
     await advance(2000);
-    expect(calls).toEqual(['start', 'speed 2', 'speed 3']);
+    expect(calls).toEqual(['speed 2', 'start', 'speed 2', 'speed 3']);
     setDist(5050); runner.tick();
     await advance(0);
-    expect(calls).toEqual(['start', 'speed 2', 'speed 3', 'stop']);
+    expect(calls).toEqual(['speed 2', 'start', 'speed 2', 'speed 3', 'stop']);
     await expect(done).resolves.toBe('finished');
   });
 });
@@ -541,5 +561,50 @@ describe('ProgramRunner: progress (display only)', () => {
     const before = [...calls];
     for (let i = 0; i < 5; i++) runner.progress();
     expect(calls).toEqual(before);
+  });
+});
+
+// #47: after a run at 6 km/h, a program whose first step is 2 km/h must never cause a Set Speed above 2 km/h.
+// The real library (createTreadmill) with the simulated treadmill, which records every speed the belt is told.
+describe('ProgramRunner with the real library (#47)', () => {
+  beforeEach(() => { vi.useFakeTimers(); });
+  afterEach(() => { vi.useRealTimers(); });
+
+  it('after a run at 6 km/h a program starting at 2 km/h never asks the belt for more than 2 km/h', async () => {
+    const tm = createTreadmill({ speedLimit: 8, maxStep: 1 });
+    const adapter = new SimulatorAdapter({ countdownMs: 500 });
+    const sent: number[] = [];
+    const setTarget = adapter.belt.setTarget.bind(adapter.belt);
+    adapter.belt.setTarget = kmh => { sent.push(kmh); setTarget(kmh); };
+    const connecting = tm.connect(adapter);
+    await vi.advanceTimersByTimeAsync(2000);
+    await connecting;
+
+    // free training at 6 km/h, then Stop
+    const started = tm.start();
+    await vi.advanceTimersByTimeAsync(5000);
+    await started;
+    tm.setSpeed(6);
+    await vi.advanceTimersByTimeAsync(15_000);
+    expect(Math.max(...sent)).toBeGreaterThan(2);
+    const stopping = tm.stop();
+    await vi.advanceTimersByTimeAsync(10_000);
+    await stopping;
+    sent.length = 0;
+
+    const host: ProgramHost = {
+      start: () => tm.start(),
+      stop: () => tm.stop(),
+      setTarget: kmh => { tm.setSpeed(kmh, { source: 'program' }); },
+      currentTarget: () => tm.state.target,
+      distance: () => undefined,
+      status: () => undefined,
+    };
+    const runner = new ProgramRunner(host);
+    const done = runner.run([{ sec: 20, speed: 2 }]);
+    await vi.advanceTimersByTimeAsync(40_000);
+    await done;
+    expect(sent.length).toBeGreaterThan(0);
+    expect(Math.max(...sent)).toBeLessThanOrEqual(2);
   });
 });
