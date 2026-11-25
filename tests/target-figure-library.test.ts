@@ -20,6 +20,24 @@ describe('a dash means Start will not ramp (the library rule the figure relies o
     expect(src.slice(src.indexOf('function onDisconnected'))).toContain('wanted = null;');
   });
 
+  it('wanted changes only where a target event follows, and a limit change clamps the target without that event', () => {
+    // The app takes its memory from 'target' events only (speed-controls.ts); that matches `wanted` only while these hold
+    const src = read('treadmill.js');
+    expect(src.match(/\bwanted = /g)).toHaveLength(3); // initial, onChange, onDisconnected
+    expect(src).toMatch(/if \(governor\.target !== null\)\s*wanted = governor\.target;\s*emit\('target', undefined\);/);
+    const safety = readFileSync(join(process.cwd(), 'node_modules/ftms-treadmill/dist/safety/safety.js'), 'utf8');
+    const setRange = safety.slice(safety.indexOf('setRange(range) {'), safety.indexOf('request(kmh) {'));
+    expect(setRange).toContain('this._target = clampSpeed(this._target, range);');
+    expect(setRange).not.toContain('onChange');
+  });
+
+  it('the clamp at Start rounds to 0.1 inside the range (target-figure.ts clampLikeStart mirrors it)', () => {
+    const safety = readFileSync(join(process.cwd(), 'node_modules/ftms-treadmill/dist/safety/safety.js'), 'utf8');
+    expect(safety).toContain('let v = Math.round(Math.max(range.min, Math.min(range.max, kmh)) * 10) / 10;');
+    expect(safety).toContain('v = floor01(range.max);');
+    expect(safety).toContain('v = ceil01(range.min);');
+  });
+
   it('the speed Start asks for is clamped to the range (governor.request uses clampSpeed)', () => {
     expect(read('belt-commands.js')).toContain('governor.request(chosen);');
     const safety = readFileSync(join(process.cwd(), 'node_modules/ftms-treadmill/dist/safety/safety.js'), 'utf8');

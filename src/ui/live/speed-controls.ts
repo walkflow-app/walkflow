@@ -36,9 +36,13 @@ export function setupSpeedControls(host: SpeedControlsHost) {
   let sliderDragging = false;
   let presets: SpeedPresets = loadSpeedPresets(null);
 
-  /** The last target of this connection: after a Stop the library still ramps to it at the next Start (see target-figure.ts) */
+  /**
+   * The last target of this connection: after a Stop the library still ramps to it at the next Start (see target-figure.ts).
+   * Taken only on a 'target' event, where the library takes its `wanted`: a limit lowered while the belt stands clamps the
+   * governor's target without that event, and `wanted` keeps the speed asked for (Start ramps to it if the limit goes up).
+   */
   let lastTarget: TargetMemory = null;
-  tm.on('target', () => renderSpeed());
+  tm.on('target', () => { lastTarget = afterTarget(lastTarget, tm.state.target); renderSpeed(); });
   tm.on('disconnected', () => { lastTarget = afterTarget(lastTarget, null, true); renderSpeed(); });
 
   function effectiveMax() { return tm.state.effectiveMax; }
@@ -84,7 +88,6 @@ export function setupSpeedControls(host: SpeedControlsHost) {
   function renderSpeed() {
     const sl = $input('slider');
     const { target, lastCommand: lc, ramping } = tm.state;
-    lastTarget = afterTarget(lastTarget, target);
     if (target !== null && !sliderDragging) sl.value = String(target);
     $('target').textContent = targetFigureText(shownTarget(target, lastTarget, { min: tm.state.deviceRange.min, max: effectiveMax() }), t.control.speed);
     $('rampInfo').textContent = ramping && target !== null && lc && lc.kmh !== target
