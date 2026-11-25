@@ -4,6 +4,7 @@ import {
   checkPresetChange, DEFAULT_SPEED_PRESETS, loadSpeedPresets, PRESET_KEYS, PRESET_MIN, presetCommand,
   serializeSpeedPresets, type SpeedPresets,
 } from './speed-presets';
+import { settingsLocked } from './settings-lock';
 
 const p = (slow: number, mid: number, run: number): SpeedPresets => ({ slow, mid, run });
 
@@ -44,47 +45,58 @@ describe('checkPresetChange', () => {
   const stored = p(2.5, 3.5, 5);
 
   it('accepts a value between its neighbours and within 2.0 and the limit, rounded to 0.1 km/h', () => {
-    expect(checkPresetChange(stored, 'mid', 4.04, 6)).toEqual({ ok: true, presets: p(2.5, 4, 5) });
-    expect(checkPresetChange(stored, 'slow', 2, 6)).toEqual({ ok: true, presets: p(2, 3.5, 5) });
-    expect(checkPresetChange(stored, 'run', 6, 6)).toEqual({ ok: true, presets: p(2.5, 3.5, 6) });
+    expect(checkPresetChange(stored, 'mid', 4.04, 6, false)).toEqual({ ok: true, presets: p(2.5, 4, 5) });
+    expect(checkPresetChange(stored, 'slow', 2, 6, false)).toEqual({ ok: true, presets: p(2, 3.5, 5) });
+    expect(checkPresetChange(stored, 'run', 6, 6, false)).toEqual({ ok: true, presets: p(2.5, 3.5, 6) });
   });
 
   it('does not change the stored presets it was given', () => {
-    checkPresetChange(stored, 'mid', 4, 6);
+    checkPresetChange(stored, 'mid', 4, 6, false);
     expect(stored).toEqual(p(2.5, 3.5, 5));
   });
 
   it('refuses what is not a number', () => {
-    expect(checkPresetChange(stored, 'mid', NaN, 6)).toEqual({ ok: false, error: 'notANumber' });
-    expect(checkPresetChange(stored, 'mid', Infinity, 6)).toEqual({ ok: false, error: 'notANumber' });
+    expect(checkPresetChange(stored, 'mid', NaN, 6, false)).toEqual({ ok: false, error: 'notANumber' });
+    expect(checkPresetChange(stored, 'mid', Infinity, 6, false)).toEqual({ ok: false, error: 'notANumber' });
   });
 
   it('refuses values below 2.0 km/h', () => {
-    expect(checkPresetChange(stored, 'slow', 1.9, 6)).toEqual({ ok: false, error: 'range' });
-    expect(checkPresetChange(stored, 'slow', 0, 6)).toEqual({ ok: false, error: 'range' });
-    expect(checkPresetChange(stored, 'slow', -3, 6)).toEqual({ ok: false, error: 'range' });
+    expect(checkPresetChange(stored, 'slow', 1.9, 6, false)).toEqual({ ok: false, error: 'range' });
+    expect(checkPresetChange(stored, 'slow', 0, 6, false)).toEqual({ ok: false, error: 'range' });
+    expect(checkPresetChange(stored, 'slow', -3, 6, false)).toEqual({ ok: false, error: 'range' });
   });
 
   it('never accepts a value above the current limit', () => {
-    expect(checkPresetChange(stored, 'run', 6.1, 6)).toEqual({ ok: false, error: 'range' });
-    expect(checkPresetChange(stored, 'run', 5.5, 4.5)).toEqual({ ok: false, error: 'range' });
+    expect(checkPresetChange(stored, 'run', 6.1, 6, false)).toEqual({ ok: false, error: 'range' });
+    expect(checkPresetChange(stored, 'run', 5.5, 4.5, false)).toEqual({ ok: false, error: 'range' });
     // A limit below the lowest preset speed leaves no allowed value
-    expect(checkPresetChange(stored, 'slow', LIMIT_MIN, LIMIT_MIN)).toEqual({ ok: false, error: 'range' });
+    expect(checkPresetChange(stored, 'slow', LIMIT_MIN, LIMIT_MIN, false)).toEqual({ ok: false, error: 'range' });
   });
 
   it('keeps slow < mid < run strictly, and says which neighbour the value runs into', () => {
-    expect(checkPresetChange(stored, 'slow', 3.5, 6)).toEqual({ ok: false, error: 'notBelowNext' });
-    expect(checkPresetChange(stored, 'mid', 2.5, 6)).toEqual({ ok: false, error: 'notAbovePrevious' });
-    expect(checkPresetChange(stored, 'mid', 5, 6)).toEqual({ ok: false, error: 'notBelowNext' });
-    expect(checkPresetChange(stored, 'run', 3.5, 6)).toEqual({ ok: false, error: 'notAbovePrevious' });
-    expect(checkPresetChange(stored, 'run', 3, 6)).toEqual({ ok: false, error: 'notAbovePrevious' });
+    expect(checkPresetChange(stored, 'slow', 3.5, 6, false)).toEqual({ ok: false, error: 'notBelowNext' });
+    expect(checkPresetChange(stored, 'mid', 2.5, 6, false)).toEqual({ ok: false, error: 'notAbovePrevious' });
+    expect(checkPresetChange(stored, 'mid', 5, 6, false)).toEqual({ ok: false, error: 'notBelowNext' });
+    expect(checkPresetChange(stored, 'run', 3.5, 6, false)).toEqual({ ok: false, error: 'notAbovePrevious' });
+    expect(checkPresetChange(stored, 'run', 3, 6, false)).toEqual({ ok: false, error: 'notAbovePrevious' });
     // Equal after rounding to 0.1 counts as equal
-    expect(checkPresetChange(stored, 'mid', 2.54, 6)).toEqual({ ok: false, error: 'notAbovePrevious' });
+    expect(checkPresetChange(stored, 'mid', 2.54, 6, false)).toEqual({ ok: false, error: 'notAbovePrevious' });
+  });
+
+  it('takes no change while the settings are locked (the belt runs), however valid the value is', () => {
+    const state = (connected: boolean, maybeRunning: boolean) => ({ connected, maybeRunning });
+    expect(checkPresetChange(stored, 'mid', 4, 6, settingsLocked(state(true, true)))).toEqual({ ok: false, error: 'locked' });
+    // Also for values that would be refused for another reason: the lock is named first
+    expect(checkPresetChange(stored, 'mid', NaN, 6, true)).toEqual({ ok: false, error: 'locked' });
+    expect(checkPresetChange(stored, 'mid', 9, 6, true)).toEqual({ ok: false, error: 'locked' });
+    // Standing or not connected: as before
+    expect(checkPresetChange(stored, 'mid', 4, 6, settingsLocked(state(true, false)))).toEqual({ ok: true, presets: p(2.5, 4, 5) });
+    expect(checkPresetChange(stored, 'mid', 4, 6, settingsLocked(state(false, true)))).toEqual({ ok: true, presets: p(2.5, 4, 5) });
   });
 
   it('lets a preset be moved below a lowered limit while another one is still above it', () => {
     // Limit lowered to 3 km/h: run (5) stays stored above it; mid can still be brought under the limit
-    expect(checkPresetChange(stored, 'mid', 3, 3)).toEqual({ ok: true, presets: p(2.5, 3, 5) });
+    expect(checkPresetChange(stored, 'mid', 3, 3, false)).toEqual({ ok: true, presets: p(2.5, 3, 5) });
   });
 });
 
