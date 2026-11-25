@@ -9,7 +9,7 @@ import {
 } from '../../core/safety/limit-settings';
 import { t } from '../../i18n/i18n';
 import { noticeText } from './treadmill-text';
-import { targetFigureText } from './target-figure';
+import { afterTarget, shownTarget, type TargetMemory, targetFigureText } from './target-figure';
 import {
   loadSpeedPresets, PRESET_KEYS, presetCommand, type PresetKey, serializeSpeedPresets, SPEED_PRESETS_STORAGE_KEY,
   type SpeedPresets,
@@ -36,7 +36,10 @@ export function setupSpeedControls(host: SpeedControlsHost) {
   let sliderDragging = false;
   let presets: SpeedPresets = loadSpeedPresets(null);
 
+  /** The last target of this connection: after a Stop the library still ramps to it at the next Start (see target-figure.ts) */
+  let lastTarget: TargetMemory = null;
   tm.on('target', () => renderSpeed());
+  tm.on('disconnected', () => { lastTarget = afterTarget(lastTarget, null, true); renderSpeed(); });
 
   function effectiveMax() { return tm.state.effectiveMax; }
 
@@ -81,8 +84,9 @@ export function setupSpeedControls(host: SpeedControlsHost) {
   function renderSpeed() {
     const sl = $input('slider');
     const { target, lastCommand: lc, ramping } = tm.state;
+    lastTarget = afterTarget(lastTarget, target);
     if (target !== null && !sliderDragging) sl.value = String(target);
-    $('target').textContent = targetFigureText(target, t.control.speed);
+    $('target').textContent = targetFigureText(shownTarget(target, lastTarget, { min: tm.state.deviceRange.min, max: effectiveMax() }), t.control.speed);
     $('rampInfo').textContent = ramping && target !== null && lc && lc.kmh !== target
       ? t.control.ramping(lc.kmh, target)
       : ' ';
@@ -167,7 +171,7 @@ export function setupSpeedControls(host: SpeedControlsHost) {
   slider.addEventListener('pointerdown', () => { sliderDragging = true; });
   window.addEventListener('pointerup', () => { sliderDragging = false; });
   slider.oninput = () => { $('target').textContent = t.control.speed(parseFloat(slider.value)); };
-  slider.onchange = () => { sliderDragging = false; requestSpeed(parseFloat(slider.value)); renderSpeed(); };
+  slider.onchange = () => { sliderDragging = false; requestSpeed(parseFloat(slider.value)); };
   $button('minus').onclick = () => stepSpeed(-speedStep());
   $button('plus').onclick = () => stepSpeed(speedStep());
   presetButtons().forEach(b => {
