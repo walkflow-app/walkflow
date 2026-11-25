@@ -4,6 +4,7 @@ import {
   buildRun, decodeTrack, encodeTrack, parseBackup, RUN_CHECKPOINT_MS, RUN_END_IDLE_MS, RUN_MAX_SAMPLES,
   RUN_MIN_MOVING_SEC, RunRecorder, readTag, serializeBackup, summarize, type Run, type RunSource, type RunTag,
 } from './runs';
+import { readRoutes, ROUTE_IMPORT_SPEED_MAX } from '../routes/routes';
 
 const T0 = new Date(2026, 9, 26, 7, 30, 0).getTime();
 const at = (sec: number) => T0 + sec * 1000;
@@ -420,6 +421,35 @@ describe('backup file', () => {
         routes: [route, { ...route, id: 'r2', points: [{ lat: 99, lon: 0 }, { lat: 0, lon: 0 }] }, 'x'],
       });
       expect(parseBackup(text)).toMatchObject({ ok: true, routes: [route], invalidRoutes: 2 });
+    });
+
+    // A backup is a file from outside, like a route package: a stranger does not choose how fast the belt runs
+    describe('route speed from a file', () => {
+      const restored = (defaultSpeed: number) => {
+        const text = JSON.stringify({ format: 'walkflow-backup', version: 1, runs: [], routes: [{ ...route, defaultSpeed }] });
+        const r = parseBackup(text);
+        if (!r.ok) throw new Error('backup not read');
+        return r;
+      };
+
+      it('a speed above the import cap is dropped, not clamped; the route is kept', () => {
+        for (const v of [ROUTE_IMPORT_SPEED_MAX + 0.1, 15, 20]) {
+          const r = restored(v);
+          expect(r.invalidRoutes).toBe(0);
+          expect(r.routes).toHaveLength(1);
+          expect(r.routes[0]?.defaultSpeed).toBeUndefined();
+          expect(r.routes[0]?.points).toEqual(route.points);
+        }
+      });
+
+      it('a speed up to the import cap is kept', () => {
+        expect(restored(ROUTE_IMPORT_SPEED_MAX).routes[0]?.defaultSpeed).toBe(ROUTE_IMPORT_SPEED_MAX);
+        expect(restored(3.5).routes[0]?.defaultSpeed).toBe(3.5);
+      });
+
+      it('the library load is not capped: the editor allows more, and the person made those routes', () => {
+        expect(readRoutes([{ ...route, defaultSpeed: 15 }]).routes[0]?.defaultSpeed).toBe(15);
+      });
     });
   });
 });

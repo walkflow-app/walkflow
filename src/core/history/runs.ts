@@ -3,7 +3,7 @@
 // control path: it never throws, and saving runs asynchronously, so it cannot delay a stop.
 
 import { accumulate, distanceSeries, type Sample } from './export';
-import { readRoutes, type Route } from '../routes/routes';
+import { readRoutes, ROUTE_IMPORT_SPEED_MAX, type Route } from '../routes/routes';
 import { readPlan, readWorkouts, type WeekPlan, type Workout } from '../training/workouts';
 
 export type RunSource = 'ble' | 'demo';
@@ -391,6 +391,13 @@ export function parseBackup(text: string): BackupResult {
     if (run) runs.push(run); else invalid++;
   }
   const { workouts, invalid: invalidWorkouts } = readWorkouts(data.workouts);
-  const { routes, invalid: invalidRoutes } = readRoutes(data.routes);
+  const { routes: read, invalid: invalidRoutes } = readRoutes(data.routes);
+  // A backup is a file from outside, like a route package: a speed above ROUTE_IMPORT_SPEED_MAX is dropped (not clamped).
+  // Only here, not in readRoutes: that also loads the person's own library, where the editor allows more.
+  const routes = read.map(r => {
+    if (r.defaultSpeed === undefined || r.defaultSpeed <= ROUTE_IMPORT_SPEED_MAX) return r;
+    const { defaultSpeed: _dropped, ...rest } = r;
+    return rest;
+  });
   return { ok: true, runs, invalid, workouts, invalidWorkouts, routes, invalidRoutes, plan: readPlan(data.plan) };
 }
