@@ -60,7 +60,8 @@ describe('the usage count in the stage (wired into the runner status hook)', () 
     const done = stage.runProgram();
     await vi.advanceTimersByTimeAsync(0);
     expect(runner.phase).toBe('starting');
-    expect(events).toEqual([]);
+    // the first step's speed is held before the start, not sent while the belt stands
+    expect(events).toEqual(['setTarget 3']);
 
     resolveStart(true);
     await vi.advanceTimersByTimeAsync(0);
@@ -68,11 +69,11 @@ describe('the usage count in the stage (wired into the runner status hook)', () 
 
     await vi.advanceTimersByTimeAsync(1000);
     expect(runner.phase).toBe('running');
-    expect(events).toEqual(['setTarget 3', 'count run.workout']);
+    expect(events).toEqual(['setTarget 3', 'setTarget 3', 'count run.workout']);
 
     // Further ticks and the next step: no second count
     await vi.advanceTimersByTimeAsync(61_000);
-    expect(events).toEqual(['setTarget 3', 'count run.workout', 'setTarget 4']);
+    expect(events).toEqual(['setTarget 3', 'setTarget 3', 'count run.workout', 'setTarget 4']);
 
     runner.abort();
     await done;

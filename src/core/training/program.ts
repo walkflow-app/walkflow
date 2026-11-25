@@ -1,6 +1,7 @@
 // Interval program: parser and runner. The runner knows neither DOM nor BLE;
 // it talks to the app through ProgramHost.
 
+import { START_MS } from 'ftms-treadmill';
 import { t, type Text } from '../../i18n/i18n';
 import { fromSpeed, KM_PER_MILE, M_PER_FOOT, toSpeed, units } from '../../i18n/units';
 
@@ -111,13 +112,11 @@ export interface ProgramHost {
 }
 
 export interface ProgramOptions {
-  /** Wait after start because of the belt's countdown (assumption, not measured). */
+  /** Wait after start because of the belt's countdown (default: the library's START_MS, which the banner uses too). */
   countdownMs?: number;
   /** Monotonic clock in ms */
   now?: () => number;
 }
-
-const COUNTDOWN_MS = 4500;
 
 export type ProgramPhase = 'idle' | 'starting' | 'countdown' | 'running';
 
@@ -164,7 +163,7 @@ export class ProgramRunner {
   private readonly now: () => number;
 
   constructor(private readonly host: ProgramHost, opts: ProgramOptions = {}) {
-    this.countdownMs = opts.countdownMs ?? COUNTDOWN_MS;
+    this.countdownMs = opts.countdownMs ?? START_MS;
     this.now = opts.now ?? (() => performance.now());
   }
 
@@ -203,6 +202,14 @@ export class ProgramRunner {
       };
       this.cur = st;
       this.host.status(() => t.program.starting);
+      // The first step's speed goes in before start(): the library's start() takes the speed last asked for, which
+      // would otherwise be the previous run's. While the governor knows the belt stands (moving === false) it is only held.
+      // Right after connecting (no report yet, moving === null) or while the belt still coasts after a Stop, one Set Speed
+      // (a ramp step) can go out before start(). That is harmless: start() resets the governor and sends the device minimum
+      // before Start, so nothing above the first step's speed can go out.
+      // (the first step that will actually run: a 0 min or 0 m step is skipped and its speed is never wanted)
+      const first = steps.find(s => (s.sec !== undefined ? s.sec > 0 : s.meters > 0));
+      if (first) this.host.setTarget(first.speed);
       void this.host.start().catch(() => false).then(ok => {
         if (this.cur !== st) return;
         if (!ok) {
