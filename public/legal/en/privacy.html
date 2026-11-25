@@ -20,10 +20,15 @@
   <h1>Privacy policy</h1>
 
   <h2>Controller</h2>
-  <p>Walkflow, a private open-source project. Contact: <a href="mailto:walkflow.app@gmail.com">walkflow.app@gmail.com</a>. Walkflow does not run a server of its own and stores nothing about the visitors of these pages. The app works on your device.</p>
+  <p>Walkflow, a private open-source project. Contact: <a href="mailto:walkflow.app@gmail.com">walkflow.app@gmail.com</a>. Walkflow does not run a server of its own and stores nothing about the visitors of these pages, apart from the anonymous totals (see “Anonymous counts”). The app works on your device.</p>
 
   <h2>Hosting</h2>
   <p>This website and the web app are served by GitHub Pages, a service of GitHub, Inc. (USA). When you open them, GitHub usually processes technically necessary connection data, including your IP address, the date and time of the request and browser details, to deliver the pages and to keep the service secure. Walkflow has no access to this data and does not evaluate it. <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">GitHub’s privacy statement</a> applies. The same goes for downloads of the desktop app and for the route store and the update check of the desktop app (see below), which contact GitHub’s servers (github.com, api.github.com, raw.githubusercontent.com).</p>
+
+  <h2>Anonymous counts</h2>
+  <p>The app and this website count anonymously how often they are used, to improve the app. The counting is done by GoatCounter (goatcounter.com), a counting service run by one person in Ireland, on servers in Finland and Germany. Each count is one request to the counting address of Walkflow’s site at GoatCounter; the app shows this address under Settings → Info.</p>
+  <p>What is counted: always that the app was started, with its platform (web, Windows, macOS, Linux) and its version. With the switch for improvements (on by default): the language, the views that are opened, the kinds of runs that are started, workouts and routes made or imported, that the route map is switched on, exports, the route store and the store routes that are added, and the maker and model of your treadmill as the treadmill reports them. With the switch for errors (on by default): which known kind of error happened, with the version, never the error text. The product page counts each visit with its language (English or German). Never counted: speed, distance, times, places, the content or names of your own routes and workouts, the name your treadmill shows in the Bluetooth list, its serial number and Bluetooth address, error messages. The counts say that something was used, never who used it, and Walkflow links no two counts of a person.</p>
+  <p>Your IP address reaches the counting service, as it does with every website. The service says that it does not store IP addresses, the full browser details or any ID; it looks up your country from the IP address and keeps only totals. To count visitors once it keeps a temporary code in memory for up to 8 hours, which is never saved. Nothing is passed on to others. Walkflow itself sees only the totals. For the counts, no cookies are set and nothing is stored on your device except the two switches. The app sends nothing before the notice at its first start is accepted. Both switches are under Settings → Info; the start of the app is counted even when both are off. Builds made from source send nothing unless their maker sets an address. An ad blocker only makes the counts lower. <a href="https://www.goatcounter.com/privacy">GoatCounter’s privacy page</a> applies to the service.</p>
 
   <h2>Rights of data subjects</h2>
   <p>Walkflow itself does not store any personal data about you. The data of the app (runs, workouts, routes, settings) is on your device, where you can look at it, export it and delete it at any time (Settings &amp; data). Where data arises at GitHub, GitHub is responsible for it.</p>
@@ -31,10 +36,10 @@
 
   <h2>What the app processes</h2>
   <ul>
-    <li>No accounts, no own server, no cookies, no tracking, no analytics.</li>
-    <li>No scripts, fonts or other content from third parties; everything is loaded from the same address. The exceptions are the optional map and the route store (see below), and only after a person switches them on.</li>
-    <li>Bluetooth data from the treadmill is processed only in the browser and sent nowhere.</li>
-    <li>The browser’s localStorage holds only settings: speed limit, maximum change per command, background behaviour, sport for TCX, language, theme, accepted safety notice, whether runs are saved.</li>
+    <li>No accounts, no own server, no cookies, no tracking of people. The app and this website only count anonymously how often they are used (see “Anonymous counts”).</li>
+    <li>No scripts, fonts or other content from third parties; everything is loaded from the same address. The exceptions are the optional map and the route store (see below), which only load after a person switches them on, and the anonymous counts (see above).</li>
+    <li>Bluetooth data from the treadmill is processed only in the browser and sent nowhere, except the maker and model in the anonymous counts (see above).</li>
+    <li>The browser’s localStorage holds only settings: speed limit, maximum change per command, background behaviour, sport for TCX, language, theme, accepted safety notice, whether runs are saved, and the two switches for the anonymous counts.</li>
     <li>A service worker stores the app files in the browser cache for offline use.</li>
     <li>The current recording for the chart and the CSV/TCX export stays only in memory until the page is closed.</li>
     <li>Runs are stored in the browser’s IndexedDB on this device (desktop app: in the app’s data folder): time, speed, distance, incline, kcal and heart rate (only if the treadmill reports one), about once per second. They leave the device only when the person downloads a backup or an export themselves. Saving can be turned off; runs can be deleted one by one or all at once.</li>

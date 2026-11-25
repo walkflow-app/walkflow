@@ -30,6 +30,13 @@ describe('the legal pages', () => {
     expect(html).toContain('walkflow-app/route-store');
   });
 
+  it.each(PRIVACY)('%s: names the counting service and no longer says there is no tracking at all (#74, #87)', page => {
+    const html = read(page);
+    expect(html).toContain('GoatCounter');
+    expect(html).toContain('goatcounter.com/privacy');
+    expect(html).not.toMatch(/no analytics|kein Analytics|pas d’outil d’analyse/);
+  });
+
   it('every language has the same number of list items and sections', () => {
     const shape = (html: string) => ({ h2: (html.match(/<h2>/g) ?? []).length, li: (html.match(/<li>/g) ?? []).length });
     const [de, en, fr] = PRIVACY.map(p => shape(read(p)));

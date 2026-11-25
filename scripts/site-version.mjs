@@ -16,9 +16,16 @@ export function siteUrl(url) {
   return m[1];
 }
 
-/** Replaces {{version}} and {{site}}; any other {{…}} left in the page is a typo and fails the build */
-export function fillPage(text, { version, site }) {
-  const out = text.replaceAll('{{version}}', version).replaceAll('{{site}}', site);
+/**
+ * Replaces {{version}}, {{site}} and {{usage}} (the address of the counter); any other {{…}} left in the page is a typo and fails
+ * the build. Without a counter address everything between `<!-- usage -->` and `<!-- /usage -->` is removed: the pixel, the small
+ * print and the asterisk of the fact.
+ */
+export function fillPage(text, { version, site, usage = '' }) {
+  let out = text;
+  if (usage) out = out.replaceAll(/<!-- \/?usage -->\n?/g, '');
+  else out = out.replaceAll(/[ \t]*<!-- usage -->[\s\S]*?<!-- \/usage -->\n?/g, '');
+  out = out.replaceAll('{{version}}', version).replaceAll('{{site}}', site).replaceAll('{{usage}}', usage);
   const left = out.match(/\{\{[^}]*\}\}/);
   if (left) throw new Error(`Unknown placeholder in the page: ${left[0]}`);
   return out;
