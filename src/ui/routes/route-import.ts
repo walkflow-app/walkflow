@@ -23,7 +23,7 @@ export interface RouteImportHost {
   added(route: Route): Promise<void>;
 }
 
-/** The speed a route from outside brings along is shown before it is saved (it is held to the person's limit when walked) */
+/** The speed a route from outside brings along is shown in the questions before it is saved (open from outside, store, community) and in the status after a package import (it is held to the person's limit when walked) */
 const speedNote = (route: Route) => (route.defaultSpeed === undefined ? [] : [t.routes.speedNote(route.defaultSpeed)]);
 
 type Failure = 'unreadable' | 'packageTooLarge' | 'packageNewer' | 'packageInvalid';
@@ -86,7 +86,7 @@ export function setupRouteImport(host: RouteImportHost) {
     }
     try { await (await host.store()).put(route); } catch (e) { setStatus(() => t.routes.failed(String(e))); return; }
     await host.added(route);
-    setStatus(() => t.routes.imported(routeName(route, lang), analyzeRoute(route).total));
+    setStatus(() => [t.routes.imported(routeName(route, lang), analyzeRoute(route).total), ...speedNote(route)].join(' '));
   }
 
   /**
