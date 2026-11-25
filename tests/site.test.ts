@@ -12,7 +12,8 @@ import { fillPage } from '../scripts/site-version.mjs';
 const SITE = fileURLToPath(new URL('../site/', import.meta.url));
 const PAGES = ['index.html', 'de/index.html'];
 const read = (f: string) => readFileSync(`${SITE}${f}`, 'utf8');
-const VALUES = { version: '9.8.7', site: 'https://example.org/w' };
+const USAGE = 'https://walkflow.goatcounter.com';
+const VALUES = { version: '9.8.7', site: 'https://example.org/w', usage: USAGE };
 const filled = (f: string): string => fillPage(read(f), VALUES);
 
 /** Local addresses in a page: href, src and the files of a srcset, without anchors, queries and other sites */
@@ -64,7 +65,8 @@ describe('the product page', () => {
     const shape = (html: string) => ({
       ids: [...html.matchAll(/\bid="([^"]+)"/g)].map(m => m[1]),
       sections: (html.match(/<section\b/g) ?? []).length,
-      images: [...html.matchAll(/<img\b[^>]*\bsrc="([^"]+)"/g)].map(m => m[1]!.replace(/^(\.\.\/)?(img\/(dark|light)-(en|de)-)?/, '')),
+      // The counting pixel has its own name per language
+      images: [...html.matchAll(/<img\b[^>]*\bsrc="([^"]+)"/g)].filter(m => !m[1]!.includes('{{usage}}')).map(m => m[1]!.replace(/^(\.\.\/)?(img\/(dark|light)-(en|de)-)?/, '')),
       external: [...html.matchAll(/href="(https:\/\/[^"]+)"/g)].map(m => m[1]),
     });
     const en = shape(read('index.html')), de = shape(read('de/index.html'));
@@ -74,13 +76,26 @@ describe('the product page', () => {
     expect(de.external).toEqual(en.external);
   });
 
-  it('does not load anything from other sites (no tracking, no external fonts or scripts)', () => {
+  it('does not load anything from other sites but the one counting pixel (no external fonts or scripts)', () => {
     for (const page of PAGES) {
       const html = read(page);
+      const lang = page.startsWith('de') ? 'de' : 'en';
+      const images = [...html.matchAll(/<img\b[^>]*\bsrc="(https?:[^"]*|\{\{usage\}\}[^"]*)"/g)].map(m => m[1]);
+      expect(images, page).toEqual([`{{usage}}/count?p=site.${lang}&t=site.${lang}&e=true`]);
       expect(html).not.toMatch(/<script[^>]+src="https?:/);
       expect(html).not.toMatch(/<link[^>]+href="https?:\/\/[^"]*"[^>]*rel="stylesheet"/);
     }
     expect(read('site.css')).not.toMatch(/@import|url\(\s*["']?https?:/);
+  });
+
+  it.each([['index.html', 'en'], ['de/index.html', 'de']])('%s: with a counter address the page has its own pixel and the small print, without neither', (page, lang) => {
+    const withUsage = filled(page);
+    expect(withUsage.match(/<img\b[^>]*\/count\?[^>]*>/g)).toEqual([`<img src="${USAGE}/count?p=site.${lang}&t=site.${lang}&e=true" alt="" width="1" height="1">`]);
+    expect(withUsage).toContain('class="fineprint"');
+    expect(withUsage).toMatch(/who you are\.\*<\/p>|wer du bist\.\*<\/p>/);
+    const without: string = fillPage(read(page), { ...VALUES, usage: '' });
+    expect(without).not.toMatch(/\/count\?|fineprint|\{\{|usage -->|who you are\.\*|wer du bist\.\*/);
+    expect(without).toMatch(/who you are\.<\/p>|wer du bist\.<\/p>/);
   });
 
   it.each(PAGES)('%s: the download links point straight at the files of the release, named like the installers', page => {

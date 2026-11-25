@@ -16,6 +16,9 @@ typed, measured or identifying is ever part of one. A test (`tests/usage-docs.te
 - A request that fails, is blocked or never answers changes nothing.
 - Your IP address reaches the counting service, as with every website. It is not stored or linked by the app, and the app
   links no two events of a person.
+  What the service does with it is GoatCounter's own statement, not the app's: its [privacy page](https://www.goatcounter.com/privacy)
+  says that it does not store IP addresses, and that is what the small print on the product page repeats as GoatCounter's
+  statement.
 
 ## Levels
 
@@ -29,6 +32,9 @@ The two switches are the only thing stored for the counts: `walkflow.usageImprov
 absent means on and `0` means off. The switches are in the settings, Info tab, section "Usage data", which also says what is
 sent and where it goes (without a counter in the build it says that nothing is sent and shows no switches). The first-start
 popup and the Info tab carry a short notice that points there, only in a build that has a counter.
+
+The small print on the product page says that the switches exist. It is built in only with `WALKFLOW_USAGE`, so the official
+build is switched on (walkflow#85) only after the switches are in the settings (walkflow#76); nothing before that says it.
 
 ## Names
 
@@ -120,7 +126,9 @@ app's update ended in an error). And `unexpected`: an exception nobody caught (`
 - `error.unexpected.v<x.y.z>`
 
 The platform is `web` for the web build, otherwise the desktop app's system. The version is the app's version, and only a
-plain `x.y.z` (a pre-release sends nothing). The product page will be counted separately, by its own pixel (`site.en`, `site.de`); it is not part of the app.
+plain `x.y.z` (a pre-release sends nothing). The product page is counted separately, by its own pixel (`site.en`, `site.de`: an image without a script or a cookie);
+it is not part of the app. `scripts/build-pages.mjs` fills the pixel's address from `WALKFLOW_USAGE` like the app build
+does; without it the pages carry no pixel and no small print about counting.
 
 ## Never sent
 
