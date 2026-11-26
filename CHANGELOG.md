@@ -1,5 +1,42 @@
 # Changelog
 
+## [0.8.0](https://github.com/walkflow-app/walkflow/compare/v0.7.3...v0.8.0) (2026-11-26)
+
+
+### Safety
+
+* a route from outside brings at most a walking speed along ([#54](https://github.com/walkflow-app/walkflow/issues/54)) ([de2b9ad](https://github.com/walkflow-app/walkflow/commit/de2b9ad6c863805f2cc3dabd44cab1539d31cddf))
+* **desktop:** Stop after a display error, the program tick first, a crashed window warns ([#59](https://github.com/walkflow-app/walkflow/issues/59)) ([75246d9](https://github.com/walkflow-app/walkflow/commit/75246d9768c5c51e1b3852267d24093f36139a7b))
+* **dialogs:** the dialog Stop shows whenever connected, initial focus never on it ([#126](https://github.com/walkflow-app/walkflow/issues/126)) ([973e2ad](https://github.com/walkflow-app/walkflow/commit/973e2ad35a9197860dccb35024fa78cc75667a99))
+* **history:** a restored backup drops a route speed above 8 km/h ([#132](https://github.com/walkflow-app/walkflow/issues/132)) ([d4cd22f](https://github.com/walkflow-app/walkflow/commit/d4cd22f88b62db6e698e6bcb64ff11c719437407))
+* **program:** ask for the first step's speed before start, so start() does not ramp to the previous run's speed ([#127](https://github.com/walkflow-app/walkflow/issues/127)) ([596148e](https://github.com/walkflow-app/walkflow/commit/596148ec378862f0d99136e080a553f75470e144))
+* **routes:** routes from outside may bring up to 8 km/h, and the confirmation shows it ([#129](https://github.com/walkflow-app/walkflow/issues/129)) ([24d7e3d](https://github.com/walkflow-app/walkflow/commit/24d7e3dfdab0892769c8d4538408dd6d4f85c0ca))
+* **settings:** lock the speed presets while the belt runs ([#128](https://github.com/walkflow-app/walkflow/issues/128)) ([5510e67](https://github.com/walkflow-app/walkflow/commit/5510e6701885e86ff58a7eb3fd18d08d522dafd7))
+* **treadmill:** ftms-treadmill 0.3.0, sendRaw checks and the smaller promise gaps ([#96](https://github.com/walkflow-app/walkflow/issues/96)) ([82671b0](https://github.com/walkflow-app/walkflow/commit/82671b0e8617f695917a46a7f2bd0d9fa27e6834))
+* **treadmill:** ftms-treadmill 0.4.0, the notice start-belt-moving and the error superseded ([#134](https://github.com/walkflow-app/walkflow/issues/134)) ([b1dd156](https://github.com/walkflow-app/walkflow/commit/b1dd1563139d7cd959697cb87217b25af2ff0737))
+* **ui:** Target figure shows a dash when no target is set ([#97](https://github.com/walkflow-app/walkflow/issues/97)) ([#112](https://github.com/walkflow-app/walkflow/issues/112)) ([f7a37e9](https://github.com/walkflow-app/walkflow/commit/f7a37e9d0e308fbfdf478b5c51e1c9976c216a44))
+* **wiring:** handlers of the belt wiring take plain objects, tested against the simulated treadmill ([#133](https://github.com/walkflow-app/walkflow/issues/133)) ([c15b2cb](https://github.com/walkflow-app/walkflow/commit/c15b2cb20dc10537db2607e672fd0ef78eec3ca7))
+
+
+### Features
+
+* usage counts: error kinds of the treadmill connection and unexpected errors ([#104](https://github.com/walkflow-app/walkflow/issues/104)) ([1b7c205](https://github.com/walkflow-app/walkflow/commit/1b7c205ba808d4b9721eb9b89bf92b8bd4018e06))
+* usage counts: level 2 events from the views, editors, exports and the store ([#101](https://github.com/walkflow-app/walkflow/issues/101)) ([82b13a1](https://github.com/walkflow-app/walkflow/commit/82b13a15e0c961a6df55a061edf6b1e625aa412e))
+* usage counts: notice in the first-start popup, Usage data section with two switches ([#105](https://github.com/walkflow-app/walkflow/issues/105)) ([0306772](https://github.com/walkflow-app/walkflow/commit/03067725d97bd2baa1fad07df9bbb8c6a20f82b8))
+* usage counts: sender, build setting and level 1 ([#92](https://github.com/walkflow-app/walkflow/issues/92)) ([b12a076](https://github.com/walkflow-app/walkflow/commit/b12a076d7b90891d0c17975ec0dd5002ca687b10))
+* usage counts: the app's own error kinds (map, files, store, update) ([#123](https://github.com/walkflow-app/walkflow/issues/123)) ([7200acc](https://github.com/walkflow-app/walkflow/commit/7200acc102648b4ab28c31f1ff6b032c1d26c565))
+* **usage:** count the run starts (run.*) ([#100](https://github.com/walkflow-app/walkflow/issues/100)) ([fec5484](https://github.com/walkflow-app/walkflow/commit/fec5484da923d6b0b8b36c62c16905d8ce50dfb7))
+* **usage:** count the treadmill model from Device Information, with a guard ([#103](https://github.com/walkflow-app/walkflow/issues/103)) ([c5a6aba](https://github.com/walkflow-app/walkflow/commit/c5a6abacfdfbe867a497785e67edc48da116d9f2))
+* **usage:** the official build counts to walkflow.goatcounter.com ([#137](https://github.com/walkflow-app/walkflow/issues/137)) ([72b7e18](https://github.com/walkflow-app/walkflow/commit/72b7e187da3cbf7f5f1618d3c059068cb8115ebc))
+
+
+### Fixes
+
+* offer updates from peers redraw the community view at most twice a second ([#58](https://github.com/walkflow-app/walkflow/issues/58)) ([5aff7a3](https://github.com/walkflow-app/walkflow/commit/5aff7a37b97d655373c8ede9f6e065c2c4a0a3d0))
+* **pipeline:** a conflict is solved before the checks are kicked ([#121](https://github.com/walkflow-app/walkflow/issues/121)) ([9fe415c](https://github.com/walkflow-app/walkflow/commit/9fe415c184727a9a764f92ae26665e7e8fb912aa))
+* **pipeline:** a failed review is started again once, and a handed-back pull request gets a new window ([#120](https://github.com/walkflow-app/walkflow/issues/120)) ([c30a2d3](https://github.com/walkflow-app/walkflow/commit/c30a2d30d1cdea8be7d73667df235b51ebb1cbaa))
+* **pipeline:** while GitHub does not know about a conflict yet, wait instead of parking ([#122](https://github.com/walkflow-app/walkflow/issues/122)) ([b88c82a](https://github.com/walkflow-app/walkflow/commit/b88c82a107c27897a2d7f899fa3feb31b0286f85))
+
 ## [0.7.3](https://github.com/walkflow-app/walkflow/compare/v0.7.2...v0.7.3) (2026-11-22)
 
 
