@@ -614,6 +614,7 @@ export const en = {
     safetyKey: 'Is the safety key inserted and attached to your clothing?',
     confirm: 'Yes, start',
     startSpeedFailed: '⚠ The treadmill did not take the starting speed. The belt may run up to the speed it remembers. Stop works as always.',
+    startBeltMoving: '⚠ Start not sent: the belt is already running.',
   },
   stop: {
     stopped: 'Stopped',
@@ -680,6 +681,7 @@ export const en = {
     dropped: (hex: string) => `dropped: ${hex} (stop/pause takes priority)`,
     writeError: (msg: string) => `❌ Write error: ${msg}`,
     writeTimeout: 'no answer from the treadmill',
+    superseded: 'connection replaced by a newer one',
     notConnected: 'not connected',
     noGatt: 'Device has no GATT server',
   },

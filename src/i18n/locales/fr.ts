@@ -616,6 +616,7 @@ export const fr: Messages = {
     safetyKey: 'La clé de sécurité est-elle insérée et attachée à vos vêtements ?',
     confirm: 'Oui, démarrer',
     startSpeedFailed: '⚠ Le tapis n’a pas accepté la vitesse de départ. La bande peut monter jusqu’à la vitesse qu’il a mémorisée. L’arrêt fonctionne comme toujours.',
+    startBeltMoving: '⚠ Démarrage non envoyé : la bande tourne déjà.',
   },
   stop: {
     stopped: 'Arrêté',
@@ -682,6 +683,7 @@ export const fr: Messages = {
     dropped: (hex: string) => `abandonné : ${hex} (arrêt/pause prioritaire)`,
     writeError: (msg: string) => `❌ Erreur d’écriture : ${msg}`,
     writeTimeout: 'pas de réponse du tapis',
+    superseded: 'connexion remplacée par une plus récente',
     notConnected: 'non connecté',
     noGatt: 'L’appareil n’a pas de serveur GATT',
   },

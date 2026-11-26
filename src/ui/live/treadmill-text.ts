@@ -40,6 +40,7 @@ function errorCodeText(code: TreadmillErrorCode): string {
     case 'no-gatt': return t.ble.noGatt;
     case 'not-connected': return t.ble.notConnected;
     case 'write-timeout': return t.ble.writeTimeout;
+    case 'superseded': return t.ble.superseded;
   }
 }
 
@@ -68,6 +69,7 @@ export function noticeText(n: Notice | LimitProblem | LimitNote): string {
     case 'speed-held-until-moving': return t.limit.heldUntilMoving(n.kmh);
     case 'ramp-aborted': return t.limit.rampAborted;
     case 'start-speed-failed': return t.start.startSpeedFailed;
+    case 'start-belt-moving': return t.start.startBeltMoving;
     case 'speed-refused': return t.limit.speedRefused;
     case 'limit-lowered': return t.limit.lowered(n.kmh);
     case 'limit-unconfirmed': return t.limit.unconfirmed(n.requested, n.applied);

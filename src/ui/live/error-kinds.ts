@@ -24,6 +24,7 @@ export const NOTICE_ERROR_KINDS: Record<Notice['code'], ErrorKind | null> = {
   'speed-held-until-moving': null,
   'ramp-aborted': null,
   'start-speed-failed': 'start-speed-failed',
+  'start-belt-moving': null,
   'speed-refused': 'speed-refused',
   'limit-lowered': null,
   'limit-unconfirmed': null,
@@ -40,6 +41,7 @@ export const THROWN_ERROR_KINDS: Record<TreadmillErrorCode, ErrorKind> = {
   'no-gatt': 'no-gatt',
   'not-connected': 'not-connected',
   'write-timeout': 'write-timeout',
+  'superseded': 'connect-failed',
 };
 
 /** The kind of a notice, or null when it is no failure */
