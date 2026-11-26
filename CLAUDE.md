@@ -97,7 +97,8 @@ npm run dev                                     # Demo (no treadmill) in the con
   On GitHub one review runs, with Sonnet. **Reviewed locally means no review on GitHub:** once the reviewers that apply have run
   and their findings are fixed, the last commit of the branch carries the line `Local-Review: done` in its message (with nothing
   left to commit: `git commit --allow-empty -m "chore: local review done" -m "Local-Review: done"`). Never add it without that
-  review; a later commit without it is reviewed on GitHub again.
+  review; a later commit without it is reviewed on GitHub again. The line is trusted:
+  nothing checks that a review ran.
 - **Treadmill checks**: skill `hardware-check` writes them into HARDWARE-TESTS.md, reads a log the maintainer pastes, and
   prepares a guided session at the treadmill (mode C: the build running, the log followed, the steps).
 - **Website**: agent `site-editor`.

@@ -8,7 +8,7 @@ export const SAFETY = [
   /^src\/main\.ts$/, /^electron\//,
 ];
 
-/** Trust-boundary code: what talks to others or shares data. Two reviews by two models like belt code, but no treadmill session.
+/** Trust-boundary code: what talks to others or shares data. Reviewed like belt code, but no treadmill session.
  *  The pipeline merges it. */
 export const TRUST = [/^src\/net\//, /^src\/core\/share\//];
 
