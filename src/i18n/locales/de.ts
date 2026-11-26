@@ -613,6 +613,7 @@ export const de: Messages = {
     safetyKey: 'Ist der Sicherheitsschlüssel eingesteckt und an deiner Kleidung befestigt?',
     confirm: 'Ja, starten',
     startSpeedFailed: '⚠ Das Laufband hat die Startgeschwindigkeit nicht angenommen. Das Band kann auf die Geschwindigkeit hochlaufen, die es sich gemerkt hat. Stopp wirkt wie immer.',
+    startBeltMoving: '⚠ Start nicht gesendet: Das Band läuft bereits.',
   },
   stop: {
     stopped: 'Gestoppt',
@@ -679,6 +680,7 @@ export const de: Messages = {
     dropped: (hex: string) => `verworfen: ${hex} (Stop/Pause hat Vorrang)`,
     writeError: (msg: string) => `❌ Schreibfehler: ${msg}`,
     writeTimeout: 'keine Antwort vom Laufband',
+    superseded: 'Verbindung durch eine neuere ersetzt',
     notConnected: 'nicht verbunden',
     noGatt: 'Gerät hat keinen GATT-Server',
   },

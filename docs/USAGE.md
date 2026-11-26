@@ -100,7 +100,7 @@ Level 3, `error.<kind>.v<x.y.z>`: this known error, in this app version, and not
 the cause stays in the log, which the person may copy into an issue). The kinds are listed in `src/core/usage/errors.ts`. From the
 treadmill library, mapped in `src/ui/live/error-kinds.ts`: the notices `features-unreadable`, `speed-range-unreadable`,
 `write-failed`, `start-speed-failed`, `speed-refused`, and the errors `no-gatt`, `not-connected`, `write-timeout`. The app's own:
-`connect-failed` (connecting failed without a library code; also when the person closes the device chooser),
+`connect-failed` (connecting failed without a library code, or with the library's `superseded`, a connection replaced by a newer one; also when the person closes the device chooser),
 `connection-lost` (a connection that was up ended and the person did not press Disconnect; so it also counts when something
 outside the app ends the connection, such as the system or the browser), `map-style` (the map reported an error, for example
 its style could not be loaded), `file-read` (a file you opened or chose could not be read: GPX, route or workout

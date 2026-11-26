@@ -19,7 +19,7 @@ describe('the library codes and the error kinds', () => {
   });
 
   it('maps every TreadmillErrorCode of the library', () => {
-    expect(thrownCodes).toEqual(['no-gatt', 'not-connected', 'write-timeout']);
+    expect(thrownCodes).toEqual(['no-gatt', 'not-connected', 'write-timeout', 'superseded']);
     expect(Object.keys(THROWN_ERROR_KINDS).sort()).toEqual([...thrownCodes].sort());
   });
 
@@ -36,6 +36,7 @@ describe('the library codes and the error kinds', () => {
   it('gives a notice its kind, and nothing for information', () => {
     expect(noticeErrorKind({ code: 'write-failed' })).toBe('write-failed');
     expect(noticeErrorKind({ code: 'features' })).toBeNull();
+    expect(noticeErrorKind({ code: 'start-belt-moving' })).toBeNull();
   });
 });
 
@@ -43,6 +44,7 @@ describe('connectErrorKind', () => {
   it('is the library code when the error carries one', () => {
     expect(connectErrorKind(new TreadmillError('no-gatt'))).toBe('no-gatt');
     expect(connectErrorKind(new TreadmillError('write-timeout'))).toBe('write-timeout');
+    expect(connectErrorKind(new TreadmillError('superseded'))).toBe('connect-failed');
   });
 
   it('is connect-failed for anything else, whatever the text says', () => {
