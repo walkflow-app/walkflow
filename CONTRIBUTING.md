@@ -80,7 +80,7 @@ Every new pull request gets a review by AI agents (`.github/workflows/agent-revi
 `CLAUDE.md` asks for and post their verdict. Maintainers can ask for more with `@claude …` in a comment, or hand over an issue
 with the label `agent-ready` (`.github/workflows/claude.yml`); belt code is built like any other issue, with the safeguards that stay: the test first, the safety reviewer, the
 label `needs-hardware`, and one check on a treadmill before the release. Pull requests
-from forks are not reviewed by agents. GitHub reviews with Sonnet only, once; a head commit with the line `Local-Review: done` is not reviewed there.
+from forks are not reviewed by agents. GitHub reviews with Sonnet only, once; a head commit with the line `Local-Review: done` is not reviewed there. The line is trusted: nothing checks that a review ran.
 
 What counts as belt code (`SAFETY`: `needs-hardware`, a check on the treadmill before the release) and as
 trust-boundary code (`TRUST`: `src/net/`, `src/core/share/`: no treadmill) is listed once, in `scripts/paths.mjs`; the
