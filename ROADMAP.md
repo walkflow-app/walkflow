@@ -5,12 +5,12 @@ moves into *Now*. Each line links to where the work is. The treadmill library an
 [ftms-treadmill](https://github.com/walkflow-app/ftms-treadmill/blob/main/ROADMAP.md),
 [route-store](https://github.com/walkflow-app/route-store/blob/main/ROADMAP.md). Last updated: 2026-11-26.
 
-State: [0.7.2](https://github.com/walkflow-app/walkflow/releases/tag/v0.7.2) (2026-11-16), with ftms-treadmill 0.2.0, tested on
+State: [0.8.1](https://github.com/walkflow-app/walkflow/releases/tag/v0.8.1) (2026-11-26), with ftms-treadmill 0.4.0, tested on
 a Sportstech sPad 500.
 
 ## Now
 
-- **Hardware checks still open.** 64 items in [HARDWARE-TESTS.md](HARDWARE-TESTS.md) are not ticked, among them
+- **Hardware checks still open.** 98 items in [HARDWARE-TESTS.md](HARDWARE-TESTS.md) are not ticked, among them
   incline levels, program transitions, reconnecting, **the belt on a lost connection** and stop on a standing belt. Needs a
   real treadmill. `needs-hardware`
 
@@ -34,7 +34,8 @@ a Sportstech sPad 500.
 
 ## Done recently
 
-- 2026-11-26: anonymous usage counts ([#74](https://github.com/walkflow-app/walkflow/issues/74)): the official build counts to its own GoatCounter site, with two switches in the settings (*Improve*, *Errors*), no cookies and no ID; on with the release 0.8.0.
+- 2026-11-26: 0.8.1 (0.8.0 was never published: its Windows build stopped on a test that fails only on Windows), with the belt bugs ([#111](https://github.com/walkflow-app/walkflow/issues/111)): 15 defects of the ramp, Start, Stop, dialogs and routes and backups from outside, fixed in the app, in ftms-treadmill 0.4.0 and in the route store; two sessions on a sPad 500, results in [HARDWARE-TESTS.md](HARDWARE-TESTS.md). Open from them: [ftms-treadmill#66](https://github.com/walkflow-app/ftms-treadmill/issues/66), [#62](https://github.com/walkflow-app/ftms-treadmill/issues/62), [#130](https://github.com/walkflow-app/walkflow/issues/130).
+- 2026-11-26: anonymous usage counts ([#74](https://github.com/walkflow-app/walkflow/issues/74)): the official build counts to its own GoatCounter site, with two switches in the settings (*Improve*, *Errors*), no cookies and no ID; on with the release 0.8.1.
 - 2026-11-16: 0.7.2, exported files are named after the local time
   ([#61](https://github.com/walkflow-app/walkflow/pull/61), [#62](https://github.com/walkflow-app/walkflow/pull/62)).
 - 2026-11-14: docs out of date fixed ([#41](https://github.com/walkflow-app/walkflow/issues/41)): `src/net/` and the
