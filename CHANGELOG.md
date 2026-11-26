@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.2](https://github.com/walkflow-app/walkflow/compare/v0.8.1...v0.8.2) (2026-11-26)
+
+
+### Safety
+
+* **dialogs:** the dialog Stop shows only while the belt may run ([#141](https://github.com/walkflow-app/walkflow/issues/141)) ([b8d42c8](https://github.com/walkflow-app/walkflow/commit/b8d42c84d590dfdd65c7afc6cf1adf84fcf4a21b))
+
 ## [0.8.1](https://github.com/walkflow-app/walkflow/compare/v0.8.0...v0.8.1) (2026-11-26)
 
 
