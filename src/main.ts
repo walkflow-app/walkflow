@@ -4,7 +4,7 @@ import { desktop, setupDesktop } from './ui/desktop';
 import type { TcxSport } from './core/history/export';
 import { setupExportControls } from './ui/history/export-controls';
 import { setupHistory } from './ui/history/history';
-import { lang, onLanguageChange, retranslate, t, type Text } from './i18n/i18n';
+import { lang, onLanguageChange, retranslate, t } from './i18n/i18n';
 import { appStartName, langName } from './core/usage/events';
 import { count, countUnexpected } from './ui/usage';
 import { APP_VERSION, BUILD_TARGET } from './platform/config';
@@ -21,6 +21,7 @@ import { setupBackground } from './ui/background';
 import { setupCommunity } from './ui/community/community';
 import { disclaimerAccepted, ensureDisclaimer } from './ui/disclaimer';
 import { setupConnection } from './ui/live/connection';
+import { createBelt, globalStop } from './ui/live/belt';
 import { makeConfirmStart } from './ui/live/confirm-start';
 import { setupControls } from './ui/live/controls';
 import { setupInclineCard } from './ui/live/incline-card';
@@ -113,11 +114,7 @@ const community = COMMUNITY_ENABLED
 if (!COMMUNITY_ENABLED) document.querySelectorAll('[data-view="community"], .community-part').forEach(e => e.remove());
 
 // Start, pause and stop. A reason is what a running program shows as its end; without one it shows what the treadmill says.
-const belt = {
-  start: () => tm.start(),
-  stop: (reason?: Text) => { if (reason) runner.abort(reason); return tm.stop(); },
-  pause: (reason?: Text) => { if (reason) runner.abort(reason); return tm.pause(); },
-};
+const belt = createBelt(tm, reason => runner.abort(reason));
 
 /** A Stop or Pause that did not get through although the treadmill is connected: the person has to stop the belt on the treadmill */
 const stopFailed = (failed: boolean) => {
@@ -284,7 +281,7 @@ setupPwa(() => tm.state.connected);
 // Settings → Info: install the web app as an app of its own (web build only)
 setupInstall();
 setupDesktop({
-  onGlobalStop: () => { if (tm.state.connected) { log(t.stop.globalShortcutLog); void belt.stop(() => t.stop.globalShortcut); } },
+  onGlobalStop: () => globalStop({ connected: () => tm.state.connected, belt, log: () => log(t.stop.globalShortcutLog), reason: () => t.stop.globalShortcut }),
   // A file opened from outside goes to the view that fits what is in it; anything else gets the routes' message
   onOpenPackage: f => void (f.text !== undefined && packageKind(f.text) === 'workout' ? workouts.openPackage(f) : routes.openPackage(f)),
   log,
