@@ -312,6 +312,8 @@ The library changes of [the feature #111](https://github.com/walkflow-app/walkfl
 - [ ] **A route's speed of 8 km/h is taken, and shown** (#129, #48). Import a route file with `defaultSpeed` 8. The question shows `This route brings its own speed: 8.0 km/h`. With the default limit of 6, press Start: the log never goes above `→ 02 58 02` (6.00) and never shows `→ 02 20 03` (8.00).
 - [ ] **A route above 8 km/h brings no speed** (#129, #48). Import a file with `defaultSpeed` 8.1: no speed line, and the route starts at 3 km/h (`→ 02 2c 01`).
 
+- [ ] **A backup restore drops a route speed above 8 km/h** (#132, #70). Make a backup, edit the JSON so that one route has `"defaultSpeed": 12` and another `"defaultSpeed": 5`, and restore it into an app where those routes are not present (the app's own library keeps its speeds). Expected: the 12 route shows no speed of its own and starts at the default 3 km/h (`→ 02 2c 01` at most, never `→ 02 b0 04`, 12.00); the 5 route keeps 5 km/h (`→ 02 f4 01`, with the limit raised to 5 or more). A restore shows no note about the speed, unlike a package import.
+
 **Training view in the Demo** (#97, no belt: the Demo connection will do; after its pull request [#112](https://github.com/walkflow-app/walkflow/pull/112) is merged)
 
 - [ ] **The figure and the slider agree after a reconnect.** In the Demo connect, choose a speed, disconnect, connect again. Expected: the target figure shows a dash (no target set), the slider does not show the old value as a target, and Start does what the figure says (the start speed, no ramp to the old value).
