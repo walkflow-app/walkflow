@@ -8,10 +8,22 @@ describe('resolveUsageBase', () => {
     expect(resolveUsageBase('', 'https://my-site2.goatcounter.com')).toBe('https://my-site2.goatcounter.com');
   });
 
-  it('has no default for any repository: nothing set, nothing sent', () => {
-    expect(resolveUsageBase('walkflow-app/walkflow')).toBeNull();
-    expect(resolveUsageBase('walkflow-app/walkflow', '')).toBeNull();
+  it('is the official counting site for the official repository when nothing is set', () => {
+    expect(resolveUsageBase('walkflow-app/walkflow')).toBe('https://walkflow.goatcounter.com');
+    expect(resolveUsageBase('walkflow-app/walkflow', '')).toBe('https://walkflow.goatcounter.com');
+  });
+
+  it('has no default for any other repository, a fork or an empty one: nothing set, nothing sent', () => {
+    for (const repo of ['', 'someone/walkflow', 'walkflow-app/other', 'walkflow-app/walkflow-fork', 'Walkflow-App/walkflow', 'walkflow-app/walkflow/x'])
+      expect(resolveUsageBase(repo), repo).toBeNull();
+    expect(resolveUsageBase('someone/walkflow', '')).toBeNull();
     expect(resolveUsageBase('', '')).toBeNull();
+  });
+
+  it('lets the override beat the default, and an invalid override gives nothing (never the default)', () => {
+    expect(resolveUsageBase('walkflow-app/walkflow', 'https://other.goatcounter.com')).toBe('https://other.goatcounter.com');
+    expect(resolveUsageBase('walkflow-app/walkflow', 'https://example.org')).toBeNull();
+    expect(resolveUsageBase('walkflow-app/walkflow', ' ')).toBeNull();
   });
 
   it('accepts nothing but https://<code>.goatcounter.com', () => {
