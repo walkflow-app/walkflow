@@ -1,6 +1,6 @@
-// A Stop button in every dialog while the treadmill is connected. A modal dialog makes the rest of the page inert for mouse and touch,
+// A Stop button in every dialog while the belt runs or may run. A modal dialog makes the rest of the page inert for mouse and touch,
 // so the Stop buttons of the page cannot be reached while one is open (#46). It is drawn into each dialog and shown by
-// style.css while <html data-running="1"> (main.ts sets it, from dialogStopShown: connected).
+// style.css while <html data-running="1"> (main.ts sets it, from dialogStopShown).
 // A press stops the belt first, then cancels the dialog the way Esc would.
 
 import { initialFocusIndex } from '../../core/safety/dialog-stop';

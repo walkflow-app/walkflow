@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { dialogStopShown, initialFocusIndex } from './dialog-stop';
 
 describe('dialogStopShown', () => {
-  it('shows whenever the treadmill is connected, also when the belt is not reported as running', () => {
-    expect(dialogStopShown({ connected: true, maybeRunning: false })).toBe(true);
+  it('shows while the belt runs or may run', () => {
     expect(dialogStopShown({ connected: true, maybeRunning: true })).toBe(true);
+  });
+  it('is hidden while the belt stands: there is nothing to stop', () => {
+    expect(dialogStopShown({ connected: true, maybeRunning: false })).toBe(false);
   });
   it('is hidden without a connection', () => {
     expect(dialogStopShown({ connected: false, maybeRunning: false })).toBe(false);

@@ -200,7 +200,7 @@ const connMenu = setupMenu($button('statusBtn'), $('connMenu'), controls);
 setupPrefs($('langOptions'), $('themeOptions'), $('paletteOptions'), $('unitsOptions'));
 $button('openData').onclick = () => settings.open('data');
 setInterval(renderSettingsLock, 500);
-// Every dialog shows a Stop while connected (dialog-stop.ts): a modal dialog makes the page's Stop buttons unreachable
+// Every dialog shows a Stop while the belt may run (dialog-stop.ts): a modal dialog makes the page's Stop buttons unreachable
 const renderRunning = () => { document.documentElement.dataset.running = dialogStopShown(tm.state) ? '1' : '0'; };
 setDialogStop(() => void belt.stop());
 for (const e of ['phase', 'disconnected', 'machineStatus', 'data'] as const) tm.on(e, renderRunning);
