@@ -78,20 +78,21 @@ request; Dependabot keeps the GitHub Actions, which are pinned by commit, and th
 
 Every new pull request gets a review by AI agents (`.github/workflows/agent-review.yml`): they check what this repository's
 `CLAUDE.md` asks for and post their verdict. Maintainers can ask for more with `@claude …` in a comment, or hand over an issue
-with the label `agent-ready` (`.github/workflows/claude.yml`); belt code is built like any other issue, with the safeguards that stay: the test first, the safety reviewer, two reviews by two
-models, the label `needs-hardware`, and one check on a treadmill before the release. Pull requests
-from forks are not reviewed by agents. A review runs with another model than the one that wrote the change (Opus and Sonnet
-check each other; `.github/scripts/review-model.sh`).
+with the label `agent-ready` (`.github/workflows/claude.yml`); belt code is built like any other issue, with the safeguards that stay: the test first, the safety reviewer, the
+label `needs-hardware`, and one check on a treadmill before the release. Pull requests
+from forks are not reviewed by agents. GitHub reviews with Sonnet only, once; a head commit with the line `Local-Review: done` is not reviewed there.
 
-What counts as belt code (`SAFETY`: two reviews by two models, `needs-hardware`, a check on the treadmill before the release) and as
-trust-boundary code (`TRUST`: `src/net/`, `src/core/share/`: two reviews, no treadmill) is listed once, in `scripts/paths.mjs`; the
-safety gate, the pipeline and `review-model.sh` read it.
+What counts as belt code (`SAFETY`: `needs-hardware`, a check on the treadmill before the release) and as
+trust-boundary code (`TRUST`: `src/net/`, `src/core/share/`: no treadmill) is listed once, in `scripts/paths.mjs`; the
+safety gate and the pipeline read it.
 
 **The agent pipeline** (repository variable `AGENT_PIPELINE` = `on`; off, the verdict is a comment and the PM or the maintainer merges)
 takes a pull request to `main` without a maintainer. The rules are in `scripts/agent-pipeline.mjs` and its tests:
 
 - The review is a review of the app *walkflow-reviewer* on the reviewed commit: `OK` approves, `OK with remarks` comments,
-  `changes needed` and `blocking` request changes. It runs again on every new commit.
+  `changes needed` and `blocking` request changes. It runs again on every new commit, except one
+  with the line `Local-Review: done` on a person's pull request: the pipeline takes that as `OK` (also when GitHub then
+  merges `main` into it).
 - `agent-pipeline.yml` (after a review, CI or a fix, and every 15 minutes) decides: merge (squash) when the head commit is
   approved, `test` and `safety-gate` are green and there is no conflict; start `agent-fix.yml` for remarks, a failing check or
   a conflict (one try per commit, a failed fix run is tried once more); or park the pull request with a comment why: the label
@@ -113,7 +114,7 @@ takes a pull request to `main` without a maintainer. The rules are in `scripts/a
   starts the checks). While GitHub does not yet know whether there is a conflict (`UNKNOWN`, for a while after `main`
   moved) it waits for the next sweep instead of parking, whatever it was about to decide on the reviews.
 - **Belt code** (`SAFETY` in `scripts/paths.mjs`, and a new `ftms-treadmill` version) and **trust-boundary code** (`TRUST`:
-  `src/net/`, `src/core/share/`) are reviewed by Opus and Sonnet, merged only when both say `OK` and on top of the current
+  `src/net/`, `src/core/share/`) are merged only when the review says `OK` and on top of the current
   `main`. Belt code also gets the label `needs-hardware`: one check on a treadmill before the release, not before each merge.
 - **Never merged by an agent** (`PROTECTED` in `scripts/agent-pipeline.mjs`: the rules themselves): changes to `.github/`, `.claude/`,
   `CLAUDE.md`, `scripts/`, dependencies and npm settings, the test, lint, build and release configuration, `public/legal/`, and a
