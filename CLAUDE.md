@@ -91,7 +91,7 @@ npm run dev                                     # Demo (no treadmill) in the con
     `src/net/`, `src/core/share/`), Bluetooth, the `ftms-treadmill` version, or anything that ends in a call that drives the belt;
   - `docs-i18n-reviewer` for every change to behaviour, settings, UI texts or the site;
   - `architect` for a spec, a refactor, or a change across layers or repositories.
-  Reviewers run with another model than the one that wrote the change: written with Opus, the reviewer runs with Sonnet, and
+  Local reviewers run with another model than the one that wrote the change: written with Opus, the reviewer runs with Sonnet, and
   the other way round; when that is unclear, Opus for safety code, Bluetooth, sharing, the library version or big changes,
   else Sonnet.
   On GitHub one review runs, with Sonnet. **Reviewed locally means no review on GitHub:** once the reviewers that apply have run
