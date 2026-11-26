@@ -1,7 +1,7 @@
 # Who has to look at what. Today one maintainer owns everything; the explicit lines mark what an agent changes only with care
 # (the release and deploy pipeline, the agent setup, the legal pages, the safety rules and the live view). Whether a ruleset
 # requires the owner's review of them is the maintainer's setting. Trust-boundary code (src/net/, src/core/share/) and electron/ are merged by the agent pipeline after two
-# reviews by two models (meta process/flow.md, scripts/paths.mjs); they have no line here.
+# reviews (meta process/flow.md, scripts/paths.mjs); they have no line here.
 *                               @caenderl
 
 src/core/safety/                @caenderl
