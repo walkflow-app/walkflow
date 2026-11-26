@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.1](https://github.com/walkflow-app/walkflow/compare/v0.8.0...v0.8.1) (2026-11-26)
+
+
+### Fixes
+
+* **tests:** the usage docs test reads docs/USAGE.md with Windows line ends ([#138](https://github.com/walkflow-app/walkflow/issues/138)) ([55f6f73](https://github.com/walkflow-app/walkflow/commit/55f6f738987acaae24e9f9921f8398edcf98c816))
+
 ## [0.8.0](https://github.com/walkflow-app/walkflow/compare/v0.7.3...v0.8.0) (2026-11-26)
 
 
