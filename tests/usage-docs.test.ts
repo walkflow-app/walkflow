@@ -7,7 +7,8 @@ import { describe, expect, it } from 'vitest';
 import { ERROR_KINDS, ERROR_PATTERNS } from '../src/core/usage/errors';
 import { FIXED_NAMES, PATTERNS } from '../src/core/usage/events';
 
-const doc = readFileSync(fileURLToPath(new URL('../docs/USAGE.md', import.meta.url)), 'utf8');
+// A checkout on Windows may turn the line ends into CRLF (no .gitattributes): the patterns below read LF
+const doc = readFileSync(fileURLToPath(new URL('../docs/USAGE.md', import.meta.url)), 'utf8').replace(/\r\n/g, '\n');
 
 /** The list under "## Names": one bullet with the name in backticks per line */
 const listed = (() => {
