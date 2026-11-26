@@ -72,7 +72,7 @@ export function setupSettings(onLockClose: () => void = () => {}) {
       if (next) { e.preventDefault(); showTab(next, true); }
     };
   }
-  // Stop within reach while the dialog is open: the belt can be started on the treadmill while it is
+  // Stop within reach: the belt can be started on the treadmill while the dialog is open (it then locks and closes)
   dlg.prepend(lastingDialogStopButton(dlg));
   button.onclick = () => open();
   $button('settingsClose').onclick = () => dlg.close();
